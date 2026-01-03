@@ -1,0 +1,338 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://strongcode.app/schemas/v1.0/program.schema.json",
+  "title": "Training Program",
+  "description": "StrongCode training program with input parameters, calculated targets, and generated sessions",
+  "type": "object",
+  "required": ["schema_version", "meta", "client", "program_info", "input"],
+
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^1\\.0$",
+      "description": "Schema version (must be 1.0)"
+    },
+
+    "meta": {
+      "type": "object",
+      "required": ["filename", "created_at"],
+      "properties": {
+        "filename": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}_(prep|comp|transition)_[a-z-]+\\.json$",
+          "description": "Filename following convention: YYYY-MM-DD_phase_lifts.json"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "created_by": {
+          "type": "string",
+          "description": "Coach who created this program"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "active", "completed", "archived"],
+          "description": "Program status"
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "client": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Client name"
+        },
+        "one_rm": {
+          "type": "object",
+          "description": "1RM values used for this program",
+          "properties": {
+            "squat": {"type": "number", "minimum": 0},
+            "bench_press": {"type": "number", "minimum": 0},
+            "deadlift": {"type": "number", "minimum": 0},
+            "overhead_press": {"type": "number", "minimum": 0}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "program_info": {
+      "type": "object",
+      "required": ["phase", "start_date", "weeks"],
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": ["prep", "comp", "transition"],
+          "description": "Training phase"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Program start date"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Program end date (calculated)"
+        },
+        "weeks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "description": "Number of weeks in program"
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "input": {
+      "type": "object",
+      "description": "Input parameters for each lift",
+      "patternProperties": {
+        "^(squat|bench_press|deadlift|overhead_press|front_squat)$": {
+          "type": "object",
+          "required": ["monthly_nl", "volume_pattern", "intensity_distribution"],
+          "properties": {
+            "monthly_nl": {
+              "type": "integer",
+              "minimum": 50,
+              "maximum": 500,
+              "description": "Monthly Number of Lifts (total reps for the month)"
+            },
+            "rounding": {
+              "type": "number",
+              "enum": [1.0, 2.5, 5.0],
+              "description": "Weight rounding (kg)"
+            },
+            "volume_pattern": {
+              "type": "string",
+              "enum": ["1", "2a", "2b", "2c", "3a", "3b", "3c", "4", "1-3a", "1-3b", "3-1a", "3-1b", "2-4a", "2-4b", "4-2a", "4-2b"],
+              "description": "Chernyak weekly volume distribution pattern"
+            },
+            "intensity_distribution": {
+              "type": "object",
+              "description": "Percentage of monthly NL per intensity zone",
+              "properties": {
+                "65": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Percent at 65% 1RM (61-70% zone)"
+                },
+                "75": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Percent at 75% 1RM (71-80% zone)"
+                },
+                "85": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Percent at 85% 1RM (81-90% zone)"
+                },
+                "92": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Percent at 92.5% 1RM (91-94% zone)"
+                },
+                "95": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Percent at 95%+ 1RM (95-100% zone)"
+                }
+              },
+              "additionalProperties": false
+            },
+            "session_pattern": {
+              "type": "string",
+              "description": "Session distribution pattern (e.g., '3_days_balanced', '2_days_heavy_light')"
+            },
+            "session_distribution": {
+              "type": "array",
+              "description": "Manual session distribution percentages (must sum to 100)",
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "calculated": {
+      "type": "object",
+      "description": "Calculated targets (generated by scripts/calculate_targets.py)",
+      "patternProperties": {
+        "^(squat|bench_press|deadlift|overhead_press|front_squat)$": {
+          "type": "object",
+          "patternProperties": {
+            "^week_\\d+$": {
+              "type": "object",
+              "properties": {
+                "total_reps": {
+                  "type": "integer",
+                  "description": "Total reps for this week"
+                },
+                "zones": {
+                  "type": "object",
+                  "description": "Reps per intensity zone",
+                  "patternProperties": {
+                    "^(65|75|85|92|95)$": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                },
+                "sessions": {
+                  "type": "object",
+                  "description": "Session targets",
+                  "patternProperties": {
+                    "^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "description": "Total reps for this session"
+                        },
+                        "zones": {
+                          "type": "object",
+                          "description": "Reps per zone for this session",
+                          "patternProperties": {
+                            "^(65|75|85|92|95)$": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "sessions": {
+      "type": "object",
+      "description": "Generated sessions with specific sets (generated by AI or deterministic engine)",
+      "patternProperties": {
+        "^week_\\d+$": {
+          "type": "object",
+          "patternProperties": {
+            "^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Specific date for this session"
+                },
+                "exercises": {
+                  "type": "object",
+                  "patternProperties": {
+                    "^(squat|bench_press|deadlift|overhead_press|front_squat)$": {
+                      "type": "object",
+                      "properties": {
+                        "structure": {
+                          "type": "string",
+                          "enum": ["pyramid", "ladder", "pyramid_with_backoff", "custom"],
+                          "description": "Session structure type"
+                        },
+                        "sets": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": ["set", "weight", "reps", "zone"],
+                            "properties": {
+                              "set": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "description": "Set number"
+                              },
+                              "weight": {
+                                "type": "number",
+                                "minimum": 0,
+                                "description": "Weight in kg"
+                              },
+                              "reps": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Planned reps (0 = optional set)"
+                              },
+                              "zone": {
+                                "type": "string",
+                                "pattern": "^(65|75|85|92|95)$",
+                                "description": "Intensity zone"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": ["warmup", "working", "top", "backoff", "ladder_up", "ladder_down"],
+                                "description": "Set type"
+                              },
+                              "rpe_target": {
+                                "type": "number",
+                                "minimum": 1,
+                                "maximum": 10,
+                                "description": "Target RPE (Rate of Perceived Exertion)"
+                              },
+                              "notes": {
+                                "type": "string",
+                                "description": "Notes for this set"
+                              }
+                            },
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "validation": {
+      "type": "object",
+      "description": "Validation results",
+      "properties": {
+        "all_checks_passed": {
+          "type": "boolean"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "errors": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+
+  "additionalProperties": true
+}

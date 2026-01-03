@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://strongcode.app/schemas/v1.0/profile.schema.json",
+  "title": "Client Profile",
+  "description": "StrongCode client profile with 1RM history and preferences",
+  "type": "object",
+  "required": ["schema_version", "name", "one_rm_history"],
+
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^1\\.0$",
+      "description": "Schema version (must be 1.0 for this schema)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Client full name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Client email address (optional)"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when profile was created"
+    },
+    "one_rm_history": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Historical 1RM records, sorted by date (newest first recommended)",
+      "items": {
+        "type": "object",
+        "required": ["date"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when 1RMs were recorded (YYYY-MM-DD)"
+          },
+          "squat": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Squat 1RM in kg"
+          },
+          "bench_press": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Bench press 1RM in kg"
+          },
+          "deadlift": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Deadlift 1RM in kg"
+          },
+          "overhead_press": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Overhead press 1RM in kg"
+          },
+          "front_squat": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Front squat 1RM in kg"
+          },
+          "tested": {
+            "type": "boolean",
+            "description": "True if tested max, false if estimated"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes about this 1RM test (e.g., 'Competition meet', 'Training max')"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "skill_level": {
+      "type": "string",
+      "enum": ["beginner", "intermediate", "advanced", "elite"],
+      "description": "Client skill level for program selection"
+    },
+    "preferences": {
+      "type": "object",
+      "description": "Client training preferences",
+      "properties": {
+        "training_days": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+          },
+          "description": "Preferred training days"
+        },
+        "focus_lifts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["squat", "bench_press", "deadlift", "overhead_press"]
+          },
+          "description": "Lifts to prioritize in programming"
+        },
+        "session_duration_minutes": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 180,
+          "description": "Typical session duration in minutes"
+        },
+        "sessions_per_week": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7,
+          "description": "Number of training sessions per week"
+        }
+      },
+      "additionalProperties": true
+    },
+    "notes": {
+      "type": "string",
+      "description": "General notes about the client"
+    },
+    "_meta": {
+      "type": "object",
+      "description": "Metadata (created_by, last_modified, etc.)",
+      "properties": {
+        "created_by": {
+          "type": "string",
+          "format": "email",
+          "description": "Coach email who created this profile"
+        },
+        "last_modified": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last modification timestamp"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

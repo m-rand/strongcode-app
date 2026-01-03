@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "name": "Katerina Balasova",
+  "email": "katerina@example.com",
+  "created_at": "2024-12-01T10:00:00Z",
+
+  "one_rm_history": [
+    {
+      "date": "2025-01-15",
+      "squat": 142.5,
+      "bench_press": 85.0,
+      "deadlift": 170.0,
+      "tested": false,
+      "notes": "Estimate based on training - po prep blocku"
+    },
+    {
+      "date": "2024-12-01",
+      "squat": 140.0,
+      "bench_press": 82.5,
+      "deadlift": 165.0,
+      "tested": true,
+      "notes": "Competition meet - StrongFirst Prague"
+    },
+    {
+      "date": "2024-08-15",
+      "squat": 135.0,
+      "bench_press": 80.0,
+      "deadlift": 160.0,
+      "tested": false,
+      "notes": "Training max - konec prep phase"
+    }
+  ],
+
+  "skill_level": "advanced",
+
+  "preferences": {
+    "training_days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+    "focus_lifts": ["squat"],
+    "session_duration_minutes": 90,
+    "sessions_per_week": 5
+  },
+
+  "notes": "Fokus na squat, deadlift pouze 1× týdně. Preferuje ladder sessions pro squat.",
+
+  "_meta": {
+    "created_by": "Marcel Balas",
+    "last_modified": "2025-01-15T12:30:00Z"
+  }
+}
