@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 interface LiftColumnProps {
   liftName: 'squat' | 'bench_press' | 'deadlift'
   liftData: any
@@ -17,6 +19,7 @@ export default function LiftColumn({
   calculateActualPercentage,
   calculatePercentageFromReps
 }: LiftColumnProps) {
+  const t = useTranslations('admin.create.liftColumn')
   const liftLabel = liftName === 'squat' ? 'Squat' :
                     liftName === 'bench_press' ? 'Bench Press' : 'Deadlift'
 
@@ -29,7 +32,7 @@ export default function LiftColumn({
 
       {/* Basic Parameters */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h4 className="text-lg font-semibold mb-4">Základní parametry</h4>
+        <h4 className="text-lg font-semibold mb-4">{t('basicParameters')}</h4>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -77,18 +80,18 @@ export default function LiftColumn({
 
       {/* Zone Weights */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h4 className="text-lg font-semibold mb-4">Váhy pro zóny (kg)</h4>
+        <h4 className="text-lg font-semibold mb-4">{t('zoneWeights')}</h4>
         <div className="space-y-3">
           {[
-            { zone: '65', label: '65% zóna' },
-            { zone: '75', label: '75% zóna' },
-            { zone: '85', label: '85% zóna' },
-            { zone: '90', label: '90% zóna (92.5%)' },
-            { zone: '95', label: '95% zóna' }
-          ].map(({ zone, label }) => (
+            { zone: '65', labelKey: 'zone65' as const },
+            { zone: '75', labelKey: 'zone75' as const },
+            { zone: '85', labelKey: 'zone85' as const },
+            { zone: '90', labelKey: 'zone90' as const },
+            { zone: '95', labelKey: 'zone95' as const }
+          ].map(({ zone, labelKey }) => (
             <div key={zone}>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                {label}
+                {t(labelKey)}
                 <span className="ml-2 text-xs text-gray-500">
                   ({calculateActualPercentage(liftData[`weight_${zone}`], liftData.oneRM)}%)
                 </span>
@@ -107,11 +110,11 @@ export default function LiftColumn({
 
       {/* Intensity Distribution */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h4 className="text-lg font-semibold mb-4">Distribuce intenzity</h4>
+        <h4 className="text-lg font-semibold mb-4">{t('intensityDistribution')}</h4>
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              65% zóna (auto)
+              {t('zone65Auto')}
             </label>
             <input
               type="number"
@@ -125,7 +128,7 @@ export default function LiftColumn({
 
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              75% zóna (%)
+              {t('zone75Percent')}
             </label>
             <input
               type="number"
@@ -137,7 +140,7 @@ export default function LiftColumn({
 
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              85% zóna (%)
+              {t('zone85Percent')}
             </label>
             <input
               type="number"
@@ -149,7 +152,7 @@ export default function LiftColumn({
 
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              90% zóna (reps)
+              {t('zone90Reps')}
               <span className="ml-1 text-xs text-gray-500">
                 = {calculatePercentageFromReps(liftData.zone_90_total_reps, liftData.volume)}%
               </span>
@@ -164,7 +167,7 @@ export default function LiftColumn({
 
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              95% zóna (reps)
+              {t('zone95Reps')}
               <span className="ml-1 text-xs text-gray-500">
                 = {calculatePercentageFromReps(liftData.zone_95_total_reps, liftData.volume)}%
               </span>
@@ -181,11 +184,11 @@ export default function LiftColumn({
 
       {/* Volume Patterns */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h4 className="text-lg font-semibold mb-4">Volume Patterns</h4>
+        <h4 className="text-lg font-semibold mb-4">{t('volumePatterns')}</h4>
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Main Pattern
+              {t('mainPattern')}
             </label>
             <select
               value={liftData.volume_pattern_main}
@@ -200,7 +203,7 @@ export default function LiftColumn({
 
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              81-90% Pattern
+              {t('pattern8190')}
             </label>
             <select
               value={liftData.volume_pattern_8190}

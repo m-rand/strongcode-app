@@ -1,0 +1,571 @@
+{
+  "nav": {
+    "home": "Home",
+    "intro": "Intro",
+    "features": "Features",
+    "howItWorks": "How it works",
+    "lookInside": "Look Inside",
+    "price": "Price",
+    "about": "About",
+    "login": "Login",
+    "dashboard": "Dashboard",
+    "clients": "Clients",
+    "programs": "Programs",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "home": {
+    "brand": "StrongCode 60",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "quote": {
+      "text": "Lift as heavy as possible, as much volume as possible, while remaining as fresh as possible.",
+      "author": "Steve Freides"
+    },
+    "intro": {
+      "what": {
+        "navTitle": "What is StrongCode",
+        "title": "StrongCode",
+        "description": "StrongCode is a strength training system that breaks away from traditional programs. Instead of following rigid set × rep schemes, it uses dynamic volume and intensity planning to maximize your strength gains while minimizing fatigue.",
+        "sidebar1": "StrongCode combines programming principles with strength training methodology.",
+        "sidebar2": "The dynamic approach adapts to individual needs and capabilities."
+      },
+      "who": {
+        "navTitle": "Who is it for",
+        "title": "Who is it for",
+        "description": "StrongCode is designed for intermediate and advanced lifters who:",
+        "point1": "Have mastered proper technique in their chosen lifts",
+        "point2": "Have established baseline 1RMs that haven't improved on linear progression",
+        "point3": "Want to break through plateaus in any of these lifts:",
+        "lifts": {
+          "powerlifts": "Powerlifts (squat, bench press, deadlift)",
+          "militaryPress": "Military press (barbell or kettlebell)",
+          "kettlebellSquat": "Kettlebell squat",
+          "pullups": "Weighted pull-ups"
+        }
+      },
+      "expect": {
+        "navTitle": "What to expect",
+        "title": "What to expect",
+        "paragraph1": "It promises progression for most lifters, focusing on long-term development and long-lasting results.",
+        "paragraph2": "Can we promise exceptional results? Certainly not. Outcomes vary greatly from person to person and are influenced by external factors beyond the program's control.",
+        "paragraph3": "However, keep stress levels low, have quality sleep, and maintain a balanced diet, and you're setting the stage for success."
+      }
+    },
+    "features": {
+      "title": "Features",
+      "sidebar1": "Each program is uniquely crafted based on individual characteristics and goals.",
+      "sidebar2": "The dynamic approach to volume and intensity creates an engaging and effective training experience.",
+      "tailored": {
+        "navTitle": "Individually Tailored",
+        "title": "Individually Tailored",
+        "description": "Each program is tailored according to your specific characteristics, abilities, and goals. Thus it is practically impossible for two people to receive the exact same program."
+      },
+      "unique": {
+        "navTitle": "Unique",
+        "title": "Unique",
+        "paragraph1": "StrongCode provides a new way of training. Most likely, you have not experienced anything like this before. What might seem chaotic on a first glance is underpinned by several patterns and principles tried and tested over decades.",
+        "paragraph2": "Key differences from traditional programs include:",
+        "point1": "High variability of volume (between sessions, weeks, and months)",
+        "point2": "Volume and intensity are planned independently on each other",
+        "point3": "High variability of intensity zones in each workout",
+        "paragraph3": "You will simultaneously practice different intensity zones with varying volumes during each training session. The volume in these zones dynamically changes according to several rules and patterns, not only between training sessions but also between weeks and months."
+      },
+      "joyful": {
+        "navTitle": "Joyful",
+        "title": "Joyful and satisfying",
+        "description": "Each session is different, ensuring a continually satisfying training experience. No more same and boring set × rep schemes."
+      },
+      "longterm": {
+        "navTitle": "Long term",
+        "title": "Long term",
+        "paragraph1": "If you provide correct data, you should never train on the edge of failure using StrongCode. This alone significantly lowers the probability of injuries.",
+        "paragraph2": "Dynamically changing the volume between sessions / weeks / months also significantly lowers the possibility of overtraining. This makes StrongCode a great system for long-term progress."
+      },
+      "hypertrophy": {
+        "navTitle": "Hypertrophy",
+        "title": "Hypertrophy?",
+        "description": "Curious about hypertrophy? While StrongCode focuses on strength, the program can be adjusted to include hypertrophy goals for a balanced approach. By tweaking certain parameters during the program's creation, it is possible to focus either on strength alone or on both strength and hypertrophy for any of the lifts. Just let us know."
+      },
+      "benefits": {
+        "navTitle": "Benefits",
+        "title": "Benefits",
+        "point1": "Better flexibility of training sessions within a week, and weeks within a month.",
+        "point2": "More variety of rep ranges at a given load helps to remove psychological barriers associated with those weights.",
+        "point3": "Staying farther away from xRM at given weights lefts you more fresh even after a high volume trainings.",
+        "point4": "Long lasting gains.",
+        "point5": "Fewer overuse and nagging injuries or other setbacks.",
+        "point6": "Increased frequency of heavy attempts, which develops confidence and consistency.",
+        "point7": "Shorter peaks: you are always around 5% close to peak, which also means shorter taper periods."
+      }
+    },
+    "howItWorks": {
+      "title": "How it works",
+      "sidebar1": "The program creation process combines scientific analysis with experienced coaching.",
+      "sidebar2": "Dynamic programming allows for optimal volume and intensity distribution across different time scales.",
+      "inputs": {
+        "navTitle": "Inputs",
+        "paragraph1": "Based on a detailed questionnaire and the coach's know-how, the initial program parameters are derived from a large amount of input. Inputs include basic factors (gender, age, height, weight), as well as various parameters of your training history (e.g., tolerance to higher/lower volumes for a given lift), strength curves of all lifts, etc.",
+        "paragraph2": "Then comes the art of the coach, who composes the entire detailed program from the calculated parameters. Nothing algorithmic, only the creative abilities and experience of the program's creator.",
+        "buttonText": "Start Survey (10-15 min)"
+      },
+      "result": {
+        "navTitle": "Result",
+        "paragraph1": "The result is a program that spans a minimum of 2 months, divided into two key phases: preparatory and peak.",
+        "paragraph2": "While a 2-month duration is the absolute minimum for effectiveness, extending the preparatory phase to 2 or more months provides significantly better results. A longer preparatory phase allows for greater strength development and a smoother transition into the peak phase, maximizing overall performance."
+      }
+    },
+    "lookInside": {
+      "title": "Look inside",
+      "sidebar1": "The program creation process combines scientific analysis with experienced coaching.",
+      "sidebar2": "Dynamic programming allows for optimal volume and intensity distribution across different time scales.",
+      "beginners": {
+        "navTitle": "Why not for beginners",
+        "title": "Why not for beginners?",
+        "description": "For beginners, progress is largely a function of intensity / weight on the bar. The programming is quite simple: just keep the volume at the same levels and try to increase weight on the bar. As one becomes more advanced, progress increasingly depends on the volume and its proper distribution across sessions, weeks, months, and even years. The more advanced you are, the more complex programming is needed. And this is where StrongCode plays its role."
+      },
+      "model": {
+        "navTitle": "Training Model",
+        "title": "Linear, wave, and dynamic model",
+        "description": "Both the linear and wave models use an inverse relationship between volume and intensity. What sets StrongCode apart is that volume and intensity are independent variables. Treating volume and intensity independently allows for more diversity in programming, creating a highly adaptable training plan."
+      },
+      "factors": {
+        "navTitle": "Key Factors",
+        "title": "Key Factors Considered When Creating Your Program",
+        "paragraph1": "Key considerations include the balance of volume and intensity over time, ensuring optimal recovery and progress.",
+        "paragraph2": "What we measure?",
+        "point1": "volume per year / month / week / session",
+        "point2": "average intensity per year / month / week / session",
+        "point3": "distribution of the volume between months / in a month / week / session",
+        "point4": "distribution of the average intensity between months / in a month / week / session"
+      },
+      "dynamics": {
+        "navTitle": "Training Dynamics",
+        "title": "Training Dynamics",
+        "paragraph1": "StrongCode avoids stagnation by varying both volume and intensity throughout your training cycle. Changes are customized to each lifter based on their experience, goals, and recovery capacity.",
+        "paragraph2": "Both volume and (average) intensity are changing:",
+        "point1Title": "From session to session:",
+        "point1": "Each workout is different - mixing heavy, moderate, and light weights with varying volumes.",
+        "point2Title": "From week to week:",
+        "point2": "Unlike traditional programs that follow predictable patterns and small changes, volume shifts can be dramatic, e.g. week 1: high, week 2: low, week 3: high, week 4: moderate.",
+        "point3Title": "From month to month:",
+        "point3": "Long-term changes are designed to peak your strength when it matters most, such as for a competition or a personal best attempt.",
+        "keyTakeawayTitle": "Key Takeaway",
+        "keyTakeaway": "This dynamic model isn't random—it's a carefully calculated approach rooted in decades of strength training research. By continuously adjusting volume and intensity, StrongCode ensures consistent progress, prevents overtraining, and keeps you mentally and physically engaged throughout the program."
+      },
+      "ladders": {
+        "navTitle": "Ladders",
+        "title": "Why do we use ladders so extensively?",
+        "description": "Because ladders are great to manage high volumes and at the same time keep neural and metabolic fatigue low."
+      }
+    },
+    "price": {
+      "title": "Price",
+      "sidebar1": "All prices include detailed program creation and ongoing support.",
+      "sidebar2": "Choose longer programs for better value and more comprehensive progress.",
+      "base": {
+        "navTitle": "Base Price",
+        "title": "Base Price",
+        "amount": "39 USD / EUR per lift per month",
+        "exampleIntro": "So e.g.:",
+        "example1": "2 month program for 3 powerlifts: 39×3×2 = 234 USD / EUR",
+        "example2": "3 month program for 3 powerlifts: 39×3×3 = 351 USD / EUR"
+      }
+    },
+    "about": {
+      "title": "About",
+      "sidebar1": "The unique combination of programming expertise and strength coaching creates a systematic approach to strength development.",
+      "sidebar2": "Each program represents a perfect balance between computational precision and coaching creativity.",
+      "intro": {
+        "navTitle": "Marcel Balas",
+        "title": "Marcel Balas",
+        "description": "Marcel Balas is the key figure behind StrongCode, skillfully combining his expertise as:",
+        "point1": "Software developer originally specializing in high-performance computing",
+        "point2": "Gym owner",
+        "point3": "Strength coach",
+        "point4": "Head of a powerlifting team"
+      },
+      "vision": {
+        "navTitle": "StrongCode Vision",
+        "title": "Vision",
+        "description": "StrongCode combines advanced computational analysis with real-world strength training expertise. Each program is built using precise calculations and refined through expert coaching to match your specific needs."
+      }
+    },
+    "cta": {
+      "title": "Ready to get stronger?",
+      "description": "Contact us to discuss your strength goals and get started with StrongCode.",
+      "buttonText": "Fill Survey (10-15 min)"
+    },
+    "footer": {
+      "copyright": "© 2025 StrongCode 60. Based on PlanStrong™ methodology."
+    }
+  },
+  "survey": {
+    "title": "Initial Survey",
+    "subtitle": "Be Strong Advanced Survey",
+    "description": "This survey helps us understand your current level and create an optimal training program for you. It takes approximately 10-15 minutes to complete.",
+    "sections": {
+      "personal": {
+        "title": "Personal Information",
+        "name": "Full Name",
+        "email": "Email",
+        "nationality": "Nationality",
+        "gender": "Gender",
+        "genderOptions": {
+          "select": "Select...",
+          "male": "Male",
+          "female": "Female",
+          "other": "Other"
+        },
+        "dateOfBirth": "Date of Birth",
+        "height": "Height (cm)",
+        "weight": "Weight (kg)",
+        "healthIssues": "Health issues or limitations",
+        "healthIssuesPlaceholder": "Describe any health problems, injuries or limitations...",
+        "otherComments": "Additional notes",
+        "otherCommentsPlaceholder": "Any additional information we should know..."
+      },
+      "oneRM": {
+        "title": "Current 1RM",
+        "subtitle": "Your current one-rep maximum (1RM) in kilograms",
+        "squat": "Squat (kg)",
+        "bench": "Bench Press (kg)",
+        "deadlift": "Deadlift (kg)"
+      },
+      "psyching": {
+        "title": "Psyching Readiness",
+        "subtitle": "Can you lift your 1RM anytime?",
+        "squat": "Squat",
+        "bench": "Bench Press",
+        "deadlift": "Deadlift"
+      },
+      "performance": {
+        "title": "Performance Tests",
+        "repsAt75": "How many reps at 75% 1RM?",
+        "repsAt85": "How many reps at 85% 1RM?",
+        "repsAt925": "How many reps at 92.5% 1RM?",
+        "squat": "Squat",
+        "bench": "Bench",
+        "deadlift": "Deadlift"
+      },
+      "equipment": {
+        "title": "Equipment",
+        "subtitle": "Minimum weight jump in kg (available plates)",
+        "squat": "Squat (kg)",
+        "bench": "Bench (kg)",
+        "deadlift": "Deadlift (kg)"
+      },
+      "stress": {
+        "title": "External Stress",
+        "level": "Level of external stress (1-5)",
+        "options": {
+          "select": "Select...",
+          "1": "1 - Very low (few obligations, good rest)",
+          "2": "2 - Low (occasional stress, good balance)",
+          "3": "3 - Medium (normal life and work)",
+          "4": "4 - High (many obligations, little time)",
+          "5": "5 - Very high (extreme pressure, lack of sleep)"
+        }
+      },
+      "frequency": {
+        "title": "Training Frequency",
+        "subtitle": "How many times per week do you train each lift?",
+        "squat": "Squat (×/week)",
+        "bench": "Bench (×/week)",
+        "deadlift": "Deadlift (×/week)"
+      },
+      "volume": {
+        "title": "Training Volume (last 2 months)",
+        "avgLifts70": "Average lifts ≥70% per week",
+        "lifts95100": "Lifts at 95-100% per month",
+        "squat": "Squat",
+        "bench": "Bench",
+        "deadlift": "Deadlift"
+      },
+      "progress": {
+        "title": "Progress Tracking",
+        "improvement2Months": "1RM improvement over last 2 months (kg)",
+        "improvementYear": "1RM improvement over last year (kg)",
+        "squat": "Squat",
+        "bench": "Bench",
+        "deadlift": "Deadlift"
+      },
+      "capacity": {
+        "title": "Capacity",
+        "sessionsLately": "Training sessions per week lately",
+        "maxSessions": "Maximum training sessions per week",
+        "muscleMass": "Importance of muscle mass (besides strength)",
+        "muscleMassPlaceholder": "Describe how important muscle mass gain, aesthetics, etc. are to you..."
+      }
+    },
+    "submit": "Submit Survey",
+    "submitting": "Submitting...",
+    "success": {
+      "title": "Thank you!",
+      "message": "Your survey has been successfully submitted. We will contact you shortly with more information.",
+      "backHome": "Back to Home"
+    },
+    "errors": {
+      "nameEmailRequired": "Name and email are required",
+      "allOneRMRequired": "Please fill in all 1RM values",
+      "submitFailed": "Failed to submit survey"
+    },
+    "footer": "After submission, your data will be securely stored and we will contact you soon.",
+    "required": "*"
+  },
+  "login": {
+    "title": "StrongCode 60",
+    "subtitle": "System Login",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Log In",
+    "submitting": "Logging in...",
+    "error": "Invalid credentials",
+    "defaultCredentials": "Default access: admin@strongcode.cz / admin123"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Welcome",
+      "stats": {
+        "totalClients": "Total Clients",
+        "activePrograms": "Active Programs",
+        "pendingSurveys": "Pending Surveys"
+      },
+      "cards": {
+        "createProgram": {
+          "title": "Create Program",
+          "description": "Create a new training program for a client"
+        },
+        "importProgram": {
+          "title": "Import Program",
+          "description": "Upload a complete JSON program created with AI"
+        },
+        "clients": {
+          "title": "Clients",
+          "description": "Manage clients and their profiles"
+        },
+        "programs": {
+          "title": "Programs",
+          "description": "View and edit existing programs"
+        }
+      }
+    },
+    "clients": {
+      "title": "Clients",
+      "loadingClients": "Loading clients...",
+      "backToDashboard": "Dashboard",
+      "addClient": "Add Client",
+      "noClients": "No clients",
+      "noClientsDescription": "No clients have been added yet",
+      "addFirstClient": "Add first client",
+      "viewClient": "View",
+      "table": {
+        "name": "Name",
+        "skillLevel": "Skill Level",
+        "oneRM": "1RM (current)",
+        "programs": "Programs",
+        "actions": "Actions",
+        "notSpecified": "Not specified"
+      },
+      "skillLevels": {
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced",
+        "elite": "Elite"
+      }
+    },
+    "clientDetail": {
+      "loading": "Loading client...",
+      "notFound": "Client not found",
+      "backToClients": "← Back to clients",
+      "clients": "← Clients",
+      "survey": "Survey",
+      "edit": "Edit",
+      "newProgram": "+ New program",
+      "basicInfo": "Basic Information",
+      "email": "Email",
+      "skillLevel": "Skill Level",
+      "created": "Created",
+      "notes": "Notes",
+      "currentOneRM": "Current 1RM",
+      "date": "Date",
+      "tested": "Tested",
+      "surveyTitle": "Be Strong Survey",
+      "completed": "Completed",
+      "update": "Update",
+      "psychingReadiness": "Psyching Readiness (1RM anytime)",
+      "externalStress": "External Stress",
+      "trainingCapacity": "Training Capacity",
+      "currently": "Currently",
+      "maximum": "Maximum",
+      "perWeek": "× per week",
+      "performanceTests": "Performance Tests",
+      "lift": "Lift",
+      "strengthProgress": "Strength Progress",
+      "twoMonths": "2 months",
+      "year": "Year",
+      "oneRMHistory": "1RM History",
+      "total": "Total",
+      "programs": "Programs",
+      "createProgram": "+ Create program",
+      "noPrograms": "No programs have been created yet",
+      "program": "Program",
+      "block": "Block",
+      "start": "Start",
+      "weeks": "Weeks",
+      "status": "Status",
+      "view": "View"
+    },
+    "import": {
+      "title": "Import Program",
+      "backToDashboard": "← Dashboard",
+      "description": "Upload a JSON program file created with AI assistance.",
+      "selectClient": "Select Client",
+      "selectClientPlaceholder": "Select a client...",
+      "noClients": "No clients available",
+      "addClientFirst": "Add a client first",
+      "uploadFile": "Upload file",
+      "pasteJson": "Paste JSON",
+      "selectJsonFile": "Select JSON file with complete program",
+      "pasteJsonContent": "Paste JSON content",
+      "dragDrop": "Drag and drop your JSON file here, or click to select",
+      "selectedFile": "Selected file",
+      "import": "Import Program",
+      "importing": "Importing...",
+      "success": "Program imported successfully! Redirecting...",
+      "viewProgram": "View Program",
+      "importAnother": "Import Another",
+      "onlyJson": "Only JSON files are supported",
+      "invalidJson": "Invalid JSON format",
+      "selectFileOrPaste": "Select a file or paste JSON",
+      "importFailed": "Import failed",
+      "importError": "Error during import",
+      "preview": "Preview",
+      "previewClient": "Client",
+      "previewBlock": "Block",
+      "previewWeeks": "Weeks",
+      "previewDate": "Date",
+      "previewSessions": "Contains sessions",
+      "yes": "Yes ✓",
+      "noOnlyTargets": "No (only calculated targets)",
+      "jsonFormat": "JSON Format",
+      "mustContain": "Program must contain these sections",
+      "inputParams": "input parameters for each lift",
+      "calculatedTargets": "calculated targets",
+      "sessionData": "detailed workout data (optional)",
+      "seeSchema": "See"
+    },
+    "create": {
+      "title": "Create New Program",
+      "subtitle": "Enter parameters for all 3 lifts (Squat, Bench Press, Deadlift)",
+      "clientSelection": "Client Selection",
+      "recordType": "Record Type",
+      "newClient": "New client",
+      "existingClient": "Existing client",
+      "selectClient": "Select client",
+      "clientInfo": "Client Information",
+      "clientName": "Client name",
+      "level": "Level (Delta)",
+      "block": "Block",
+      "trainingSessions": "Training Sessions",
+      "sessionsPerWeek": "Sessions per week",
+      "sessionDistribution": "Session Distribution",
+      "autoRecalculate": "Auto-recalculate",
+      "calculating": "calculating...",
+      "current": "Current",
+      "cancel": "Cancel",
+      "calculateProgram": "Calculate Program",
+      "programCalculated": "Program successfully calculated!",
+      "editMode": "Edit mode: click on number to change",
+      "checkResults": "Check results below",
+      "editResults": "Edit results",
+      "done": "Done",
+      "targetValues": "Target values (monthly totals)",
+      "calculatedTargets": "Calculated targets",
+      "target": "target",
+      "editInput": "Edit input",
+      "downloadJson": "Download JSON",
+      "saveProgram": "Save program",
+      "saved": "Saved ✓",
+      "programSaved": "Program saved successfully!",
+      "liftColumn": {
+        "basicParameters": "Basic Parameters",
+        "zoneWeights": "Zone Weights (kg)",
+        "zone65": "65% zone",
+        "zone75": "75% zone",
+        "zone85": "85% zone",
+        "zone90": "90% zone (92.5%)",
+        "zone95": "95% zone",
+        "intensityDistribution": "Intensity Distribution",
+        "zone65Auto": "65% zone (auto)",
+        "zone75Percent": "75% zone (%)",
+        "zone85Percent": "85% zone (%)",
+        "zone90Reps": "90% zone (reps)",
+        "zone95Reps": "95% zone (reps)",
+        "volumePatterns": "Volume Patterns",
+        "mainPattern": "Main Pattern",
+        "pattern8190": "81-90% Pattern"
+      }
+    },
+    "programs": {
+      "title": "Programs",
+      "backToDashboard": "← Dashboard",
+      "loading": "Loading programs...",
+      "noPrograms": "No programs",
+      "noProgramsDescription": "No programs have been created yet",
+      "createProgram": "Create program",
+      "importProgram": "Import program",
+      "import": "Import",
+      "createNew": "Create new",
+      "hasSessionsYes": "Yes",
+      "hasSessionsNo": "Only targets",
+      "table": {
+        "client": "Client",
+        "program": "Program",
+        "block": "Block",
+        "start": "Start",
+        "weeks": "Weeks",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "view": "View"
+    },
+    "programDetail": {
+      "loading": "Loading program...",
+      "notFound": "Program not found",
+      "backToPrograms": "← Back to programs",
+      "programs": "← Programs",
+      "programInfo": "Program Information",
+      "start": "Start",
+      "end": "End",
+      "weeks": "Weeks",
+      "skillLevel": "Skill Level",
+      "volumeTargets": "Volume & Intensity Targets",
+      "totalNL": "Total NL",
+      "blockARI": "Block ARI",
+      "zoneDistribution": "Zone Distribution",
+      "calculatedTargets": "Calculated Targets",
+      "noSessions": "This program does not have sessions yet (only targets)."
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "actions": "Actions",
+    "required": "Required",
+    "optional": "Optional"
+  }
+}

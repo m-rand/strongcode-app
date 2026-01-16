@@ -124,8 +124,9 @@ def calculate_lift_targets(
     weekly_dist_main = CHERNYAK_PATTERNS[volume_pattern_main][:weeks]
     weekly_dist_8190 = CHERNYAK_PATTERNS[volume_pattern_8190][:weeks]
 
-    # Apply skill level adjustment to main pattern
-    weekly_dist_main = apply_skill_level_adjustment(weekly_dist_main, skill_level)
+    # Note: We use patterns as-is. Skill level adjustments only apply
+    # when no specific pattern is chosen (default/auto mode).
+    # Explicitly chosen patterns like "3a", "2-4a" should be used exactly.
 
     print(f"     Weekly distribution (main): {weekly_dist_main}")
     print(f"     Weekly distribution (81-90): {weekly_dist_8190}")
@@ -146,8 +147,29 @@ def calculate_lift_targets(
 
     print(f"     Zone distribution: {zone_percentages}")
 
-    # Distribute monthly NL across weeks (using MAIN pattern for total)
-    weekly_nl = distribute_volume(monthly_nl, weekly_dist_main)
+    # Calculate monthly NL for each zone
+    monthly_zone_nl = {
+        zone: round(monthly_nl * pct / 100)
+        for zone, pct in zone_percentages.items()
+    }
+
+    # Distribute each zone across weeks using appropriate pattern
+    # - 65%, 75% zones use MAIN pattern
+    # - 85% zone uses 8190 pattern
+    # - 90%, 95% zones use 8190 pattern (or could be constant)
+    weekly_zones = {
+        '65': distribute_volume(monthly_zone_nl['65'], weekly_dist_main),
+        '75': distribute_volume(monthly_zone_nl['75'], weekly_dist_main),
+        '85': distribute_volume(monthly_zone_nl['85'], weekly_dist_8190),
+        '90': distribute_volume(monthly_zone_nl['90'], weekly_dist_8190),
+        '95': distribute_volume(monthly_zone_nl['95'], weekly_dist_8190),
+    }
+
+    # Calculate weekly totals by summing all zones
+    weekly_nl = [
+        sum(weekly_zones[zone][week] for zone in weekly_zones)
+        for week in range(weeks)
+    ]
     print(f"     Weekly NL: {weekly_nl}")
 
     # Get session distribution pattern
@@ -159,11 +181,14 @@ def calculate_lift_targets(
     all_zone_reps = {'65': 0, '75': 0, '85': 0, '90': 0, '95': 0}
 
     for week_num in range(1, weeks + 1):
-        week_total = weekly_nl[week_num - 1]
+        week_idx = week_num - 1
+        week_total = weekly_nl[week_idx]
 
-        # Distribute week total across intensity zones
-        # Note: 85% zone uses separate 8190 pattern
-        zone_reps = distribute_intensity_zones(week_total, zone_percentages)
+        # Get zone reps for this week (already calculated above)
+        zone_reps = {
+            zone: weekly_zones[zone][week_idx]
+            for zone in weekly_zones
+        }
 
         # Accumulate for overall ARI
         for zone in all_zone_reps:

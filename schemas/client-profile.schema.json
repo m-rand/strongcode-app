@@ -1,0 +1,205 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://strongcode.com/schemas/client-profile.json",
+  "title": "Client Profile",
+  "description": "Complete client profile including personal info, 1RM history, and survey data",
+  "type": "object",
+  "required": ["schema_version", "name", "email", "skill_level", "one_rm_history", "created_at"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "name": {
+      "type": "string",
+      "description": "Full name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "nationality": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string",
+      "enum": ["male", "female", "other"]
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "height": {
+      "type": "number",
+      "description": "Height in cm"
+    },
+    "weight": {
+      "type": "number",
+      "description": "Weight in kg"
+    },
+    "health_issues": {
+      "type": "string",
+      "description": "Health issues to be aware of"
+    },
+    "skill_level": {
+      "type": "string",
+      "enum": ["beginner", "intermediate", "advanced", "elite"]
+    },
+    "one_rm_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["date", "squat", "bench_press", "deadlift"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "squat": { "type": "number" },
+          "bench_press": { "type": "number" },
+          "deadlift": { "type": "number" },
+          "tested": { "type": "boolean" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "survey": {
+      "type": "object",
+      "description": "Be Strong Advanced Survey results - training insights and readiness data",
+      "properties": {
+        "completed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the survey was last completed"
+        },
+        "can_lift_1rm_anytime": {
+          "type": "object",
+          "properties": {
+            "squat": { "type": "boolean" },
+            "bench": { "type": "boolean" },
+            "deadlift": { "type": "boolean" }
+          }
+        },
+        "reps_at_75_percent": {
+          "type": "object",
+          "properties": {
+            "squat": { "type": "integer" },
+            "bench": { "type": "integer" },
+            "deadlift": { "type": "integer" }
+          }
+        },
+        "reps_at_85_percent": {
+          "type": "object",
+          "properties": {
+            "squat": { "type": "integer" },
+            "bench": { "type": "integer" },
+            "deadlift": { "type": "integer" }
+          }
+        },
+        "reps_at_92_5_percent": {
+          "type": "object",
+          "properties": {
+            "squat": { "type": "integer" },
+            "bench": { "type": "integer" },
+            "deadlift": { "type": "integer" }
+          }
+        },
+        "minimum_weight_jump": {
+          "type": "object",
+          "properties": {
+            "squat": { "type": "number" },
+            "bench": { "type": "number" },
+            "deadlift": { "type": "number" }
+          }
+        },
+        "external_stress_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "training_frequency_per_week": {
+          "type": "object",
+          "properties": {
+            "squat": { "type": "integer" },
+            "bench": { "type": "integer" },
+            "deadlift": { "type": "integer" }
+          }
+        },
+        "avg_lifts_70_percent_per_week": {
+          "type": "object",
+          "description": "Average lifts ≥70% per week in last 2 months",
+          "properties": {
+            "squat": { "type": "integer" },
+            "bench": { "type": "integer" },
+            "deadlift": { "type": "integer" }
+          }
+        },
+        "lifts_95_100_percent_per_month": {
+          "type": "object",
+          "description": "Lifts at 95-100% per month in last 2 months",
+          "properties": {
+            "squat": { "type": "integer" },
+            "bench": { "type": "integer" },
+            "deadlift": { "type": "integer" }
+          }
+        },
+        "improvement_last_2_months": {
+          "type": "object",
+          "description": "1RM improvement in last 2 months (kg)",
+          "properties": {
+            "squat": { "type": "number" },
+            "bench": { "type": "number" },
+            "deadlift": { "type": "number" }
+          }
+        },
+        "improvement_last_year": {
+          "type": "object",
+          "description": "1RM improvement in last year (kg)",
+          "properties": {
+            "squat": { "type": "number" },
+            "bench": { "type": "number" },
+            "deadlift": { "type": "number" }
+          }
+        },
+        "training_sessions_per_week_lately": {
+          "type": "integer",
+          "description": "Total training sessions per week lately"
+        },
+        "max_training_sessions_per_week": {
+          "type": "integer",
+          "description": "Maximum training sessions per week possible"
+        },
+        "muscle_mass_importance": {
+          "type": "string",
+          "description": "Importance of muscle mass gain besides strength"
+        }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "training_days": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "focus_lifts": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "session_duration_minutes": { "type": "integer" },
+        "sessions_per_week": { "type": "integer" }
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "_meta": {
+      "type": "object",
+      "properties": {
+        "created_by": { "type": "string" },
+        "last_modified": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

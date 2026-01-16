@@ -1,0 +1,616 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "filename": "2025-11-01_josef-frodl_prep_all_lifts.json",
+    "created_at": "2025-11-01T10:00:00Z",
+    "created_by": "AI + Human",
+    "status": "active",
+    "notes": "Josef Frodl prep cycle November 2025"
+  },
+  "client": {
+    "name": "Josef Frodl",
+    "delta": "advanced",
+    "one_rm": {
+      "squat": 195,
+      "bench_press": 137.5,
+      "deadlift": 240
+    }
+  },
+  "program_info": {
+    "block": "prep",
+    "start_date": "2025-11-01",
+    "end_date": "2025-11-28",
+    "weeks": 4
+  },
+  "input": {
+    "squat": {
+      "volume": 175,
+      "rounding": 2.5,
+      "weights": {
+        "65": 130,
+        "75": 142.5,
+        "85": 165,
+        "90": 175,
+        "95": 185
+      },
+      "intensity_distribution": {
+        "75_percent": 30,
+        "85_percent": 35,
+        "90_total_reps": 8,
+        "95_total_reps": 2,
+        "65_percent": null
+      },
+      "volume_pattern_main": "4-2a",
+      "volume_pattern_8190": "3b",
+      "sessions_per_week": 3,
+      "session_distribution": "d25_33_42"
+    },
+    "bench_press": {
+      "volume": 225,
+      "rounding": 2.5,
+      "weights": {
+        "65": 90,
+        "75": 105,
+        "85": 117.5,
+        "90": 127.5,
+        "95": 130
+      },
+      "intensity_distribution": {
+        "75_percent": 32,
+        "85_percent": 38,
+        "90_total_reps": 4,
+        "95_total_reps": 2,
+        "65_percent": null
+      },
+      "volume_pattern_main": "4-2a",
+      "volume_pattern_8190": "2-4a",
+      "sessions_per_week": 3,
+      "session_distribution": "d25_33_42"
+    },
+    "deadlift": {
+      "volume": 150,
+      "rounding": 2.5,
+      "weights": {
+        "65": 155,
+        "75": 180,
+        "85": 205,
+        "90": 220,
+        "95": 225
+      },
+      "intensity_distribution": {
+        "75_percent": 28,
+        "85_percent": 40,
+        "90_total_reps": 4,
+        "95_total_reps": 2,
+        "65_percent": null
+      },
+      "volume_pattern_main": "3-1a",
+      "volume_pattern_8190": "3-1a",
+      "sessions_per_week": 2,
+      "session_distribution": "d40_60"
+    }
+  },
+  "calculated": {
+    "squat": {
+      "_summary": {
+        "total_nl": 175,
+        "actual_nl": 175,
+        "block_ari": 75.01,
+        "zone_distribution": {
+          "65": 26,
+          "75": 30,
+          "85": 35,
+          "90": 4.5,
+          "95": 1.1
+        },
+        "zone_totals": {
+          "65": 46,
+          "75": 53,
+          "85": 61,
+          "90": 8,
+          "95": 2
+        },
+        "weights": {
+          "65": 130,
+          "75": 142.5,
+          "85": 165,
+          "90": 175,
+          "95": 185
+        }
+      },
+      "week_1": {
+        "total_reps": 39,
+        "zones": { "65": 10, "75": 12, "85": 14, "90": 2, "95": 0 },
+        "ari": 74.2,
+        "sessions": {
+          "A": { "total": 10, "zones": { "65": 3, "75": 3, "85": 3, "90": 1, "95": 0 } },
+          "B": { "total": 13, "zones": { "65": 3, "75": 4, "85": 5, "90": 1, "95": 0 } },
+          "C": { "total": 16, "zones": { "65": 4, "75": 5, "85": 6, "90": 0, "95": 0 } }
+        }
+      },
+      "week_2": {
+        "total_reps": 44,
+        "zones": { "65": 12, "75": 13, "85": 15, "90": 2, "95": 1 },
+        "ari": 75.3,
+        "sessions": {
+          "A": { "total": 11, "zones": { "65": 3, "75": 3, "85": 4, "90": 1, "95": 0 } },
+          "B": { "total": 14, "zones": { "65": 4, "75": 4, "85": 5, "90": 1, "95": 0 } },
+          "C": { "total": 19, "zones": { "65": 5, "75": 6, "85": 6, "90": 0, "95": 1 } }
+        }
+      },
+      "week_3": {
+        "total_reps": 61,
+        "zones": { "65": 16, "75": 18, "85": 21, "90": 3, "95": 1 },
+        "ari": 75.5,
+        "sessions": {
+          "A": { "total": 15, "zones": { "65": 4, "75": 5, "85": 5, "90": 1, "95": 0 } },
+          "B": { "total": 20, "zones": { "65": 5, "75": 6, "85": 7, "90": 1, "95": 1 } },
+          "C": { "total": 26, "zones": { "65": 7, "75": 7, "85": 9, "90": 1, "95": 0 } }
+        }
+      },
+      "week_4": {
+        "total_reps": 31,
+        "zones": { "65": 8, "75": 10, "85": 11, "90": 1, "95": 0 },
+        "ari": 74.8,
+        "sessions": {
+          "A": { "total": 8, "zones": { "65": 2, "75": 2, "85": 3, "90": 1, "95": 0 } },
+          "B": { "total": 10, "zones": { "65": 3, "75": 3, "85": 3, "90": 0, "95": 0 } },
+          "C": { "total": 13, "zones": { "65": 3, "75": 5, "85": 5, "90": 0, "95": 0 } }
+        }
+      }
+    }
+  },
+  "sessions": {
+    "A": {
+      "week_1": {
+        "lifts": [
+          {
+            "lift": "deadlift",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 155, "reps": 4 },
+              { "weight": 140, "reps": 4 }
+            ],
+            "rpe": 2.0
+          },
+          {
+            "lift": "deadlift",
+            "variant": "Sumo",
+            "sets": [
+              { "weight": 180, "reps": 4 },
+              { "weight": 162.5, "reps": 4 },
+              { "weight": 205, "reps": 3 },
+              { "weight": 185, "reps": 3 }
+            ],
+            "rpe": 5.5
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 90, "reps": 6 },
+              { "weight": 80, "reps": 7 },
+              { "weight": 72.5, "reps": 8 }
+            ],
+            "rpe": 3.0
+          },
+          {
+            "lift": "squat",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 130, "reps": 4 },
+              { "weight": 117.5, "reps": 4 },
+              { "weight": 105, "reps": 5 },
+              { "weight": 142.5, "reps": 5 }
+            ],
+            "rpe": 1.8
+          },
+          {
+            "lift": "squat",
+            "variant": "High Bar",
+            "sets": [
+              { "weight": 150, "reps": 3 },
+              { "weight": 135, "reps": 3 }
+            ]
+          }
+        ],
+        "accessories": [
+          {
+            "name": "Hanging Leg Raise / Ab-Wheel",
+            "prescription": "3x max",
+            "sets": [
+              { "reps": 15 },
+              { "reps": 15 },
+              { "reps": 12 }
+            ]
+          }
+        ],
+        "notes": "Session A - Week 1"
+      },
+      "week_2": {
+        "lifts": [
+          {
+            "lift": "deadlift",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 155, "reps": 3 },
+              { "weight": 140, "reps": 4 }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "variant": "Sumo",
+            "sets": [
+              { "weight": 180, "reps": 4 },
+              { "weight": 162.5, "reps": 4 },
+              { "weight": 205, "reps": 3 },
+              { "weight": 185, "reps": 3 },
+              { "weight": 220, "reps": 1 },
+              { "weight": 197.5, "reps": 1 }
+            ],
+            "rpe": 7.5
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 90, "reps": 8 },
+              { "weight": 80, "reps": 8 }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Close Grip",
+            "sets": [
+              { "weight": 105, "reps": 3 },
+              { "weight": 95, "reps": 3 }
+            ]
+          },
+          {
+            "lift": "squat",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 130, "reps": 4 },
+              { "weight": 117.5, "reps": 3 },
+              { "weight": 105, "reps": 4 },
+              { "weight": 142.5, "reps": 4 }
+            ]
+          },
+          {
+            "lift": "squat",
+            "variant": "High Bar",
+            "sets": [
+              { "weight": 150, "reps": 4 },
+              { "weight": 135, "reps": 4 },
+              { "weight": 165, "reps": 2 },
+              { "weight": 147.5, "reps": 2 }
+            ]
+          }
+        ],
+        "accessories": [
+          {
+            "name": "Hanging Leg Raise / Ab-Wheel",
+            "prescription": "3x max",
+            "sets": [
+              { "reps": 12 },
+              { "reps": 12 },
+              { "reps": 12 }
+            ]
+          }
+        ]
+      },
+      "week_3": {
+        "lifts": [
+          {
+            "lift": "deadlift",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 155, "reps": 5 },
+              { "weight": 140, "reps": 4 },
+              { "weight": 155, "reps": 4 },
+              { "weight": 140, "reps": 5 }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "variant": "Sumo",
+            "sets": [
+              { "weight": 180, "reps": 4 },
+              { "weight": 162.5, "reps": 3 },
+              { "weight": 205, "reps": 2 }
+            ],
+            "rpe": 6.0
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 90, "reps": 9 },
+              { "weight": 80, "reps": 6 }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Board",
+            "sets": [
+              { "weight": 117.5, "reps": 2 },
+              { "weight": 105, "reps": 0 }
+            ]
+          },
+          {
+            "lift": "squat",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 130, "reps": 4 },
+              { "weight": 117.5, "reps": 3 },
+              { "weight": 105, "reps": 4 },
+              { "weight": 142.5, "reps": 4 }
+            ]
+          },
+          {
+            "lift": "squat",
+            "variant": "High Bar",
+            "sets": [
+              { "weight": 150, "reps": 3 },
+              { "weight": 135, "reps": 3 },
+              { "weight": 165, "reps": 2 },
+              { "weight": 147.5, "reps": 2 }
+            ]
+          }
+        ],
+        "accessories": [
+          {
+            "name": "Hanging Leg Raise / Ab-Wheel",
+            "prescription": "3x max",
+            "sets": [
+              { "reps": 13 },
+              { "reps": 13 },
+              { "reps": 13 }
+            ]
+          }
+        ]
+      },
+      "week_4": {
+        "lifts": [
+          {
+            "lift": "deadlift",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 155, "reps": 3 },
+              { "weight": 140, "reps": 3 }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "variant": "Sumo",
+            "sets": [
+              { "weight": 180, "reps": 4 },
+              { "weight": 162.5, "reps": 3 },
+              { "weight": 205, "reps": 2 }
+            ],
+            "rpe": 3.2
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 90, "reps": 6 },
+              { "weight": 80, "reps": 6 }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Close Grip",
+            "sets": [
+              { "weight": 105, "reps": 3 },
+              { "weight": 95, "reps": 3 }
+            ]
+          },
+          {
+            "lift": "squat",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 130, "reps": 3 },
+              { "weight": 117.5, "reps": 4 },
+              { "weight": 105, "reps": 4 }
+            ]
+          },
+          {
+            "lift": "squat",
+            "variant": "High Bar",
+            "sets": [
+              { "weight": 150, "reps": 3 },
+              { "weight": 135, "reps": 3 }
+            ]
+          }
+        ],
+        "accessories": [
+          {
+            "name": "Hanging Leg Raise / Ab-Wheel",
+            "prescription": "3x max",
+            "sets": [
+              { "reps": 14 },
+              { "reps": 14 },
+              { "reps": 14 }
+            ]
+          }
+        ]
+      }
+    },
+    "B": {
+      "week_1": {
+        "lifts": [
+          {
+            "lift": "bench_press",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 90, "reps": 3 }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Close Grip",
+            "sets": [
+              { "weight": 105, "reps": 4 },
+              { "weight": 95, "reps": 3 }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Board",
+            "sets": [
+              { "weight": 117.5, "reps": 3 },
+              { "weight": 105, "reps": 2 }
+            ],
+            "rpe": 6.5
+          }
+        ],
+        "accessories": [
+          {
+            "name": "Pendlay Rows",
+            "prescription": "3x8 @ 120",
+            "sets": [
+              { "reps": 8, "weight": 120 },
+              { "reps": 8, "weight": 120 },
+              { "reps": 8, "weight": 120 }
+            ]
+          },
+          {
+            "name": "Dips",
+            "prescription": "3x RPE9 @ BW(+10-20)",
+            "sets": [
+              { "reps": 10 },
+              { "reps": 11 },
+              { "reps": 9 }
+            ]
+          },
+          {
+            "name": "Seated Rows",
+            "prescription": "3x10-15 @ RPE9",
+            "sets": [
+              { "reps": 13 },
+              { "reps": 12 },
+              { "reps": 13 }
+            ]
+          }
+        ]
+      }
+    },
+    "C": {
+      "week_1": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 130, "reps": 3 },
+              { "weight": 117.5, "reps": 3 }
+            ]
+          },
+          {
+            "lift": "squat",
+            "variant": "High Bar",
+            "sets": [
+              { "weight": 150, "reps": 4 },
+              { "weight": 135, "reps": 4 },
+              { "weight": 165, "reps": 3 },
+              { "weight": 147.5, "reps": 3 }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 155, "reps": 4 },
+              { "weight": 140, "reps": 4 }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "variant": "Sumo",
+            "sets": [
+              { "weight": 180, "reps": 3 },
+              { "weight": 162.5, "reps": 3 },
+              { "weight": 205, "reps": 3 },
+              { "weight": 185, "reps": 2 }
+            ],
+            "rpe": 3.2
+          }
+        ],
+        "accessories": [
+          {
+            "name": "Seated Safety Bar Good Morning",
+            "prescription": "3x6 @ RPE7-8",
+            "sets": [
+              { "reps": 5 },
+              { "reps": 5 },
+              { "reps": 5 }
+            ]
+          }
+        ]
+      }
+    },
+    "thursday": {
+      "week_1": {
+        "lifts": [
+          {
+            "lift": "bench_press",
+            "variant": "Comp variant",
+            "sets": [
+              { "weight": 90, "reps": 2 },
+              { "weight": 80, "reps": 3 }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Close Grip",
+            "sets": [
+              { "weight": 105, "reps": 4 },
+              { "weight": 95, "reps": 4 },
+              { "weight": 85, "reps": 3 }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "variant": "Board",
+            "sets": [
+              { "weight": 117.5, "reps": 3 },
+              { "weight": 105, "reps": 2 }
+            ],
+            "rpe": 4.1
+          }
+        ],
+        "accessories": [
+          {
+            "name": "Barbell Pullover",
+            "prescription": "3x10-15 @ RPE6-7",
+            "sets": [
+              { "reps": 15 },
+              { "reps": 15 },
+              { "reps": 12 }
+            ]
+          },
+          {
+            "name": "Chin-Up / Pull-Up",
+            "prescription": "4x max @ BW (+5-10kg)",
+            "sets": [
+              { "reps": 7 },
+              { "reps": 6 },
+              { "reps": 7 },
+              { "reps": 7 }
+            ]
+          },
+          {
+            "name": "Zkřižné kladky na prsa",
+            "prescription": "3x10-15 @ RPE8-9",
+            "sets": [
+              { "reps": 12 },
+              { "reps": 12 },
+              { "reps": 10 }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

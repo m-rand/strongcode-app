@@ -1,0 +1,374 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://strongcode.com/schemas/program-complete.json",
+  "title": "StrongCode 60 Complete Program",
+  "description": "Complete training program including input, calculated targets, and detailed session workouts",
+  "type": "object",
+  "required": ["schema_version", "meta", "client", "program_info", "input", "calculated", "sessions"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Schema version",
+      "enum": ["1.0"]
+    },
+    "meta": {
+      "type": "object",
+      "required": ["filename", "created_at", "created_by", "status"],
+      "properties": {
+        "filename": {
+          "type": "string",
+          "description": "Program filename",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}_[a-z0-9-]+_(prep|comp)_all_lifts\\.json$"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp"
+        },
+        "created_by": {
+          "type": "string",
+          "description": "Creator (Web Form, AI, Manual, etc.)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "active", "completed", "archived"],
+          "description": "Program status"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes about this program"
+        }
+      }
+    },
+    "client": {
+      "type": "object",
+      "required": ["name", "delta", "one_rm"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Client full name"
+        },
+        "delta": {
+          "type": "string",
+          "enum": ["beginner", "intermediate", "advanced", "elite"],
+          "description": "Client skill level"
+        },
+        "one_rm": {
+          "type": "object",
+          "required": ["squat", "bench_press", "deadlift"],
+          "properties": {
+            "squat": { "type": "number", "minimum": 0 },
+            "bench_press": { "type": "number", "minimum": 0 },
+            "deadlift": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "program_info": {
+      "type": "object",
+      "required": ["block", "start_date", "end_date", "weeks"],
+      "properties": {
+        "block": {
+          "type": "string",
+          "enum": ["prep", "comp"],
+          "description": "Training block type"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Program start date (YYYY-MM-DD)"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Program end date (YYYY-MM-DD)"
+        },
+        "weeks": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 6,
+          "description": "Number of weeks (usually 4)"
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "description": "Input parameters for each lift",
+      "required": ["squat", "bench_press", "deadlift"],
+      "properties": {
+        "squat": { "$ref": "#/definitions/liftInput" },
+        "bench_press": { "$ref": "#/definitions/liftInput" },
+        "deadlift": { "$ref": "#/definitions/liftInput" }
+      }
+    },
+    "calculated": {
+      "type": "object",
+      "description": "Calculated volume and intensity targets",
+      "required": ["squat", "bench_press", "deadlift"],
+      "properties": {
+        "squat": { "$ref": "#/definitions/liftCalculated" },
+        "bench_press": { "$ref": "#/definitions/liftCalculated" },
+        "deadlift": { "$ref": "#/definitions/liftCalculated" }
+      }
+    },
+    "sessions": {
+      "type": "object",
+      "description": "Detailed workout sessions with specific sets/reps",
+      "patternProperties": {
+        "^[A-Z]$": {
+          "$ref": "#/definitions/sessionLetter"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "definitions": {
+    "liftInput": {
+      "type": "object",
+      "required": ["volume", "rounding", "weights", "intensity_distribution", "volume_pattern_main", "volume_pattern_8190", "sessions_per_week", "session_distribution"],
+      "properties": {
+        "volume": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 500,
+          "description": "Monthly NL (Number of Lifts)"
+        },
+        "rounding": {
+          "type": "number",
+          "enum": [1.0, 2.5, 5.0],
+          "description": "Weight rounding in kg"
+        },
+        "weights": {
+          "type": "object",
+          "required": ["65", "75", "85", "90", "95"],
+          "properties": {
+            "65": { "type": "number", "description": "Weight for 65% zone (kg)" },
+            "75": { "type": "number", "description": "Weight for 75% zone (kg)" },
+            "85": { "type": "number", "description": "Weight for 85% zone (kg)" },
+            "90": { "type": "number", "description": "Weight for 92.5% zone (kg)" },
+            "95": { "type": "number", "description": "Weight for 95% zone (kg)" }
+          }
+        },
+        "intensity_distribution": {
+          "type": "object",
+          "required": ["75_percent", "85_percent", "90_total_reps", "95_total_reps"],
+          "properties": {
+            "75_percent": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "85_percent": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "90_total_reps": { "type": "integer", "minimum": 0 },
+            "95_total_reps": { "type": "integer", "minimum": 0 },
+            "65_percent": { "type": ["integer", "null"] }
+          }
+        },
+        "volume_pattern_main": {
+          "type": "string",
+          "enum": ["1", "2a", "2b", "2c", "3a", "3b", "3c", "4", "1-3a", "1-3b", "3-1a", "3-1b", "2-4a", "2-4b", "4-2a", "4-2b"],
+          "description": "Chernyak pattern for main zones (65%, 75%)"
+        },
+        "volume_pattern_8190": {
+          "type": "string",
+          "enum": ["1", "2a", "2b", "2c", "3a", "3b", "3c", "4", "1-3a", "1-3b", "3-1a", "3-1b", "2-4a", "2-4b", "4-2a", "4-2b"],
+          "description": "Chernyak pattern for 81-90% zones"
+        },
+        "sessions_per_week": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 5,
+          "description": "Number of training sessions per week"
+        },
+        "session_distribution": {
+          "type": "string",
+          "description": "Session volume distribution pattern",
+          "examples": ["d25_33_42", "d40_60"]
+        }
+      }
+    },
+    "liftCalculated": {
+      "type": "object",
+      "required": ["_summary", "week_1", "week_2", "week_3", "week_4"],
+      "properties": {
+        "_summary": {
+          "type": "object",
+          "required": ["total_nl", "actual_nl", "block_ari", "zone_distribution", "zone_totals", "weights"],
+          "properties": {
+            "total_nl": { "type": "integer" },
+            "actual_nl": { "type": "integer" },
+            "block_ari": { "type": "number" },
+            "zone_distribution": {
+              "type": "object",
+              "properties": {
+                "65": { "type": "number" },
+                "75": { "type": "number" },
+                "85": { "type": "number" },
+                "90": { "type": "number" },
+                "95": { "type": "number" }
+              }
+            },
+            "zone_totals": {
+              "type": "object",
+              "properties": {
+                "65": { "type": "integer" },
+                "75": { "type": "integer" },
+                "85": { "type": "integer" },
+                "90": { "type": "integer" },
+                "95": { "type": "integer" }
+              }
+            },
+            "weights": {
+              "type": "object",
+              "properties": {
+                "65": { "type": "number" },
+                "75": { "type": "number" },
+                "85": { "type": "number" },
+                "90": { "type": "number" },
+                "95": { "type": "number" }
+              }
+            }
+          }
+        },
+        "week_1": { "$ref": "#/definitions/weekCalculated" },
+        "week_2": { "$ref": "#/definitions/weekCalculated" },
+        "week_3": { "$ref": "#/definitions/weekCalculated" },
+        "week_4": { "$ref": "#/definitions/weekCalculated" }
+      }
+    },
+    "weekCalculated": {
+      "type": "object",
+      "required": ["total_reps", "zones", "ari", "sessions"],
+      "properties": {
+        "total_reps": { "type": "integer", "description": "Total reps for this week" },
+        "zones": {
+          "type": "object",
+          "description": "Target reps per zone",
+          "properties": {
+            "65": { "type": "integer" },
+            "75": { "type": "integer" },
+            "85": { "type": "integer" },
+            "90": { "type": "integer" },
+            "95": { "type": "integer" }
+          }
+        },
+        "ari": { "type": "number", "description": "Average Relative Intensity for this week" },
+        "sessions": {
+          "type": "object",
+          "description": "Target reps per session",
+          "patternProperties": {
+            "^[A-Z]$": {
+              "type": "object",
+              "properties": {
+                "total": { "type": "integer" },
+                "zones": {
+                  "type": "object",
+                  "properties": {
+                    "65": { "type": "integer" },
+                    "75": { "type": "integer" },
+                    "85": { "type": "integer" },
+                    "90": { "type": "integer" },
+                    "95": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sessionLetter": {
+      "type": "object",
+      "description": "All workouts for a specific session (A, B, C, D, etc.)",
+      "patternProperties": {
+        "^week_[1-6]$": {
+          "type": "object",
+          "description": "Workouts for this week",
+          "properties": {
+            "lifts": {
+              "type": "array",
+              "description": "Ordered list of lifts in this session",
+              "items": { "$ref": "#/definitions/sessionLift" }
+            },
+            "accessories": {
+              "type": "array",
+              "description": "Assistance/accessory exercises",
+              "items": { "$ref": "#/definitions/accessoryExercise" }
+            },
+            "notes": {
+              "type": "string",
+              "description": "Session notes"
+            }
+          }
+        }
+      }
+    },
+    "sessionLift": {
+      "type": "object",
+      "required": ["lift", "sets"],
+      "properties": {
+        "lift": {
+          "type": "string",
+          "enum": ["squat", "bench_press", "deadlift"],
+          "description": "Main lift type"
+        },
+        "sets": {
+          "type": "array",
+          "description": "Ordered list of sets",
+          "items": { "$ref": "#/definitions/set" }
+        }
+      }
+    },
+    "set": {
+      "type": "object",
+      "required": ["weight", "reps"],
+      "properties": {
+        "weight": {
+          "type": "number",
+          "description": "Weight in kg"
+        },
+        "reps": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of repetitions"
+        },
+        "rpe": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Rate of Perceived Exertion (optional)"
+        },
+        "percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of 1RM (optional, for reference)"
+        }
+      }
+    },
+    "accessoryExercise": {
+      "type": "object",
+      "required": ["name", "prescription"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Exercise name",
+          "examples": ["Hanging Leg Raise", "Pendlay Rows", "Dips", "Ab-Wheel"]
+        },
+        "prescription": {
+          "type": "string",
+          "description": "Set/rep/RPE prescription",
+          "examples": ["3x max", "3x8 @ 120", "3x RPE9 @ BW(+10-20)", "3x10-15 @ RPE9"]
+        },
+        "sets": {
+          "type": "array",
+          "description": "Actual reps logged per set (optional)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "reps": { "type": "integer" },
+              "weight": { "type": "number" },
+              "rpe": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

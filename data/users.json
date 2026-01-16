@@ -1,0 +1,9 @@
+[
+  {
+    "id": "1",
+    "email": "admin@strongcode.cz",
+    "password": "$2b$10$Rm4swej8vjcCaObXPCETIOkQRaj4M.pZ5Br296PdZppN1ALWfrrWm",
+    "role": "admin",
+    "name": "Admin"
+  }
+]

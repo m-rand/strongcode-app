@@ -1,0 +1,571 @@
+{
+  "nav": {
+    "home": "Domů",
+    "intro": "Úvod",
+    "features": "Vlastnosti",
+    "howItWorks": "Jak to funguje",
+    "lookInside": "Nahlédnutí",
+    "price": "Cena",
+    "about": "O nás",
+    "login": "Přihlášení",
+    "dashboard": "Nástěnka",
+    "clients": "Klienti",
+    "programs": "Programy",
+    "settings": "Nastavení",
+    "logout": "Odhlásit"
+  },
+  "home": {
+    "brand": "StrongCode 60",
+    "theme": {
+      "light": "Světlý",
+      "dark": "Tmavý",
+      "system": "Systémový"
+    },
+    "quote": {
+      "text": "Zvedej co nejtěžší váhy, s co největším objemem, a přitom zůstaň co nejsvěžejší.",
+      "author": "Steve Freides"
+    },
+    "intro": {
+      "what": {
+        "navTitle": "Co je StrongCode",
+        "title": "StrongCode",
+        "description": "StrongCode je systém silového tréninku, který se odklání od tradičních programů. Místo sledování rigidních schémat série × opakování používá dynamické plánování objemu a intenzity k maximalizaci vašich silových zisků při minimalizaci únavy.",
+        "sidebar1": "StrongCode kombinuje principy programování s metodologií silového tréninku.",
+        "sidebar2": "Dynamický přístup se přizpůsobuje individuálním potřebám a schopnostem."
+      },
+      "who": {
+        "navTitle": "Pro koho je určen",
+        "title": "Pro koho je určen",
+        "description": "StrongCode je navržen pro středně pokročilé a pokročilé cvičence, kteří:",
+        "point1": "Zvládli správnou techniku ve svých zvolených cviků",
+        "point2": "Mají stanovené základní 1RM, které se nezlepšilo na lineární progresi",
+        "point3": "Chtějí prolomit plató v některém z těchto cviků:",
+        "lifts": {
+          "powerlifts": "Powerlifting cviky (dřep, bench press, mrtvý tah)",
+          "militaryPress": "Vojenský tisk (s činkou nebo kettlebell)",
+          "kettlebellSquat": "Dřep s kettlebell",
+          "pullups": "Shyby se zátěží"
+        }
+      },
+      "expect": {
+        "navTitle": "Co čekat",
+        "title": "Co čekat",
+        "paragraph1": "Slibuje progres pro většinu cvičenců, zaměřuje se na dlouhodobý rozvoj a dlouhotrvající výsledky.",
+        "paragraph2": "Můžeme slíbit výjimečné výsledky? Rozhodně ne. Výsledky se velmi liší od osoby k osobě a jsou ovlivněny vnějšími faktory mimo kontrolu programu.",
+        "paragraph3": "Nicméně udržujte nízkou úroveň stresu, mějte kvalitní spánek a udržujte vyváženou stravu a připravujete se na úspěch."
+      }
+    },
+    "features": {
+      "title": "Vlastnosti",
+      "sidebar1": "Každý program je jedinečně vytvořen na základě individuálních charakteristik a cílů.",
+      "sidebar2": "Dynamický přístup k objemu a intenzitě vytváří poutavý a efektivní tréninkový zážitek.",
+      "tailored": {
+        "navTitle": "Individuálně přizpůsobený",
+        "title": "Individuálně přizpůsobený",
+        "description": "Každý program je přizpůsoben podle vašich specifických charakteristik, schopností a cílů. Je tedy prakticky nemožné, aby dva lidé dostali přesně stejný program."
+      },
+      "unique": {
+        "navTitle": "Jedinečný",
+        "title": "Jedinečný",
+        "paragraph1": "StrongCode poskytuje nový způsob tréninku. S největší pravděpodobností jste ještě nezažili nic podobného. To, co se může na první pohled zdát chaotické, je podloženo několika vzory a principy, které byly zkoušeny a testovány po desítky let.",
+        "paragraph2": "Klíčové rozdíly oproti tradičním programům zahrnují:",
+        "point1": "Vysoká variabilita objemu (mezi tréninky, týdny a měsíci)",
+        "point2": "Objem a intenzita jsou plánovány nezávisle na sobě",
+        "point3": "Vysoká variabilita intenzitních zón v každém tréninku",
+        "paragraph3": "Budete současně cvičit různé intenzitní zóny s měnícím se objemem během každého tréninku. Objem v těchto zónách se dynamicky mění podle několika pravidel a vzorů, a to nejen mezi jednotlivými tréninky, ale také mezi týdny a měsíci."
+      },
+      "joyful": {
+        "navTitle": "Radostný",
+        "title": "Radostný a uspokojující",
+        "description": "Každý trénink je jiný, což zajišťuje neustále uspokojivý tréninkový zážitek. Žádné další stejné a nudné série × opakování schéma."
+      },
+      "longterm": {
+        "navTitle": "Dlouhodobý",
+        "title": "Dlouhodobý",
+        "paragraph1": "Pokud poskytnete správná data, nikdy byste neměli trénovat na hranici selhání pomocí StrongCode. To samo o sobě výrazně snižuje pravděpodobnost zranění.",
+        "paragraph2": "Dynamické měnění objemu mezi tréninky / týdny / měsíci také výrazně snižuje možnost přetrénování. To dělá ze StrongCode skvělý systém pro dlouhodobý pokrok."
+      },
+      "hypertrophy": {
+        "navTitle": "Hypertrofie",
+        "title": "Hypertrofie?",
+        "description": "Zajímá vás hypertrofie? Zatímco StrongCode se zaměřuje na sílu, program lze upravit tak, aby zahrnoval cíle hypertrofie pro vyvážený přístup. Úpravou určitých parametrů během vytváření programu je možné se zaměřit buď pouze na sílu, nebo na sílu i hypertrofii pro kterýkoli z cviků. Stačí nám to dát vědět."
+      },
+      "benefits": {
+        "navTitle": "Výhody",
+        "title": "Výhody",
+        "point1": "Lepší flexibilita tréninkových jednotek v rámci týdne a týdnů v rámci měsíce.",
+        "point2": "Větší variabilita rozsahů opakování při dané zátěži pomáhá odstranit psychologické bariéry spojené s těmito vahami.",
+        "point3": "Zůstávání dále od xRM při daných vahách vás nechává svěžejší i po tréninku s vysokým objemem.",
+        "point4": "Dlouhotrvající zisky.",
+        "point5": "Méně úrazů z přetížení a nepříjemných zranění nebo jiných komplikací.",
+        "point6": "Zvýšená frekvence těžkých pokusů, která rozvíjí sebevědomí a konzistenci.",
+        "point7": "Kratší špičky: vždy jste přibližně 5% blízko špičky, což také znamená kratší období před vrcholem."
+      }
+    },
+    "howItWorks": {
+      "title": "Jak to funguje",
+      "sidebar1": "Proces vytváření programu kombinuje vědeckou analýzu se zkušeným koučováním.",
+      "sidebar2": "Dynamické programování umožňuje optimální distribuci objemu a intenzity napříč různými časovými měřítky.",
+      "inputs": {
+        "navTitle": "Vstupy",
+        "paragraph1": "Na základě podrobného dotazníku a know-how kouče se z velkého množství vstupních údajů odvozují počáteční parametry programu. Vstupy zahrnují základní faktory (pohlaví, věk, výška, váha), stejně jako různé parametry vaší tréninkové historie (např. tolerance k vyšším/nižším objemům pro daný cvik), silové křivky všech cviků atd.",
+        "paragraph2": "Pak přichází umění kouče, který z vypočítaných parametrů složí celý detailní program. Nic algoritmického, pouze kreativní schopnosti a zkušenosti tvůrce programu.",
+        "buttonText": "Začít dotazník (10-15 min)"
+      },
+      "result": {
+        "navTitle": "Výsledek",
+        "paragraph1": "Výsledkem je program, který se rozkládá minimálně na 2 měsíce, rozdělený do dvou klíčových fází: přípravné a vrcholové.",
+        "paragraph2": "Zatímco 2měsíční trvání je absolutním minimem pro efektivitu, prodloužení přípravné fáze na 2 nebo více měsíců poskytuje výrazně lepší výsledky. Delší přípravná fáze umožňuje větší rozvoj síly a hladší přechod do vrcholové fáze, čímž maximalizuje celkový výkon."
+      }
+    },
+    "lookInside": {
+      "title": "Nahlédnutí",
+      "sidebar1": "Proces vytváření programu kombinuje vědeckou analýzu se zkušeným koučováním.",
+      "sidebar2": "Dynamické programování umožňuje optimální distribuci objemu a intenzity napříč různými časovými měřítky.",
+      "beginners": {
+        "navTitle": "Proč ne pro začátečníky",
+        "title": "Proč ne pro začátečníky?",
+        "description": "Pro začátečníky je progres převážně funkcí intenzity / váhy na tyči. Programování je poměrně jednoduché: stačí udržovat objem na stejné úrovni a snažit se zvyšovat váhu na tyči. Jak se člověk stává pokročilejším, progres stále více závisí na objemu a jeho správné distribuci napříč tréninky, týdny, měsíci a dokonce roky. Čím pokročilejší jste, tím složitější programování je potřeba. A to je místo, kde StrongCode hraje svou roli."
+      },
+      "model": {
+        "navTitle": "Tréninkový model",
+        "title": "Lineární, vlnový a dynamický model",
+        "description": "Lineární i vlnový model používají inverzní vztah mezi objemem a intenzitou. Co odlišuje StrongCode, je to, že objem a intenzita jsou nezávislé proměnné. Zacházení s objemem a intenzitou nezávisle umožňuje větší rozmanitost v programování, čímž vytváří vysoce přizpůsobivý tréninkový plán."
+      },
+      "factors": {
+        "navTitle": "Klíčové faktory",
+        "title": "Klíčové faktory zvažované při vytváření vašeho programu",
+        "paragraph1": "Klíčové úvahy zahrnují rovnováhu objemu a intenzity v čase, zajištění optimálního zotavení a pokroku.",
+        "paragraph2": "Co měříme?",
+        "point1": "objem za rok / měsíc / týden / trénink",
+        "point2": "průměrnou intenzitu za rok / měsíc / týden / trénink",
+        "point3": "distribuci objemu mezi měsíci / v měsíci / týdnu / tréninku",
+        "point4": "distribuci průměrné intenzity mezi měsíci / v měsíci / týdnu / tréninku"
+      },
+      "dynamics": {
+        "navTitle": "Tréninková dynamika",
+        "title": "Tréninková dynamika",
+        "paragraph1": "StrongCode se vyhýbá stagnaci tím, že mění jak objem, tak intenzitu během vašeho tréninkového cyklu. Změny jsou přizpůsobeny každému cvičenci na základě jejich zkušeností, cílů a zotavovací kapacity.",
+        "paragraph2": "Jak objem, tak (průměrná) intenzita se mění:",
+        "point1Title": "Z tréninku na trénink:",
+        "point1": "Každý trénink je jiný - míchání těžkých, středně těžkých a lehkých vah s měnícími se objemy.",
+        "point2Title": "Z týdne na týden:",
+        "point2": "Na rozdíl od tradičních programů, které následují předvídatelné vzorce a malé změny, mohou být změny objemu dramatické, např. týden 1: vysoký, týden 2: nízký, týden 3: vysoký, týden 4: střední.",
+        "point3Title": "Z měsíce na měsíc:",
+        "point3": "Dlouhodobé změny jsou navrženy tak, aby dosáhly vrcholu vaší síly, když na tom nejvíce záleží, například pro soutěž nebo pokus o osobní rekord.",
+        "keyTakeawayTitle": "Klíčové zjištění",
+        "keyTakeaway": "Tento dynamický model není náhodný—je to pečlivě vypočítaný přístup zakořeněný v desetiletích výzkumu silového tréninku. Neustálým přizpůsobováním objemu a intenzity StrongCode zajišťuje konzistentní pokrok, předchází přetrénování a udržuje vás mentálně i fyzicky zapojené po celou dobu programu."
+      },
+      "ladders": {
+        "navTitle": "Žebříky",
+        "title": "Proč používáme žebříky tak rozsáhle?",
+        "description": "Protože žebříky jsou skvělé pro řízení vysokých objemů a současně udržování neurální a metabolické únavy na nízké úrovni."
+      }
+    },
+    "price": {
+      "title": "Cena",
+      "sidebar1": "Všechny ceny zahrnují podrobné vytvoření programu a průběžnou podporu.",
+      "sidebar2": "Vyberte delší programy pro lepší hodnotu a komplexnější pokrok.",
+      "base": {
+        "navTitle": "Základní cena",
+        "title": "Základní cena",
+        "amount": "39 USD / EUR za cvik za měsíc",
+        "exampleIntro": "Takže např.:",
+        "example1": "2měsíční program pro 3 powerliftingové cviky: 39×3×2 = 234 USD / EUR",
+        "example2": "3měsíční program pro 3 powerliftingové cviky: 39×3×3 = 351 USD / EUR"
+      }
+    },
+    "about": {
+      "title": "O nás",
+      "sidebar1": "Unikátní kombinace programátorské expertízy a silového koučování vytváří systematický přístup k rozvoji síly.",
+      "sidebar2": "Každý program představuje dokonalou rovnováhu mezi výpočetní přesností a koučovací kreativitou.",
+      "intro": {
+        "navTitle": "Marcel Balas",
+        "title": "Marcel Balas",
+        "description": "Marcel Balas je klíčovou postavou za StrongCode, obratně kombinuje svou expertízu jako:",
+        "point1": "Vývojář softwaru původně se specializující na vysokovýkonné výpočty",
+        "point2": "Majitel fitka",
+        "point3": "Silový kouč",
+        "point4": "Vedoucí powerliftingového týmu"
+      },
+      "vision": {
+        "navTitle": "Vize StrongCode",
+        "title": "Vize",
+        "description": "StrongCode kombinuje pokročilou výpočetní analýzu s reálnou expertízou silového tréninku. Každý program je vytvořen pomocí přesných výpočtů a zdokonalen prostřednictvím odborného koučování, aby odpovídal vašim specifickým potřebám."
+      }
+    },
+    "cta": {
+      "title": "Jste připraveni být silnější?",
+      "description": "Kontaktujte nás, abychom probrali vaše silové cíle a začali se StrongCode.",
+      "buttonText": "Vyplnit dotazník (10-15 min)"
+    },
+    "footer": {
+      "copyright": "© 2025 StrongCode 60. Založeno na metodologii PlanStrong™."
+    }
+  },
+  "survey": {
+    "title": "Vstupní dotazník",
+    "subtitle": "Be Strong Advanced Survey",
+    "description": "Tento dotazník nám pomůže lépe porozumět vaší současné úrovni a vytvořit pro vás optimální tréninkový program. Vyplnění trvá přibližně 10-15 minut.",
+    "sections": {
+      "personal": {
+        "title": "Osobní údaje",
+        "name": "Celé jméno",
+        "email": "Email",
+        "nationality": "Národnost",
+        "gender": "Pohlaví",
+        "genderOptions": {
+          "select": "Vyberte...",
+          "male": "Muž",
+          "female": "Žena",
+          "other": "Jiné"
+        },
+        "dateOfBirth": "Datum narození",
+        "height": "Výška (cm)",
+        "weight": "Váha (kg)",
+        "healthIssues": "Zdravotní problémy nebo omezení",
+        "healthIssuesPlaceholder": "Popište případné zdravotní problémy, zranění nebo omezení...",
+        "otherComments": "Další poznámky",
+        "otherCommentsPlaceholder": "Jakékoli další informace, které bychom měli vědět..."
+      },
+      "oneRM": {
+        "title": "Aktuální 1RM",
+        "subtitle": "Váš současný jednorepetitorní maximum (1RM) v kilogramech",
+        "squat": "Squat (kg)",
+        "bench": "Bench Press (kg)",
+        "deadlift": "Deadlift (kg)"
+      },
+      "psyching": {
+        "title": "Psychická připravenost",
+        "subtitle": "Můžeš kdykoli zdvihnout své 1RM?",
+        "squat": "Squat",
+        "bench": "Bench Press",
+        "deadlift": "Deadlift"
+      },
+      "performance": {
+        "title": "Výkonnostní testy",
+        "repsAt75": "Kolik opakování při 75% 1RM?",
+        "repsAt85": "Kolik opakování při 85% 1RM?",
+        "repsAt925": "Kolik opakování při 92.5% 1RM?",
+        "squat": "Squat",
+        "bench": "Bench",
+        "deadlift": "Deadlift"
+      },
+      "equipment": {
+        "title": "Vybavení",
+        "subtitle": "Minimální skok váhy v kg (kotouče k dispozici)",
+        "squat": "Squat (kg)",
+        "bench": "Bench (kg)",
+        "deadlift": "Deadlift (kg)"
+      },
+      "stress": {
+        "title": "Vnější stres",
+        "level": "Úroveň externího stresu (1-5)",
+        "options": {
+          "select": "Vyberte...",
+          "1": "1 - Velmi nízký (málo povinností, dobrý odpočinek)",
+          "2": "2 - Nízký (občasný stres, dobrá rovnováha)",
+          "3": "3 - Střední (běžný život a práce)",
+          "4": "4 - Vysoký (hodně povinností, málo času)",
+          "5": "5 - Velmi vysoký (extrémní tlak, nedostatek spánku)"
+        }
+      },
+      "frequency": {
+        "title": "Frekvence tréninku",
+        "subtitle": "Kolikrát týdně trénuješ každý cvik?",
+        "squat": "Squat (×/týden)",
+        "bench": "Bench (×/týden)",
+        "deadlift": "Deadlift (×/týden)"
+      },
+      "volume": {
+        "title": "Objem tréninku (poslední 2 měsíce)",
+        "avgLifts70": "Průměrné počty zdvihů ≥70% za týden",
+        "lifts95100": "Zdvihy při 95-100% za měsíc",
+        "squat": "Squat",
+        "bench": "Bench",
+        "deadlift": "Deadlift"
+      },
+      "progress": {
+        "title": "Sledování pokroku",
+        "improvement2Months": "Zlepšení 1RM za poslední 2 měsíce (kg)",
+        "improvementYear": "Zlepšení 1RM za poslední rok (kg)",
+        "squat": "Squat",
+        "bench": "Bench",
+        "deadlift": "Deadlift"
+      },
+      "capacity": {
+        "title": "Kapacita",
+        "sessionsLately": "Tréninkové jednotky za týden v poslední době",
+        "maxSessions": "Maximální počet tréninkových jednotek za týden",
+        "muscleMass": "Důležitost svalové hmoty (kromě síly)",
+        "muscleMassPlaceholder": "Popiš jak důležitý je pro tebe nárůst svalové hmoty, estetika, atd..."
+      }
+    },
+    "submit": "Odeslat dotazník",
+    "submitting": "Odesílání...",
+    "success": {
+      "title": "Děkujeme!",
+      "message": "Váš dotazník byl úspěšně odeslán. Brzy se vám ozveme s dalšími informacemi.",
+      "backHome": "Zpět na hlavní stránku"
+    },
+    "errors": {
+      "nameEmailRequired": "Jméno a email jsou povinné",
+      "allOneRMRequired": "Prosím vyplňte všechny 1RM hodnoty",
+      "submitFailed": "Nepodařilo se uložit dotazník"
+    },
+    "footer": "Po odeslání budou vaše data bezpečně uložena a brzy se vám ozveme.",
+    "required": "*"
+  },
+  "login": {
+    "title": "StrongCode 60",
+    "subtitle": "Přihlášení do systému",
+    "email": "Email",
+    "password": "Heslo",
+    "submit": "Přihlásit se",
+    "submitting": "Přihlašování...",
+    "error": "Neplatné přihlašovací údaje",
+    "defaultCredentials": "Výchozí přístup: admin@strongcode.cz / admin123"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Nástěnka",
+      "welcome": "Vítejte",
+      "stats": {
+        "totalClients": "Celkem klientů",
+        "activePrograms": "Aktivní programy",
+        "pendingSurveys": "Čekající dotazníky"
+      },
+      "cards": {
+        "createProgram": {
+          "title": "Vytvořit program",
+          "description": "Vytvoř nový tréninkový program pro klienta"
+        },
+        "importProgram": {
+          "title": "Importovat program",
+          "description": "Nahrát hotový JSON program vytvořený s AI"
+        },
+        "clients": {
+          "title": "Klienti",
+          "description": "Spravuj klienty a jejich profily"
+        },
+        "programs": {
+          "title": "Programy",
+          "description": "Prohlédni a uprav existující programy"
+        }
+      }
+    },
+    "clients": {
+      "title": "Klienti",
+      "loadingClients": "Načítání klientů...",
+      "backToDashboard": "Dashboard",
+      "addClient": "Přidat klienta",
+      "noClients": "Žádní klienti",
+      "noClientsDescription": "Zatím nebyli přidáni žádní klienti",
+      "addFirstClient": "Přidat prvního klienta",
+      "viewClient": "Zobrazit",
+      "table": {
+        "name": "Jméno",
+        "skillLevel": "Skill Level",
+        "oneRM": "1RM (aktuální)",
+        "programs": "Programy",
+        "actions": "Akce",
+        "notSpecified": "Není zadáno"
+      },
+      "skillLevels": {
+        "beginner": "Začátečník",
+        "intermediate": "Středně pokročilý",
+        "advanced": "Pokročilý",
+        "elite": "Elitní"
+      }
+    },
+    "clientDetail": {
+      "loading": "Načítání klienta...",
+      "notFound": "Klient nenalezen",
+      "backToClients": "← Zpět na klienty",
+      "clients": "← Klienti",
+      "survey": "Dotazník",
+      "edit": "Upravit",
+      "newProgram": "+ Nový program",
+      "basicInfo": "Základní informace",
+      "email": "Email",
+      "skillLevel": "Skill Level",
+      "created": "Vytvořeno",
+      "notes": "Poznámky",
+      "currentOneRM": "Aktuální 1RM",
+      "date": "Datum",
+      "tested": "Testováno",
+      "surveyTitle": "Be Strong Survey",
+      "completed": "Vyplněno",
+      "update": "Aktualizovat",
+      "psychingReadiness": "Psychická připravenost (1RM kdykoli)",
+      "externalStress": "Vnější stres",
+      "trainingCapacity": "Kapacita tréninku",
+      "currently": "Aktuálně",
+      "maximum": "Maximum",
+      "perWeek": "× týdně",
+      "performanceTests": "Výkonnostní testy",
+      "lift": "Cvik",
+      "strengthProgress": "Pokrok v síle",
+      "twoMonths": "2 měsíce",
+      "year": "Rok",
+      "oneRMHistory": "Historie 1RM",
+      "total": "Total",
+      "programs": "Programy",
+      "createProgram": "+ Vytvořit program",
+      "noPrograms": "Žádné programy zatím nebyly vytvořeny",
+      "program": "Program",
+      "block": "Blok",
+      "start": "Start",
+      "weeks": "Týdny",
+      "status": "Status",
+      "view": "Zobrazit"
+    },
+    "import": {
+      "title": "Import programu",
+      "backToDashboard": "← Dashboard",
+      "description": "Nahrajte JSON soubor programu vytvořený s pomocí AI.",
+      "selectClient": "Vyberte klienta",
+      "selectClientPlaceholder": "Vyberte klienta...",
+      "noClients": "Žádní klienti k dispozici",
+      "addClientFirst": "Nejprve přidejte klienta",
+      "uploadFile": "Nahrát soubor",
+      "pasteJson": "Vložit JSON",
+      "selectJsonFile": "Vyberte JSON soubor s kompletním programem",
+      "pasteJsonContent": "Vložte JSON obsah",
+      "dragDrop": "Přetáhněte JSON soubor sem, nebo klikněte pro výběr",
+      "selectedFile": "Vybraný soubor",
+      "import": "Importovat program",
+      "importing": "Importuji...",
+      "success": "Program úspěšně importován! Přesměrování...",
+      "viewProgram": "Zobrazit program",
+      "importAnother": "Importovat další",
+      "onlyJson": "Pouze JSON soubory jsou podporovány",
+      "invalidJson": "Neplatný JSON formát",
+      "selectFileOrPaste": "Vyberte soubor nebo vložte JSON",
+      "importFailed": "Import selhal",
+      "importError": "Chyba při importu",
+      "preview": "Náhled",
+      "previewClient": "Klient",
+      "previewBlock": "Blok",
+      "previewWeeks": "Týdny",
+      "previewDate": "Datum",
+      "previewSessions": "Obsahuje sessions",
+      "yes": "Ano ✓",
+      "noOnlyTargets": "Ne (pouze calculated targets)",
+      "jsonFormat": "Formát JSON",
+      "mustContain": "Program musí obsahovat tyto sekce",
+      "inputParams": "vstupní parametry pro každý cvik",
+      "calculatedTargets": "vypočítané targety",
+      "sessionData": "detailní workout data (volitelné)",
+      "seeSchema": "Viz"
+    },
+    "create": {
+      "title": "Vytvořit Nový Program",
+      "subtitle": "Zadej parametry pro všechny 3 cviky (Squat, Bench Press, Deadlift)",
+      "clientSelection": "Výběr klienta",
+      "recordType": "Typ záznamu",
+      "newClient": "Nový klient",
+      "existingClient": "Existující klient",
+      "selectClient": "Vybrat klienta",
+      "clientInfo": "Informace o klientovi",
+      "clientName": "Jméno klienta",
+      "level": "Úroveň (Delta)",
+      "block": "Block",
+      "trainingSessions": "Tréninkové sessions",
+      "sessionsPerWeek": "Počet sessions v týdnu",
+      "sessionDistribution": "Session Distribution",
+      "autoRecalculate": "Auto-přepočítávání",
+      "calculating": "počítám...",
+      "current": "Aktuální",
+      "cancel": "Zrušit",
+      "calculateProgram": "Vypočítat Program",
+      "programCalculated": "Program úspěšně vypočítán!",
+      "editMode": "Režim úprav: klikni na číslo pro změnu",
+      "checkResults": "Zkontroluj výsledky níže",
+      "editResults": "Upravit výsledky",
+      "done": "Hotovo",
+      "targetValues": "Cílové hodnoty (měsíční celky)",
+      "calculatedTargets": "Vypočítané targety",
+      "target": "cíl",
+      "editInput": "Upravit vstup",
+      "downloadJson": "Stáhnout JSON",
+      "saveProgram": "Uložit program",
+      "saved": "Uloženo ✓",
+      "programSaved": "Program byl úspěšně uložen!",
+      "liftColumn": {
+        "basicParameters": "Základní parametry",
+        "zoneWeights": "Váhy pro zóny (kg)",
+        "zone65": "65% zóna",
+        "zone75": "75% zóna",
+        "zone85": "85% zóna",
+        "zone90": "90% zóna (92.5%)",
+        "zone95": "95% zóna",
+        "intensityDistribution": "Distribuce intenzity",
+        "zone65Auto": "65% zóna (auto)",
+        "zone75Percent": "75% zóna (%)",
+        "zone85Percent": "85% zóna (%)",
+        "zone90Reps": "90% zóna (reps)",
+        "zone95Reps": "95% zóna (reps)",
+        "volumePatterns": "Volume Patterns",
+        "mainPattern": "Main Pattern",
+        "pattern8190": "81-90% Pattern"
+      }
+    },
+    "programs": {
+      "title": "Programy",
+      "backToDashboard": "← Dashboard",
+      "loading": "Načítání programů...",
+      "noPrograms": "Žádné programy",
+      "noProgramsDescription": "Zatím nebyly vytvořeny žádné programy",
+      "createProgram": "Vytvořit program",
+      "importProgram": "Importovat program",
+      "import": "Importovat",
+      "createNew": "Vytvořit nový",
+      "hasSessionsYes": "Ano",
+      "hasSessionsNo": "Pouze targets",
+      "table": {
+        "client": "Klient",
+        "program": "Program",
+        "block": "Blok",
+        "start": "Start",
+        "weeks": "Týdny",
+        "status": "Status",
+        "actions": "Akce"
+      },
+      "view": "Zobrazit"
+    },
+    "programDetail": {
+      "loading": "Načítání programu...",
+      "notFound": "Program nenalezen",
+      "backToPrograms": "← Zpět na programy",
+      "programs": "← Programy",
+      "programInfo": "Informace o programu",
+      "start": "Start",
+      "end": "Konec",
+      "weeks": "Týdnů",
+      "skillLevel": "Skill Level",
+      "volumeTargets": "Volume & Intensity Targets",
+      "totalNL": "Total NL",
+      "blockARI": "Block ARI",
+      "zoneDistribution": "Zone Distribution",
+      "calculatedTargets": "Vypočítané targety",
+      "noSessions": "Tento program zatím nemá vyplněné sessions (pouze targets)."
+    }
+  },
+  "common": {
+    "loading": "Načítání...",
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "delete": "Smazat",
+    "edit": "Upravit",
+    "close": "Zavřít",
+    "back": "Zpět",
+    "next": "Další",
+    "previous": "Předchozí",
+    "search": "Hledat",
+    "filter": "Filtrovat",
+    "actions": "Akce",
+    "required": "Povinné",
+    "optional": "Volitelné"
+  }
+}

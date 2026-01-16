@@ -35,10 +35,11 @@ export async function POST(request: Request) {
     })
 
     // Build INPUT JSON with all 3 lifts
+    const clientSlug = formData.clientName.toLowerCase().replace(/\s+/g, '-')
     const programData = {
       schema_version: '1.0',
       meta: {
-        filename: `${new Date().toISOString().split('T')[0]}_${formData.block}_all_lifts.json`,
+        filename: `${new Date().toISOString().split('T')[0]}_${clientSlug}_${formData.block}_all_lifts.json`,
         created_at: new Date().toISOString(),
         created_by: 'Web Form',
         status: 'draft',
@@ -93,7 +94,6 @@ export async function POST(request: Request) {
     const result = JSON.parse(resultData)
 
     // Save to proper location
-    const clientSlug = formData.clientName.toLowerCase().replace(/\s+/g, '-')
     const clientDir = path.join(process.cwd(), '..', 'data', 'clients', clientSlug, 'programs')
     await fs.mkdir(clientDir, { recursive: true })
 
