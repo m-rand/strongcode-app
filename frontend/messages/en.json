@@ -29,14 +29,14 @@
       "what": {
         "navTitle": "What is StrongCode",
         "title": "StrongCode",
-        "description": "StrongCode is a strength training system that breaks away from traditional programs. Instead of following rigid set × rep schemes, it uses dynamic volume and intensity planning to maximize your strength gains while minimizing fatigue.",
-        "sidebar1": "StrongCode combines programming principles with strength training methodology.",
-        "sidebar2": "The dynamic approach adapts to individual needs and capabilities."
+        "description": "StrongCode is built on the Plan Strong™ methodology — the programming system developed from Soviet weightlifting research. Volume and intensity are planned across months, weeks, and sessions according to specific distribution principles. The result: continuous strength gains without grinding yourself into the ground.",
+        "sidebar1": "",
+        "sidebar2": ""
       },
       "who": {
         "navTitle": "Who is it for",
         "title": "Who is it for",
-        "description": "StrongCode is designed for intermediate and advanced lifters who:",
+        "description": "This is not a beginner program. StrongCode is for lifters who have plateaued on linear progression and need smarter programming to keep moving forward:",
         "point1": "Have mastered proper technique in their chosen lifts",
         "point2": "Have established baseline 1RMs that haven't improved on linear progression",
         "point3": "Want to break through plateaus in any of these lifts:",
@@ -50,93 +50,93 @@
       "expect": {
         "navTitle": "What to expect",
         "title": "What to expect",
-        "paragraph1": "It promises progression for most lifters, focusing on long-term development and long-lasting results.",
-        "paragraph2": "Can we promise exceptional results? Certainly not. Outcomes vary greatly from person to person and are influenced by external factors beyond the program's control.",
-        "paragraph3": "However, keep stress levels low, have quality sleep, and maintain a balanced diet, and you're setting the stage for success."
+        "paragraph1": "Expect steady progress over months, not dramatic peaks followed by burnout. You will rarely train to failure. You will lift heavy weights more often than you're used to — but leave the gym feeling capable of more.",
+        "paragraph2": "Can we promise exceptional results? No. Outcomes depend on many factors outside the program.",
+        "paragraph3": "Results depend on recovery. Sleep, stress management, and nutrition matter — the program can't fix those for you."
       }
     },
     "features": {
       "title": "Features",
-      "sidebar1": "Each program is uniquely crafted based on individual characteristics and goals.",
-      "sidebar2": "The dynamic approach to volume and intensity creates an engaging and effective training experience.",
+      "sidebar1": "",
+      "sidebar2": "",
       "tailored": {
         "navTitle": "Individually Tailored",
         "title": "Individually Tailored",
-        "description": "Each program is tailored according to your specific characteristics, abilities, and goals. Thus it is practically impossible for two people to receive the exact same program."
+        "description": "Your program is calculated from your numbers — current 1RMs, training history, recovery capacity, available time. Two lifters with different profiles will get different programs. There are no templates."
       },
       "unique": {
         "navTitle": "Unique",
         "title": "Unique",
-        "paragraph1": "StrongCode provides a new way of training. Most likely, you have not experienced anything like this before. What might seem chaotic on a first glance is underpinned by several patterns and principles tried and tested over decades.",
-        "paragraph2": "Key differences from traditional programs include:",
+        "paragraph1": "If you've only trained with fixed set × rep schemes, this will look different. Volume and intensity vary between sessions, weeks, and months — sometimes dramatically.",
+        "paragraph2": "Key differences from traditional programs:",
         "point1": "High variability of volume (between sessions, weeks, and months)",
-        "point2": "Volume and intensity are planned independently on each other",
-        "point3": "High variability of intensity zones in each workout",
-        "paragraph3": "You will simultaneously practice different intensity zones with varying volumes during each training session. The volume in these zones dynamically changes according to several rules and patterns, not only between training sessions but also between weeks and months."
+        "point2": "Volume and intensity are planned independently",
+        "point3": "Multiple intensity zones in each workout",
+        "paragraph3": "In a single session, you might work at 65%, 80%, and 90%. The volume at each zone shifts from session to session and week to week according to distribution rules — not randomly."
       },
       "joyful": {
-        "navTitle": "Joyful",
-        "title": "Joyful and satisfying",
-        "description": "Each session is different, ensuring a continually satisfying training experience. No more same and boring set × rep schemes."
+        "navTitle": "Variety",
+        "title": "Variety",
+        "description": "You won't do the same workout twice in a training block. The variability is built into the system."
       },
       "longterm": {
         "navTitle": "Long term",
         "title": "Long term",
-        "paragraph1": "If you provide correct data, you should never train on the edge of failure using StrongCode. This alone significantly lowers the probability of injuries.",
-        "paragraph2": "Dynamically changing the volume between sessions / weeks / months also significantly lowers the possibility of overtraining. This makes StrongCode a great system for long-term progress."
+        "paragraph1": "If you provide correct data, you should never train to failure. This alone significantly lowers the probability of injuries.",
+        "paragraph2": "Volume waves up and down across weeks. This prevents the accumulation of fatigue that eventually stops progress on most programs."
       },
       "hypertrophy": {
         "navTitle": "Hypertrophy",
         "title": "Hypertrophy?",
-        "description": "Curious about hypertrophy? While StrongCode focuses on strength, the program can be adjusted to include hypertrophy goals for a balanced approach. By tweaking certain parameters during the program's creation, it is possible to focus either on strength alone or on both strength and hypertrophy for any of the lifts. Just let us know."
+        "description": "Want more muscle? We shift the parameters. Want pure strength? Different settings. The system adapts to your goal."
       },
       "benefits": {
         "navTitle": "Benefits",
         "title": "Benefits",
-        "point1": "Better flexibility of training sessions within a week, and weeks within a month.",
-        "point2": "More variety of rep ranges at a given load helps to remove psychological barriers associated with those weights.",
-        "point3": "Staying farther away from xRM at given weights lefts you more fresh even after a high volume trainings.",
-        "point4": "Long lasting gains.",
-        "point5": "Fewer overuse and nagging injuries or other setbacks.",
-        "point6": "Increased frequency of heavy attempts, which develops confidence and consistency.",
-        "point7": "Shorter peaks: you are always around 5% close to peak, which also means shorter taper periods."
+        "point1": "Flexible scheduling — sessions can be moved within a week, weeks within a month.",
+        "point2": "Variety of rep ranges at a given load removes psychological barriers associated with heavy weights.",
+        "point3": "Submaximal efforts. High volume without grinding.",
+        "point4": "Gains that stick.",
+        "point5": "Fewer overuse injuries and setbacks.",
+        "point6": "Frequent heavy singles build confidence and consistency.",
+        "point7": "You stay close to your peak year-round. When you need to perform, the taper is short."
       }
     },
     "howItWorks": {
       "title": "How it works",
-      "sidebar1": "The program creation process combines scientific analysis with experienced coaching.",
-      "sidebar2": "Dynamic programming allows for optimal volume and intensity distribution across different time scales.",
+      "sidebar1": "",
+      "sidebar2": "",
       "inputs": {
         "navTitle": "Inputs",
-        "paragraph1": "Based on a detailed questionnaire and the coach's know-how, the initial program parameters are derived from a large amount of input. Inputs include basic factors (gender, age, height, weight), as well as various parameters of your training history (e.g., tolerance to higher/lower volumes for a given lift), strength curves of all lifts, etc.",
-        "paragraph2": "Then comes the art of the coach, who composes the entire detailed program from the calculated parameters. Nothing algorithmic, only the creative abilities and experience of the program's creator.",
+        "paragraph1": "You fill out a detailed questionnaire. We collect your 1RMs, training history, volume tolerance, recovery capacity, schedule constraints. From this data, program parameters are calculated.",
+        "paragraph2": "The numbers come from calculations. The program comes from the coach — someone who has built hundreds of these plans and knows what works.",
         "buttonText": "Start Survey (10-15 min)"
       },
       "result": {
         "navTitle": "Result",
-        "paragraph1": "The result is a program that spans a minimum of 2 months, divided into two key phases: preparatory and peak.",
-        "paragraph2": "While a 2-month duration is the absolute minimum for effectiveness, extending the preparatory phase to 2 or more months provides significantly better results. A longer preparatory phase allows for greater strength development and a smoother transition into the peak phase, maximizing overall performance."
+        "paragraph1": "Minimum program length is 2 months: preparatory phase plus peak.",
+        "paragraph2": "Longer prep phases (3+ months) produce better results — more time to build strength before peaking."
       }
     },
     "lookInside": {
       "title": "Look inside",
-      "sidebar1": "The program creation process combines scientific analysis with experienced coaching.",
-      "sidebar2": "Dynamic programming allows for optimal volume and intensity distribution across different time scales.",
+      "sidebar1": "",
+      "sidebar2": "",
       "beginners": {
         "navTitle": "Why not for beginners",
         "title": "Why not for beginners?",
-        "description": "For beginners, progress is largely a function of intensity / weight on the bar. The programming is quite simple: just keep the volume at the same levels and try to increase weight on the bar. As one becomes more advanced, progress increasingly depends on the volume and its proper distribution across sessions, weeks, months, and even years. The more advanced you are, the more complex programming is needed. And this is where StrongCode plays its role."
+        "description": "For beginners, progress is largely a function of weight on the bar. The programming is simple: keep volume steady, add weight. As you advance, progress depends more on volume and its distribution across sessions, weeks, and months. The more advanced you are, the more programming matters. That's where this system earns its value."
       },
       "model": {
         "navTitle": "Training Model",
         "title": "Linear, wave, and dynamic model",
-        "description": "Both the linear and wave models use an inverse relationship between volume and intensity. What sets StrongCode apart is that volume and intensity are independent variables. Treating volume and intensity independently allows for more diversity in programming, creating a highly adaptable training plan."
+        "description": "Linear and wave periodization tie volume and intensity together inversely. In StrongCode, they're independent. This allows combinations that traditional models can't produce."
       },
       "factors": {
         "navTitle": "Key Factors",
-        "title": "Key Factors Considered When Creating Your Program",
-        "paragraph1": "Key considerations include the balance of volume and intensity over time, ensuring optimal recovery and progress.",
-        "paragraph2": "What we measure?",
+        "title": "What we track",
+        "paragraph1": "Programming decisions are based on measurable variables across different time scales.",
+        "paragraph2": "We track:",
         "point1": "volume per year / month / week / session",
         "point2": "average intensity per year / month / week / session",
         "point3": "distribution of the volume between months / in a month / week / session",
@@ -145,16 +145,16 @@
       "dynamics": {
         "navTitle": "Training Dynamics",
         "title": "Training Dynamics",
-        "paragraph1": "StrongCode avoids stagnation by varying both volume and intensity throughout your training cycle. Changes are customized to each lifter based on their experience, goals, and recovery capacity.",
-        "paragraph2": "Both volume and (average) intensity are changing:",
+        "paragraph1": "Volume and intensity change throughout the training cycle. The changes are calculated based on your profile.",
+        "paragraph2": "Both volume and average intensity vary:",
         "point1Title": "From session to session:",
-        "point1": "Each workout is different - mixing heavy, moderate, and light weights with varying volumes.",
+        "point1": "Each workout is different — heavy, moderate, and light weights with varying volumes.",
         "point2Title": "From week to week:",
-        "point2": "Unlike traditional programs that follow predictable patterns and small changes, volume shifts can be dramatic, e.g. week 1: high, week 2: low, week 3: high, week 4: moderate.",
+        "point2": "Volume shifts can be dramatic. Week 1: high, week 2: low, week 3: high, week 4: moderate.",
         "point3Title": "From month to month:",
-        "point3": "Long-term changes are designed to peak your strength when it matters most, such as for a competition or a personal best attempt.",
-        "keyTakeawayTitle": "Key Takeaway",
-        "keyTakeaway": "This dynamic model isn't random—it's a carefully calculated approach rooted in decades of strength training research. By continuously adjusting volume and intensity, StrongCode ensures consistent progress, prevents overtraining, and keeps you mentally and physically engaged throughout the program."
+        "point3": "Long-term progression is designed to peak when it matters — competition or a PR attempt.",
+        "keyTakeawayTitle": "",
+        "keyTakeaway": "The variation follows rules. It's not random."
       },
       "ladders": {
         "navTitle": "Ladders",
@@ -164,8 +164,8 @@
     },
     "price": {
       "title": "Price",
-      "sidebar1": "All prices include detailed program creation and ongoing support.",
-      "sidebar2": "Choose longer programs for better value and more comprehensive progress.",
+      "sidebar1": "",
+      "sidebar2": "",
       "base": {
         "navTitle": "Base Price",
         "title": "Base Price",
@@ -177,13 +177,13 @@
     },
     "about": {
       "title": "About",
-      "sidebar1": "The unique combination of programming expertise and strength coaching creates a systematic approach to strength development.",
-      "sidebar2": "Each program represents a perfect balance between computational precision and coaching creativity.",
+      "sidebar1": "",
+      "sidebar2": "",
       "intro": {
         "navTitle": "Marcel Balas",
         "title": "Marcel Balas",
-        "description": "Marcel Balas is the key figure behind StrongCode, skillfully combining his expertise as:",
-        "point1": "Software developer originally specializing in high-performance computing",
+        "description": "Marcel Balas runs StrongCode. Background:",
+        "point1": "Software developer (high-performance computing)",
         "point2": "Gym owner",
         "point3": "Strength coach",
         "point4": "Head of a powerlifting team"
@@ -191,13 +191,13 @@
       "vision": {
         "navTitle": "StrongCode Vision",
         "title": "Vision",
-        "description": "StrongCode combines advanced computational analysis with real-world strength training expertise. Each program is built using precise calculations and refined through expert coaching to match your specific needs."
+        "description": "Programs are calculated first, then reviewed and adjusted by a coach. Numbers plus experience."
       }
     },
     "cta": {
-      "title": "Ready to get stronger?",
-      "description": "Contact us to discuss your strength goals and get started with StrongCode.",
-      "buttonText": "Fill Survey (10-15 min)"
+      "title": "Interested?",
+      "description": "Fill out the survey. We'll review your numbers and get back to you.",
+      "buttonText": "Start Survey (10-15 min)"
     },
     "footer": {
       "copyright": "© 2025 StrongCode 60. Based on PlanStrong™ methodology."

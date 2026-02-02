@@ -4,36 +4,12 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 
 export default function HomePage() {
   const t = useTranslations('home')
   const tNav = useTranslations('nav')
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system')
   const [activeSection, setActiveSection] = useState('')
-
-  // Theme management
-  useEffect(() => {
-    const saved = localStorage.getItem('theme') as 'light' | 'dark' | 'system' || 'system'
-    setTheme(saved)
-    applyTheme(saved)
-  }, [])
-
-  const applyTheme = (newTheme: 'light' | 'dark' | 'system') => {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const isDark = newTheme === 'dark' || (newTheme === 'system' && prefersDark)
-
-    if (isDark) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }
-
-  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
-    setTheme(newTheme)
-    localStorage.setItem('theme', newTheme)
-    applyTheme(newTheme)
-  }
 
   // Active section tracking
   useEffect(() => {
@@ -73,43 +49,13 @@ export default function HomePage() {
             <a href="#price" className="transition-colors" style={{ color: 'var(--text-primary)' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-primary)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-primary)'}>{tNav('price')}</a>
             <a href="#about" className="transition-colors" style={{ color: 'var(--text-primary)' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-primary)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-primary)'}>{tNav('about')}</a>
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Theme Switcher */}
+            <ThemeSwitcher />
+
             {/* Language Switcher */}
             <LanguageSwitcher />
 
-            {/* Theme Switcher */}
-            <div className="flex items-center gap-1 text-xs font-light">
-              <button
-                onClick={() => handleThemeChange('light')}
-                className="px-2 py-1 rounded transition-colors"
-                style={{
-                  background: theme === 'light' ? 'var(--accent-primary)' : 'transparent',
-                  color: theme === 'light' ? '#fff' : 'var(--text-primary)'
-                }}
-              >
-                {t('theme.light')}
-              </button>
-              <button
-                onClick={() => handleThemeChange('dark')}
-                className="px-2 py-1 rounded transition-colors"
-                style={{
-                  background: theme === 'dark' ? 'var(--accent-primary)' : 'transparent',
-                  color: theme === 'dark' ? '#fff' : 'var(--text-primary)'
-                }}
-              >
-                {t('theme.dark')}
-              </button>
-              <button
-                onClick={() => handleThemeChange('system')}
-                className="px-2 py-1 rounded transition-colors"
-                style={{
-                  background: theme === 'system' ? 'var(--accent-primary)' : 'transparent',
-                  color: theme === 'system' ? '#fff' : 'var(--text-primary)'
-                }}
-              >
-                {t('theme.system')}
-              </button>
-            </div>
             <Link
               href="/login"
               className="text-sm font-light transition-colors"
@@ -124,9 +70,9 @@ export default function HomePage() {
       </header>
 
       {/* Main Container */}
-      <div className="max-w-[1200px] mx-auto px-5 pt-24">
+      <div className="max-w-[1200px] mx-auto px-5 pt-24 md:pt-28">
         {/* Intro Section */}
-        <section id="intro" className="mb-24 scroll-mt-24">
+        <section id="intro" className="section-gap scroll-mt-24">
           <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-10">
             <nav className="hidden lg:block sticky top-24 self-start">
               <div className="space-y-4 pr-5 border-r" style={{ borderColor: 'var(--border-color)' }}>
@@ -142,62 +88,66 @@ export default function HomePage() {
               </div>
             </nav>
 
-            <div className="space-y-16">
+            <div className="stack-xl">
               <div id="intro-what" className="scroll-mt-24">
-                <h1 className="hero-title mb-8">
+                <h1 className="hero-title heading-gap-lg">
                   {t('intro.what.title')}
                 </h1>
 
-                <div className="border-l-4 pl-8 my-12" style={{ borderColor: 'var(--accent-primary)' }}>
+                <div className="border-l-4 pl-8 my-8" style={{ borderColor: 'var(--accent-primary)' }}>
                   <blockquote className="text-2xl md:text-3xl font-light italic leading-tight mb-4">
                     {t('quote.text')}
                   </blockquote>
                   <cite className="block text-base font-light" style={{ color: 'var(--accent-primary)' }}>{t('quote.author')}</cite>
                 </div>
 
-                <p className="text-body mb-6">
+                <p className="text-body">
                   {t('intro.what.description')}
                 </p>
               </div>
 
               <div id="intro-who" className="scroll-mt-24">
-                <h2 className="section-title mb-6">
+                <h2 className="section-title heading-gap-md">
                   {t('intro.who.title')}
                 </h2>
-                <p className="text-body mb-4">
-                  {t('intro.who.description')}
-                </p>
-                <ul className="space-y-3 text-body pl-6">
-                  <li className="list-disc">{t('intro.who.point1')}</li>
-                  <li className="list-disc">{t('intro.who.point2')}</li>
-                  <li className="list-disc">{t('intro.who.point3')}
-                    <ul className="pl-6 mt-2 space-y-1">
-                      <li className="list-disc">{t('intro.who.lifts.powerlifts')}</li>
-                      <li className="list-disc">{t('intro.who.lifts.militaryPress')}</li>
-                      <li className="list-disc">{t('intro.who.lifts.kettlebellSquat')}</li>
-                      <li className="list-disc">{t('intro.who.lifts.pullups')}</li>
-                    </ul>
-                  </li>
-                </ul>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('intro.who.description')}
+                  </p>
+                  <ul className="space-y-2 text-body pl-6">
+                    <li className="list-disc">{t('intro.who.point1')}</li>
+                    <li className="list-disc">{t('intro.who.point2')}</li>
+                    <li className="list-disc">{t('intro.who.point3')}
+                      <ul className="pl-6 mt-2 space-y-1">
+                        <li className="list-disc">{t('intro.who.lifts.powerlifts')}</li>
+                        <li className="list-disc">{t('intro.who.lifts.militaryPress')}</li>
+                        <li className="list-disc">{t('intro.who.lifts.kettlebellSquat')}</li>
+                        <li className="list-disc">{t('intro.who.lifts.pullups')}</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
               </div>
 
               <div id="intro-expect" className="scroll-mt-24">
-                <h2 className="section-title mb-6">
+                <h2 className="section-title heading-gap-md">
                   {t('intro.expect.title')}
                 </h2>
-                <p className="text-body mb-4">
-                  {t('intro.expect.paragraph1')}
-                </p>
-                <p className="text-body mb-4">
-                  {t('intro.expect.paragraph2')}
-                </p>
-                <p className="text-body">
-                  {t('intro.expect.paragraph3')}
-                </p>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('intro.expect.paragraph1')}
+                  </p>
+                  <p className="text-body">
+                    {t('intro.expect.paragraph2')}
+                  </p>
+                  <p className="text-body">
+                    {t('intro.expect.paragraph3')}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <aside className="hidden lg:block text-meta space-y-6">
+            <aside className="hidden lg:block text-meta space-y-4">
               <div className="border-l-2 pl-4" style={{ borderColor: 'var(--border-color)' }}>
                 {t('intro.what.sidebar1')}
               </div>
@@ -209,7 +159,7 @@ export default function HomePage() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="mb-24 scroll-mt-24 border-t pt-16" style={{ borderColor: 'var(--border-color)' }}>
+        <section id="features" className="section-gap scroll-mt-24 border-t section-divider" style={{ borderColor: 'var(--border-color)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-10">
             <nav className="hidden lg:block sticky top-24 self-start">
               <div className="space-y-4 pr-5 border-r" style={{ borderColor: 'var(--border-color)' }}>
@@ -234,11 +184,11 @@ export default function HomePage() {
               </div>
             </nav>
 
-            <div className="space-y-16">
-              <h1 className="page-title">{t('features.title')}</h1>
+            <div className="stack-xl">
+              <h1 className="page-title heading-gap-lg">{t('features.title')}</h1>
 
               <div id="features-tailored" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('features.tailored.title')}
                 </h2>
                 <p className="text-body">
@@ -247,27 +197,29 @@ export default function HomePage() {
               </div>
 
               <div id="features-unique" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('features.unique.title')}
                 </h2>
-                <p className="text-body mb-4">
-                  {t('features.unique.paragraph1')}
-                </p>
-                <p className="text-body mb-4">
-                  {t('features.unique.paragraph2')}
-                </p>
-                <ul className="space-y-2 text-body pl-6">
-                  <li className="list-disc">{t('features.unique.point1')}</li>
-                  <li className="list-disc">{t('features.unique.point2')}</li>
-                  <li className="list-disc">{t('features.unique.point3')}</li>
-                </ul>
-                <p className="text-body mt-4">
-                  {t('features.unique.paragraph3')}
-                </p>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('features.unique.paragraph1')}
+                  </p>
+                  <p className="text-body">
+                    {t('features.unique.paragraph2')}
+                  </p>
+                  <ul className="space-y-2 text-body pl-6">
+                    <li className="list-disc">{t('features.unique.point1')}</li>
+                    <li className="list-disc">{t('features.unique.point2')}</li>
+                    <li className="list-disc">{t('features.unique.point3')}</li>
+                  </ul>
+                  <p className="text-body">
+                    {t('features.unique.paragraph3')}
+                  </p>
+                </div>
               </div>
 
               <div id="features-joyful" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('features.joyful.title')}
                 </h2>
                 <p className="text-body">
@@ -276,19 +228,21 @@ export default function HomePage() {
               </div>
 
               <div id="features-longterm" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('features.longterm.title')}
                 </h2>
-                <p className="text-body mb-4">
-                  {t('features.longterm.paragraph1')}
-                </p>
-                <p className="text-body">
-                  {t('features.longterm.paragraph2')}
-                </p>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('features.longterm.paragraph1')}
+                  </p>
+                  <p className="text-body">
+                    {t('features.longterm.paragraph2')}
+                  </p>
+                </div>
               </div>
 
               <div id="features-hypertrophy" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('features.hypertrophy.title')}
                 </h2>
                 <p className="text-body">
@@ -297,7 +251,7 @@ export default function HomePage() {
               </div>
 
               <div id="features-benefits" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('features.benefits.title')}
                 </h2>
                 <ul className="space-y-2 text-body pl-6">
@@ -312,7 +266,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <aside className="hidden lg:block text-meta space-y-6">
+            <aside className="hidden lg:block text-meta space-y-4">
               <div className="border-l-2 pl-4" style={{ borderColor: 'var(--border-color)' }}>
                 {t('features.sidebar1')}
               </div>
@@ -324,7 +278,7 @@ export default function HomePage() {
         </section>
 
         {/* How it Works Section */}
-        <section id="how-it-works" className="mb-24 scroll-mt-24 border-t pt-16" style={{ borderColor: 'var(--border-color)' }}>
+        <section id="how-it-works" className="section-gap scroll-mt-24 border-t section-divider" style={{ borderColor: 'var(--border-color)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-10">
             <nav className="hidden lg:block sticky top-24 self-start">
               <div className="space-y-4 pr-5 border-r" style={{ borderColor: 'var(--border-color)' }}>
@@ -337,18 +291,20 @@ export default function HomePage() {
               </div>
             </nav>
 
-            <div className="space-y-16">
+            <div className="stack-xl">
               <div id="inputs" className="scroll-mt-24">
-                <h1 className="page-title mb-8">{t('howItWorks.title')}</h1>
-                <p className="text-body mb-4">
-                  {t('howItWorks.inputs.paragraph1')}
-                </p>
-                <p className="text-body mb-6">
-                  {t('howItWorks.inputs.paragraph2')}
-                </p>
+                <h1 className="page-title heading-gap-lg">{t('howItWorks.title')}</h1>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('howItWorks.inputs.paragraph1')}
+                  </p>
+                  <p className="text-body">
+                    {t('howItWorks.inputs.paragraph2')}
+                  </p>
+                </div>
                 <Link
                   href="/survey"
-                  className="inline-block px-8 py-3 text-white text-base font-light rounded hover:opacity-90 transition-opacity"
+                  className="inline-block mt-6 px-8 py-3 text-white text-base font-light rounded hover:opacity-90 transition-opacity"
                   style={{ background: 'var(--accent-primary)' }}
                 >
                   {t('howItWorks.inputs.buttonText')}
@@ -356,19 +312,21 @@ export default function HomePage() {
               </div>
 
               <div id="result" className="scroll-mt-24">
-                <p className="text-body mb-4">
-                  {t('howItWorks.result.paragraph1')}
-                </p>
-                <p className="text-body">
-                  {t('howItWorks.result.paragraph2')}
-                </p>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('howItWorks.result.paragraph1')}
+                  </p>
+                  <p className="text-body">
+                    {t('howItWorks.result.paragraph2')}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Look Inside Section */}
-        <section id="look-inside" className="mb-24 scroll-mt-24 border-t pt-16" style={{ borderColor: 'var(--border-color)' }}>
+        <section id="look-inside" className="section-gap scroll-mt-24 border-t section-divider" style={{ borderColor: 'var(--border-color)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-10">
             <nav className="hidden lg:block sticky top-24 self-start">
               <div className="space-y-4 pr-5 border-r" style={{ borderColor: 'var(--border-color)' }}>
@@ -390,11 +348,11 @@ export default function HomePage() {
               </div>
             </nav>
 
-            <div className="space-y-16">
-              <h1 className="page-title">{t('lookInside.title')}</h1>
+            <div className="stack-xl">
+              <h1 className="page-title heading-gap-lg">{t('lookInside.title')}</h1>
 
               <div id="how-beginners" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('lookInside.beginners.title')}
                 </h2>
                 <p className="text-body">
@@ -403,7 +361,7 @@ export default function HomePage() {
               </div>
 
               <div id="how-model" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('lookInside.model.title')}
                 </h2>
                 <p className="text-body">
@@ -412,48 +370,61 @@ export default function HomePage() {
               </div>
 
               <div id="how-factors" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('lookInside.factors.title')}
                 </h2>
-                <p className="text-body mb-4">
-                  {t('lookInside.factors.paragraph1')}
-                </p>
-                <p className="text-body mb-4">
-                  {t('lookInside.factors.paragraph2')}
-                </p>
-                <ul className="space-y-2 text-body pl-6">
-                  <li className="list-disc">{t('lookInside.factors.point1')}</li>
-                  <li className="list-disc">{t('lookInside.factors.point2')}</li>
-                  <li className="list-disc">{t('lookInside.factors.point3')}</li>
-                  <li className="list-disc">{t('lookInside.factors.point4')}</li>
-                </ul>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('lookInside.factors.paragraph1')}
+                  </p>
+                  <p className="text-body">
+                    {t('lookInside.factors.paragraph2')}
+                  </p>
+                  <ul className="space-y-2 text-body pl-6">
+                    <li className="list-disc">{t('lookInside.factors.point1')}</li>
+                    <li className="list-disc">{t('lookInside.factors.point2')}</li>
+                    <li className="list-disc">{t('lookInside.factors.point3')}</li>
+                    <li className="list-disc">{t('lookInside.factors.point4')}</li>
+                  </ul>
+                </div>
               </div>
 
               <div id="how-dynamics" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('lookInside.dynamics.title')}
                 </h2>
-                <p className="text-body mb-4">
-                  {t('lookInside.dynamics.paragraph1')}
-                </p>
-                <p className="text-body mb-4">
-                  <strong className="font-semibold">{t('lookInside.dynamics.paragraph2')}</strong>
-                </p>
-                <ul className="space-y-3 text-body pl-6">
-                  <li className="list-disc"><strong className="font-semibold">{t('lookInside.dynamics.point1Title')}</strong> {t('lookInside.dynamics.point1')}</li>
-                  <li className="list-disc"><strong className="font-semibold">{t('lookInside.dynamics.point2Title')}</strong> {t('lookInside.dynamics.point2')}</li>
-                  <li className="list-disc"><strong className="font-semibold">{t('lookInside.dynamics.point3Title')}</strong> {t('lookInside.dynamics.point3')}</li>
-                </ul>
-                <h3 className="text-xl md:text-2xl font-bold leading-tight tracking-[-0.01em] mt-8 mb-4">
-                  {t('lookInside.dynamics.keyTakeawayTitle')}
-                </h3>
-                <p className="text-body">
-                  {t('lookInside.dynamics.keyTakeaway')}
-                </p>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('lookInside.dynamics.paragraph1')}
+                  </p>
+                  <p className="text-body">
+                    <strong className="font-semibold">{t('lookInside.dynamics.paragraph2')}</strong>
+                  </p>
+                  <ul className="space-y-2 text-body pl-6">
+                    <li className="list-disc"><strong className="font-semibold">{t('lookInside.dynamics.point1Title')}</strong> {t('lookInside.dynamics.point1')}</li>
+                    <li className="list-disc"><strong className="font-semibold">{t('lookInside.dynamics.point2Title')}</strong> {t('lookInside.dynamics.point2')}</li>
+                    <li className="list-disc"><strong className="font-semibold">{t('lookInside.dynamics.point3Title')}</strong> {t('lookInside.dynamics.point3')}</li>
+                  </ul>
+                  {t('lookInside.dynamics.keyTakeawayTitle') && (
+                    <>
+                      <h3 className="subsection-title heading-gap-sm mt-6">
+                        {t('lookInside.dynamics.keyTakeawayTitle')}
+                      </h3>
+                      <p className="text-body">
+                        {t('lookInside.dynamics.keyTakeaway')}
+                      </p>
+                    </>
+                  )}
+                  {!t('lookInside.dynamics.keyTakeawayTitle') && (
+                    <p className="text-body mt-4">
+                      {t('lookInside.dynamics.keyTakeaway')}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div id="how-ladders" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('lookInside.ladders.title')}
                 </h2>
                 <p className="text-body">
@@ -462,7 +433,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <aside className="hidden lg:block text-meta space-y-6">
+            <aside className="hidden lg:block text-meta space-y-4">
               <div className="border-l-2 pl-4" style={{ borderColor: 'var(--border-color)' }}>
                 {t('lookInside.sidebar1')}
               </div>
@@ -474,7 +445,7 @@ export default function HomePage() {
         </section>
 
         {/* Price Section */}
-        <section id="price" className="mb-24 scroll-mt-24 border-t pt-16" style={{ borderColor: 'var(--border-color)' }}>
+        <section id="price" className="section-gap scroll-mt-24 border-t section-divider" style={{ borderColor: 'var(--border-color)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-10">
             <nav className="hidden lg:block sticky top-24 self-start">
               <div className="space-y-4 pr-5 border-r" style={{ borderColor: 'var(--border-color)' }}>
@@ -484,27 +455,29 @@ export default function HomePage() {
               </div>
             </nav>
 
-            <div className="space-y-16">
-              <h1 className="page-title">{t('price.title')}</h1>
+            <div className="stack-xl">
+              <h1 className="page-title heading-gap-lg">{t('price.title')}</h1>
 
               <div id="price-base" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('price.base.title')}
                 </h2>
-                <p className="text-3xl font-semibold mb-8" style={{ color: 'var(--accent-primary)' }}>
+                <p className="text-3xl font-semibold mb-6" style={{ color: 'var(--accent-primary)' }}>
                   {t('price.base.amount')}
                 </p>
-                <p className="text-body mb-4">
-                  {t('price.base.exampleIntro')}
-                </p>
-                <ul className="space-y-2 text-body pl-6">
-                  <li className="list-disc">{t('price.base.example1')}</li>
-                  <li className="list-disc">{t('price.base.example2')}</li>
-                </ul>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('price.base.exampleIntro')}
+                  </p>
+                  <ul className="space-y-2 text-body pl-6">
+                    <li className="list-disc">{t('price.base.example1')}</li>
+                    <li className="list-disc">{t('price.base.example2')}</li>
+                  </ul>
+                </div>
               </div>
             </div>
 
-            <aside className="hidden lg:block text-meta space-y-6">
+            <aside className="hidden lg:block text-meta space-y-4">
               <div className="border-l-2 pl-4" style={{ borderColor: 'var(--border-color)' }}>
                 {t('price.sidebar1')}
               </div>
@@ -516,7 +489,7 @@ export default function HomePage() {
         </section>
 
         {/* About Section */}
-        <section id="about" className="mb-24 scroll-mt-24 border-t pt-16" style={{ borderColor: 'var(--border-color)' }}>
+        <section id="about" className="section-gap scroll-mt-24 border-t section-divider" style={{ borderColor: 'var(--border-color)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-10">
             <nav className="hidden lg:block sticky top-24 self-start">
               <div className="space-y-4 pr-5 border-r" style={{ borderColor: 'var(--border-color)' }}>
@@ -529,26 +502,28 @@ export default function HomePage() {
               </div>
             </nav>
 
-            <div className="space-y-16">
-              <h1 className="page-title">{t('about.title')}</h1>
+            <div className="stack-xl">
+              <h1 className="page-title heading-gap-lg">{t('about.title')}</h1>
 
               <div id="about-intro" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('about.intro.title')}
                 </h2>
-                <p className="text-body mb-4">
-                  {t('about.intro.description')}
-                </p>
-                <ul className="space-y-2 text-body pl-6">
-                  <li className="list-disc">{t('about.intro.point1')}</li>
-                  <li className="list-disc">{t('about.intro.point2')}</li>
-                  <li className="list-disc">{t('about.intro.point3')}</li>
-                  <li className="list-disc">{t('about.intro.point4')}</li>
-                </ul>
+                <div className="stack-md">
+                  <p className="text-body">
+                    {t('about.intro.description')}
+                  </p>
+                  <ul className="space-y-2 text-body pl-6">
+                    <li className="list-disc">{t('about.intro.point1')}</li>
+                    <li className="list-disc">{t('about.intro.point2')}</li>
+                    <li className="list-disc">{t('about.intro.point3')}</li>
+                    <li className="list-disc">{t('about.intro.point4')}</li>
+                  </ul>
+                </div>
               </div>
 
               <div id="about-vision" className="scroll-mt-24">
-                <h2 className="subsection-title mb-6">
+                <h2 className="subsection-title heading-gap-md">
                   {t('about.vision.title')}
                 </h2>
                 <p className="text-body">
@@ -557,7 +532,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <aside className="hidden lg:block text-meta space-y-6">
+            <aside className="hidden lg:block text-meta space-y-4">
               <div className="border-l-2 pl-4" style={{ borderColor: 'var(--border-color)' }}>
                 {t('about.sidebar1')}
               </div>
@@ -569,9 +544,9 @@ export default function HomePage() {
         </section>
 
         {/* CTA Section */}
-        <section className="mb-24 py-16 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
+        <section className="section-gap py-16 md:py-24 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
           <div className="text-center px-6">
-            <h2 className="section-title mb-6">
+            <h2 className="section-title heading-gap-md">
               {t('cta.title')}
             </h2>
             <p className="text-body mb-8 max-w-2xl mx-auto">
