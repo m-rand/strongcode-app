@@ -1,0 +1,515 @@
+{
+  "schema_version": "1.1",
+  "meta": {
+    "filename": "2022-10-03_katerina-balasova_prep_all_lifts.json",
+    "created_at": "2022-10-03T00:00:00Z",
+    "created_by": "StrongFirst Plan Strong Generator",
+    "status": "completed",
+    "notes": "Original Plan Strong program from October 2022 - PREP block"
+  },
+  "client": {
+    "name": "Katerina Balasova",
+    "delta": "intermediate",
+    "one_rm": {
+      "squat": 142.5,
+      "bench_press": 82,
+      "deadlift": 170
+    }
+  },
+  "program_info": {
+    "block": "prep",
+    "start_date": "2022-10-03",
+    "end_date": "2022-10-30",
+    "weeks": 4
+  },
+  "input": {
+    "squat": {
+      "volume": 350,
+      "rounding": 1.0,
+      "weights": {
+        "55": 78,
+        "65": 93,
+        "75": 107,
+        "85": 121,
+        "90": 132,
+        "95": 135
+      },
+      "intensity_distribution": {
+        "75_percent": null,
+        "85_percent": null,
+        "90_total_reps": 1,
+        "95_total_reps": 1,
+        "65_percent": null
+      },
+      "volume_pattern_main": "3a",
+      "volume_pattern_8190": "3a",
+      "sessions_per_week": 3,
+      "session_distribution": "d33_33_33"
+    },
+    "bench_press": {
+      "volume": 400,
+      "rounding": 1.0,
+      "weights": {
+        "55": 45,
+        "65": 53,
+        "75": 61,
+        "85": 70,
+        "90": 76,
+        "95": 78
+      },
+      "intensity_distribution": {
+        "75_percent": null,
+        "85_percent": null,
+        "90_total_reps": 2,
+        "95_total_reps": 0,
+        "65_percent": null
+      },
+      "volume_pattern_main": "4-2b",
+      "volume_pattern_8190": "2-4a",
+      "sessions_per_week": 3,
+      "session_distribution": "d33_33_33"
+    },
+    "deadlift": {
+      "volume": 300,
+      "rounding": 1.0,
+      "weights": {
+        "55": 94,
+        "65": 111,
+        "75": 128,
+        "85": 145,
+        "90": 157,
+        "95": 162
+      },
+      "intensity_distribution": {
+        "75_percent": null,
+        "85_percent": null,
+        "90_total_reps": 3,
+        "95_total_reps": 0,
+        "65_percent": null
+      },
+      "volume_pattern_main": "3a",
+      "volume_pattern_8190": "3a",
+      "sessions_per_week": 3,
+      "session_distribution": "d33_33_33"
+    }
+  },
+  "calculated": {
+    "squat": {
+      "_summary": { "total_nl": 350, "actual_nl": 350, "block_ari": 71.1, "zone_distribution": {}, "zone_totals": {}, "weights": { "55": 78, "65": 93, "75": 107, "85": 121, "90": 132, "95": 135 } },
+      "week_1": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} },
+      "week_2": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} },
+      "week_3": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} },
+      "week_4": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} }
+    },
+    "bench_press": {
+      "_summary": { "total_nl": 400, "actual_nl": 400, "block_ari": 69.1, "zone_distribution": {}, "zone_totals": {}, "weights": { "55": 45, "65": 53, "75": 61, "85": 70, "90": 76, "95": 78 } },
+      "week_1": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} },
+      "week_2": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} },
+      "week_3": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} },
+      "week_4": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} }
+    },
+    "deadlift": {
+      "_summary": { "total_nl": 300, "actual_nl": 300, "block_ari": 69.7, "zone_distribution": {}, "zone_totals": {}, "weights": { "55": 94, "65": 111, "75": 128, "85": 145, "90": 157, "95": 162 } },
+      "week_1": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} },
+      "week_2": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} },
+      "week_3": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} },
+      "week_4": { "total_reps": 0, "zones": {}, "ari": 0, "sessions": {} }
+    }
+  },
+  "sessions": {
+    "A": {
+      "week_1": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 2, "percentage": 54.7 },
+            { "weight": 93, "reps": 6, "percentage": 65.3 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 6, "percentage": 54.9 },
+            { "weight": 53, "reps": 6, "percentage": 64.6 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 3, "percentage": 55.3 },
+            { "weight": 111, "reps": 3, "percentage": 65.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 }
+          ]}
+        ]
+      },
+      "week_2": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 3, "percentage": 54.7 },
+            { "weight": 93, "reps": 4, "percentage": 65.3 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 93, "reps": 3, "percentage": 65.3 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 },
+            { "weight": 93, "reps": 2, "percentage": 65.3 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 6, "percentage": 54.9 },
+            { "weight": 53, "reps": 6, "percentage": 64.6 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 },
+            { "weight": 45, "reps": 5, "percentage": 54.9 },
+            { "weight": 53, "reps": 5, "percentage": 64.6 },
+            { "weight": 61, "reps": 3, "percentage": 74.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 4, "percentage": 55.3 },
+            { "weight": 111, "reps": 4, "percentage": 65.3 },
+            { "weight": 128, "reps": 6, "percentage": 75.3 }
+          ]}
+        ]
+      },
+      "week_3": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 5, "percentage": 54.7 },
+            { "weight": 93, "reps": 6, "percentage": 65.3 },
+            { "weight": 107, "reps": 5, "percentage": 75.1 },
+            { "weight": 93, "reps": 5, "percentage": 65.3 },
+            { "weight": 107, "reps": 5, "percentage": 75.1 },
+            { "weight": 93, "reps": 4, "percentage": 65.3 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 6, "percentage": 54.9 },
+            { "weight": 53, "reps": 5, "percentage": 64.6 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 45, "reps": 3, "percentage": 54.9 },
+            { "weight": 53, "reps": 4, "percentage": 64.6 },
+            { "weight": 61, "reps": 2, "percentage": 74.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 6, "percentage": 55.3 },
+            { "weight": 111, "reps": 6, "percentage": 65.3 },
+            { "weight": 128, "reps": 5, "percentage": 75.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 }
+          ]}
+        ]
+      },
+      "week_4": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 4, "percentage": 54.7 },
+            { "weight": 93, "reps": 6, "percentage": 65.3 },
+            { "weight": 107, "reps": 6, "percentage": 75.1 },
+            { "weight": 93, "reps": 5, "percentage": 65.3 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 },
+            { "weight": 107, "reps": 5, "percentage": 75.1 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 7, "percentage": 54.9 },
+            { "weight": 53, "reps": 7, "percentage": 64.6 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 },
+            { "weight": 45, "reps": 7, "percentage": 54.9 },
+            { "weight": 53, "reps": 7, "percentage": 64.6 },
+            { "weight": 61, "reps": 3, "percentage": 74.4 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 5, "percentage": 55.3 },
+            { "weight": 111, "reps": 5, "percentage": 65.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 128, "reps": 3, "percentage": 75.3 }
+          ]}
+        ]
+      }
+    },
+    "B": {
+      "week_1": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 2, "percentage": 54.7 },
+            { "weight": 93, "reps": 5, "percentage": 65.3 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 },
+            { "weight": 121, "reps": 2, "percentage": 84.9 },
+            { "weight": 107, "reps": 2, "percentage": 75.1 },
+            { "weight": 121, "reps": 1, "percentage": 84.9 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 4, "percentage": 54.9 },
+            { "weight": 53, "reps": 4, "percentage": 64.6 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 4, "percentage": 55.3 },
+            { "weight": 111, "reps": 4, "percentage": 65.3 },
+            { "weight": 128, "reps": 5, "percentage": 75.3 },
+            { "weight": 145, "reps": 2, "percentage": 85.3 }
+          ]}
+        ]
+      },
+      "week_2": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 3, "percentage": 54.7 },
+            { "weight": 93, "reps": 5, "percentage": 65.3 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 },
+            { "weight": 121, "reps": 2, "percentage": 84.9 },
+            { "weight": 107, "reps": 2, "percentage": 75.1 },
+            { "weight": 121, "reps": 1, "percentage": 84.9 },
+            { "weight": 93, "reps": 3, "percentage": 65.3 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 },
+            { "weight": 121, "reps": 2, "percentage": 84.9 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 5, "percentage": 54.9 },
+            { "weight": 53, "reps": 5, "percentage": 64.6 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 3, "percentage": 85.4 },
+            { "weight": 45, "reps": 3, "percentage": 54.9 },
+            { "weight": 53, "reps": 4, "percentage": 64.6 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 },
+            { "weight": 70, "reps": 3, "percentage": 85.4 },
+            { "weight": 61, "reps": 3, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 },
+            { "weight": 76, "reps": 1, "percentage": 92.7 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 5, "percentage": 55.3 },
+            { "weight": 111, "reps": 6, "percentage": 65.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 145, "reps": 3, "percentage": 85.3 },
+            { "weight": 128, "reps": 3, "percentage": 75.3 },
+            { "weight": 157, "reps": 1, "percentage": 92.4 }
+          ]}
+        ]
+      },
+      "week_3": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 4, "percentage": 54.7 },
+            { "weight": 93, "reps": 6, "percentage": 65.3 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 93, "reps": 6, "percentage": 65.3 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 121, "reps": 2, "percentage": 84.9 },
+            { "weight": 135, "reps": 1, "percentage": 94.7 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 6, "percentage": 54.9 },
+            { "weight": 53, "reps": 6, "percentage": 64.6 },
+            { "weight": 61, "reps": 6, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 3, "percentage": 85.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 5, "percentage": 55.3 },
+            { "weight": 111, "reps": 5, "percentage": 65.3 },
+            { "weight": 128, "reps": 5, "percentage": 75.3 },
+            { "weight": 145, "reps": 3, "percentage": 85.3 },
+            { "weight": 94, "reps": 3, "percentage": 55.3 },
+            { "weight": 111, "reps": 4, "percentage": 65.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 145, "reps": 3, "percentage": 85.3 },
+            { "weight": 128, "reps": 3, "percentage": 75.3 },
+            { "weight": 157, "reps": 1, "percentage": 92.4 }
+          ]}
+        ]
+      },
+      "week_4": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 2, "percentage": 54.7 },
+            { "weight": 93, "reps": 4, "percentage": 65.3 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 93, "reps": 3, "percentage": 65.3 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 93, "reps": 3, "percentage": 65.3 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 },
+            { "weight": 78, "reps": 1, "percentage": 54.7 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 5, "percentage": 54.9 },
+            { "weight": 53, "reps": 5, "percentage": 64.6 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 },
+            { "weight": 45, "reps": 5, "percentage": 54.9 },
+            { "weight": 53, "reps": 5, "percentage": 64.6 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 },
+            { "weight": 70, "reps": 3, "percentage": 85.4 },
+            { "weight": 76, "reps": 1, "percentage": 92.7 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 7, "percentage": 55.3 },
+            { "weight": 111, "reps": 7, "percentage": 65.3 },
+            { "weight": 128, "reps": 6, "percentage": 75.3 },
+            { "weight": 145, "reps": 3, "percentage": 85.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 145, "reps": 2, "percentage": 85.3 },
+            { "weight": 157, "reps": 1, "percentage": 92.4 }
+          ]}
+        ]
+      }
+    },
+    "C": {
+      "week_1": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 2, "percentage": 54.7 },
+            { "weight": 93, "reps": 6, "percentage": 65.3 },
+            { "weight": 107, "reps": 5, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 121, "reps": 2, "percentage": 84.9 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 4, "percentage": 54.9 },
+            { "weight": 53, "reps": 5, "percentage": 64.6 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 3, "percentage": 85.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 4, "percentage": 55.3 },
+            { "weight": 111, "reps": 4, "percentage": 65.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 145, "reps": 3, "percentage": 85.3 },
+            { "weight": 128, "reps": 3, "percentage": 75.3 },
+            { "weight": 145, "reps": 2, "percentage": 85.3 }
+          ]}
+        ]
+      },
+      "week_2": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 3, "percentage": 54.7 },
+            { "weight": 93, "reps": 5, "percentage": 65.3 },
+            { "weight": 107, "reps": 5, "percentage": 75.1 },
+            { "weight": 121, "reps": 2, "percentage": 84.9 },
+            { "weight": 93, "reps": 4, "percentage": 65.3 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 121, "reps": 2, "percentage": 84.9 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 8, "percentage": 54.9 },
+            { "weight": 53, "reps": 8, "percentage": 64.6 },
+            { "weight": 61, "reps": 6, "percentage": 74.4 },
+            { "weight": 70, "reps": 4, "percentage": 85.4 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 3, "percentage": 85.4 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 4, "percentage": 85.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 5, "percentage": 55.3 },
+            { "weight": 111, "reps": 5, "percentage": 65.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 145, "reps": 2, "percentage": 85.3 },
+            { "weight": 94, "reps": 2, "percentage": 55.3 },
+            { "weight": 111, "reps": 2, "percentage": 65.3 },
+            { "weight": 128, "reps": 3, "percentage": 75.3 },
+            { "weight": 145, "reps": 3, "percentage": 85.3 },
+            { "weight": 128, "reps": 2, "percentage": 75.3 },
+            { "weight": 145, "reps": 2, "percentage": 85.3 }
+          ]}
+        ]
+      },
+      "week_3": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 5, "percentage": 54.7 },
+            { "weight": 93, "reps": 6, "percentage": 65.3 },
+            { "weight": 107, "reps": 5, "percentage": 75.1 },
+            { "weight": 121, "reps": 4, "percentage": 84.9 },
+            { "weight": 93, "reps": 3, "percentage": 65.3 },
+            { "weight": 107, "reps": 5, "percentage": 75.1 },
+            { "weight": 121, "reps": 2, "percentage": 84.9 },
+            { "weight": 93, "reps": 5, "percentage": 65.3 },
+            { "weight": 107, "reps": 5, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 121, "reps": 2, "percentage": 84.9 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 6, "percentage": 54.9 },
+            { "weight": 53, "reps": 7, "percentage": 64.6 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 },
+            { "weight": 61, "reps": 3, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 },
+            { "weight": 61, "reps": 3, "percentage": 74.4 },
+            { "weight": 70, "reps": 2, "percentage": 85.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 6, "percentage": 55.3 },
+            { "weight": 111, "reps": 6, "percentage": 65.3 },
+            { "weight": 128, "reps": 5, "percentage": 75.3 },
+            { "weight": 145, "reps": 4, "percentage": 85.3 },
+            { "weight": 94, "reps": 5, "percentage": 55.3 },
+            { "weight": 111, "reps": 5, "percentage": 65.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 145, "reps": 3, "percentage": 85.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 145, "reps": 3, "percentage": 85.3 },
+            { "weight": 128, "reps": 3, "percentage": 75.3 }
+          ]}
+        ]
+      },
+      "week_4": {
+        "lifts": [
+          { "lift": "squat", "sets": [
+            { "weight": 78, "reps": 4, "percentage": 54.7 },
+            { "weight": 93, "reps": 6, "percentage": 65.3 },
+            { "weight": 107, "reps": 5, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 93, "reps": 5, "percentage": 65.3 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 107, "reps": 4, "percentage": 75.1 },
+            { "weight": 121, "reps": 3, "percentage": 84.9 },
+            { "weight": 107, "reps": 3, "percentage": 75.1 }
+          ]},
+          { "lift": "bench_press", "sets": [
+            { "weight": 45, "reps": 5, "percentage": 54.9 },
+            { "weight": 53, "reps": 6, "percentage": 64.6 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 4, "percentage": 85.4 },
+            { "weight": 45, "reps": 5, "percentage": 54.9 },
+            { "weight": 53, "reps": 5, "percentage": 64.6 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 3, "percentage": 85.4 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 70, "reps": 3, "percentage": 85.4 },
+            { "weight": 61, "reps": 5, "percentage": 74.4 },
+            { "weight": 61, "reps": 4, "percentage": 74.4 }
+          ]},
+          { "lift": "deadlift", "sets": [
+            { "weight": 94, "reps": 5, "percentage": 55.3 },
+            { "weight": 111, "reps": 4, "percentage": 65.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 145, "reps": 4, "percentage": 85.3 },
+            { "weight": 94, "reps": 3, "percentage": 55.3 },
+            { "weight": 111, "reps": 5, "percentage": 65.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 },
+            { "weight": 145, "reps": 4, "percentage": 85.3 },
+            { "weight": 128, "reps": 4, "percentage": 75.3 }
+          ]}
+        ]
+      }
+    }
+  }
+}

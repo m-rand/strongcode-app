@@ -9,7 +9,7 @@
     "schema_version": {
       "type": "string",
       "description": "Schema version",
-      "enum": ["1.0"]
+      "enum": ["1.0", "1.1"]
     },
     "meta": {
       "type": "object",
@@ -87,7 +87,7 @@
           "type": "integer",
           "minimum": 3,
           "maximum": 6,
-          "description": "Number of weeks (usually 4)"
+          "description": "Number of weeks (typically 4)"
         }
       }
     },
@@ -142,6 +142,7 @@
           "type": "object",
           "required": ["65", "75", "85", "90", "95"],
           "properties": {
+            "55": { "type": "number", "description": "Weight for 55% zone (kg) - optional warmup zone" },
             "65": { "type": "number", "description": "Weight for 65% zone (kg)" },
             "75": { "type": "number", "description": "Weight for 75% zone (kg)" },
             "85": { "type": "number", "description": "Weight for 85% zone (kg)" },
@@ -197,6 +198,7 @@
             "zone_distribution": {
               "type": "object",
               "properties": {
+                "55": { "type": "number" },
                 "65": { "type": "number" },
                 "75": { "type": "number" },
                 "85": { "type": "number" },
@@ -207,6 +209,7 @@
             "zone_totals": {
               "type": "object",
               "properties": {
+                "55": { "type": "integer" },
                 "65": { "type": "integer" },
                 "75": { "type": "integer" },
                 "85": { "type": "integer" },
@@ -217,6 +220,7 @@
             "weights": {
               "type": "object",
               "properties": {
+                "55": { "type": "number" },
                 "65": { "type": "number" },
                 "75": { "type": "number" },
                 "85": { "type": "number" },
@@ -229,7 +233,9 @@
         "week_1": { "$ref": "#/definitions/weekCalculated" },
         "week_2": { "$ref": "#/definitions/weekCalculated" },
         "week_3": { "$ref": "#/definitions/weekCalculated" },
-        "week_4": { "$ref": "#/definitions/weekCalculated" }
+        "week_4": { "$ref": "#/definitions/weekCalculated" },
+        "week_5": { "$ref": "#/definitions/weekCalculated" },
+        "week_6": { "$ref": "#/definitions/weekCalculated" }
       }
     },
     "weekCalculated": {
@@ -241,6 +247,7 @@
           "type": "object",
           "description": "Target reps per zone",
           "properties": {
+            "55": { "type": "integer" },
             "65": { "type": "integer" },
             "75": { "type": "integer" },
             "85": { "type": "integer" },
@@ -260,6 +267,7 @@
                 "zones": {
                   "type": "object",
                   "properties": {
+                    "55": { "type": "integer" },
                     "65": { "type": "integer" },
                     "75": { "type": "integer" },
                     "85": { "type": "integer" },
