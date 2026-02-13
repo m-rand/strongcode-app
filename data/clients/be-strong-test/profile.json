@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "status": "active",
+  "name": "Be Strong Test",
+  "email": "bestrongbrno@gmail.com",
+  "skill_level": "intermediate",
+  "one_rm_history": [
+    {
+      "date": "2026-02-11",
+      "squat": 150,
+      "bench_press": 100,
+      "deadlift": 170,
+      "tested": false,
+      "notes": "Initial entry"
+    }
+  ],
+  "created_at": "2026-02-11T20:26:15.930Z",
+  "_meta": {
+    "created_by": "Web Form",
+    "last_modified": "2026-02-11T20:26:15.930Z"
+  }
+}

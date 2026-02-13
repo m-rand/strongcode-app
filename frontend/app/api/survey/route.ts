@@ -101,6 +101,7 @@ export async function POST(request: Request) {
     // Create profile object
     const profile = {
       schema_version: '1.0',
+      status: 'pending', // Pending admin approval
       name: surveyData.name,
       email: surveyData.email,
       nationality: surveyData.nationality || undefined,

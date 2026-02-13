@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "status": "active",
+  "name": "Marcel Balas",
+  "email": "marcel.balas@gmail.com",
+  "nationality": "czech",
+  "gender": "male",
+  "date_of_birth": "1980-04-02",
+  "height": 179,
+  "weight": 93,
+  "health_issues": "none",
+  "skill_level": "advanced",
+  "one_rm_history": [
+    {
+      "date": "2026-02-09",
+      "squat": 200,
+      "bench_press": 137.5,
+      "deadlift": 210,
+      "tested": false,
+      "notes": "Initial survey data"
+    }
+  ],
+  "survey": {
+    "completed_at": "2026-02-09T10:01:41.105Z",
+    "can_lift_1rm_anytime": {
+      "squat": false,
+      "bench": false,
+      "deadlift": false
+    },
+    "reps_at_75_percent": {
+      "squat": 9,
+      "bench": 10,
+      "deadlift": 12
+    },
+    "reps_at_85_percent": {
+      "squat": 4,
+      "bench": 5,
+      "deadlift": 6
+    },
+    "reps_at_92_5_percent": {
+      "squat": 1,
+      "bench": 1,
+      "deadlift": 2
+    },
+    "minimum_weight_jump": {},
+    "external_stress_level": 3,
+    "training_frequency_per_week": {
+      "squat": 2,
+      "bench": 3,
+      "deadlift": 2
+    },
+    "avg_lifts_70_percent_per_week": {
+      "squat": 150,
+      "bench": 200,
+      "deadlift": 130
+    },
+    "lifts_95_100_percent_per_month": {
+      "squat": 0,
+      "bench": 0,
+      "deadlift": 0
+    },
+    "improvement_last_2_months": {
+      "squat": 0,
+      "bench": 0,
+      "deadlift": 0
+    },
+    "improvement_last_year": {
+      "squat": 5,
+      "bench": 2.5,
+      "deadlift": 10
+    },
+    "training_sessions_per_week_lately": 4,
+    "max_training_sessions_per_week": 4
+  },
+  "created_at": "2026-02-09T10:01:41.105Z",
+  "_meta": {
+    "created_by": "public_survey",
+    "last_modified": "2026-02-09T10:01:55.961Z",
+    "approved_at": "2026-02-09T10:01:55.961Z"
+  }
+}

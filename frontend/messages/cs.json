@@ -351,6 +351,10 @@
         "programs": {
           "title": "Programy",
           "description": "Prohlédni a uprav existující programy"
+        },
+        "surveys": {
+          "title": "Čekající dotazníky",
+          "description": "Zkontroluj a schval nové dotazníky"
         }
       }
     },
@@ -377,6 +381,65 @@
         "advanced": "Pokročilý",
         "elite": "Elitní"
       }
+    },
+    "newClient": {
+      "title": "Přidat nového klienta",
+      "basicInfo": "Základní informace",
+      "name": "Celé jméno",
+      "namePlaceholder": "Jan Novák",
+      "email": "Email",
+      "emailPlaceholder": "jan@example.com",
+      "skillLevel": "Skill Level",
+      "initialOneRM": "Počáteční 1RM (volitelné)",
+      "initialOneRMDescription": "Můžeš zadat počáteční 1RM hodnoty nyní nebo je vyplnit později přes dotazník.",
+      "createClient": "Vytvořit klienta",
+      "creating": "Vytvářím...",
+      "createFailed": "Nepodařilo se vytvořit klienta",
+      "clientExists": "Klient s tímto jménem již existuje"
+    },
+    "surveys": {
+      "title": "Čekající dotazníky",
+      "backToDashboard": "Dashboard",
+      "loading": "Načítání dotazníků...",
+      "pending": "čeká",
+      "noSurveys": "Žádné čekající dotazníky",
+      "noSurveysDescription": "Všechny odeslaná dotazníky byly zpracovány.",
+      "showDetails": "Zobrazit detaily",
+      "hideDetails": "Skrýt detaily",
+      "approve": "Schválit",
+      "approving": "Schvaluji...",
+      "personalInfo": "Osobní údaje",
+      "nationality": "Národnost",
+      "gender": "Pohlaví",
+      "height": "Výška",
+      "weight": "Váha",
+      "performanceTests": "Výkonnostní testy",
+      "trainingInfo": "Info o tréninku",
+      "stressLevel": "Úroveň stresu",
+      "sessionsPerWeek": "Tréninky/týden",
+      "maxSessions": "Max tréninků",
+      "viewFullProfile": "Zobrazit celý profil"
+    },
+    "credentials": {
+      "title": "Přihlašovací údaje",
+      "hasAccess": "Klient má přístup k přihlášení",
+      "noAccess": "Klient zatím nemá přístup k přihlášení",
+      "createAccess": "Vytvořit přístup",
+      "creating": "Vytvářím...",
+      "created": "Přihlašovací údaje úspěšně vytvořeny!",
+      "emailLabel": "Email",
+      "passwordLabel": "Heslo",
+      "copyWarning": "Zkopírujte si toto heslo - nebude znovu zobrazeno!",
+      "active": "Aktivní",
+      "sendInvite": "Poslat pozvánku",
+      "sending": "Odesílám...",
+      "inviteSent": "Pozvánka odeslána!",
+      "inviteSentDesc": "Klient obdrží email s registračním odkazem.",
+      "inviteCreated": "Pozvánka vytvořena",
+      "inviteCreatedDesc": "Email není nakonfigurován. Sdílejte tento odkaz s klientem:",
+      "copyLink": "Kopírovat odkaz",
+      "linkCopied": "Zkopírováno!",
+      "pendingInvite": "Čekající pozvánka"
     },
     "clientDetail": {
       "loading": "Načítání klienta...",
@@ -551,6 +614,61 @@
       "calculatedTargets": "Vypočítané targety",
       "noSessions": "Tento program zatím nemá vyplněné sessions (pouze targets)."
     }
+  },
+  "client": {
+    "dashboard": {
+      "loading": "Načítání...",
+      "accessDenied": "Přístup odepřen",
+      "welcome": "Vítejte",
+      "currentOneRM": "Aktuální 1RM",
+      "noOneRM": "Zatím není zaznamenáno 1RM",
+      "lastUpdated": "Poslední aktualizace",
+      "activeProgram": "Aktivní program",
+      "noActiveProgram": "Žádný aktivní program",
+      "weeks": "týdnů",
+      "started": "Začátek",
+      "viewProgram": "Zobrazit program",
+      "survey": "Dotazník",
+      "surveyCompleted": "Vyplněno",
+      "surveyNotCompleted": "Vyplňte prosím dotazník, abychom vám mohli vytvořit program",
+      "updateSurvey": "Aktualizovat dotazník",
+      "fillSurvey": "Vyplnit dotazník",
+      "allPrograms": "Všechny programy",
+      "noPrograms": "Zatím žádné programy",
+      "morePrograms": "dalších"
+    },
+    "survey": {
+      "title": "Tréninkový dotazník",
+      "backToDashboard": "Dashboard",
+      "description": "Vyplňte prosím tento dotazník, abychom lépe pochopili vaše tréninkové potřeby.",
+      "submit": "Uložit dotazník",
+      "submitting": "Ukládám...",
+      "success": "Dotazník úspěšně uložen!",
+      "error": "Nepodařilo se uložit dotazník"
+    }
+  },
+  "register": {
+    "title": "Dokončení registrace",
+    "welcomeBack": "Vítejte, {name}! Vytvořte si heslo pro přístup do StrongCode.",
+    "email": "Email",
+    "password": "Heslo",
+    "passwordPlaceholder": "Zadejte heslo (min. 6 znaků)",
+    "confirmPassword": "Potvrzení hesla",
+    "confirmPasswordPlaceholder": "Potvrďte heslo",
+    "submit": "Vytvořit účet",
+    "submitting": "Vytvářím účet...",
+    "validating": "Ověřuji pozvánku...",
+    "noToken": "Žádný token pozvánky",
+    "noTokenDesc": "Použijte prosím odkaz z pozvánkového emailu.",
+    "invalidToken": "Neplatná pozvánka",
+    "tokenExpired": "Platnost této pozvánky vypršela. Kontaktujte svého kouče pro novou.",
+    "tokenUsed": "Tato pozvánka již byla použita.",
+    "tokenInvalid": "Tento odkaz pozvánky je neplatný. Kontaktujte svého kouče.",
+    "success": "Registrace dokončena!",
+    "successDesc": "Váš účet byl vytvořen. Přesměrování na přihlášení...",
+    "errorPasswordTooShort": "Heslo musí mít alespoň 6 znaků",
+    "errorPasswordMismatch": "Hesla se neshodují",
+    "errorGeneric": "Registrace selhala. Zkuste to prosím znovu."
   },
   "common": {
     "loading": "Načítání...",

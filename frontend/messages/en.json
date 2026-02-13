@@ -351,6 +351,10 @@
         "programs": {
           "title": "Programs",
           "description": "View and edit existing programs"
+        },
+        "surveys": {
+          "title": "Pending Surveys",
+          "description": "Review and approve new survey submissions"
         }
       }
     },
@@ -377,6 +381,65 @@
         "advanced": "Advanced",
         "elite": "Elite"
       }
+    },
+    "newClient": {
+      "title": "Add New Client",
+      "basicInfo": "Basic Information",
+      "name": "Full Name",
+      "namePlaceholder": "John Doe",
+      "email": "Email",
+      "emailPlaceholder": "john@example.com",
+      "skillLevel": "Skill Level",
+      "initialOneRM": "Initial 1RM (optional)",
+      "initialOneRMDescription": "You can add the initial 1RM values now or fill them in later via survey.",
+      "createClient": "Create Client",
+      "creating": "Creating...",
+      "createFailed": "Failed to create client",
+      "clientExists": "Client with this name already exists"
+    },
+    "surveys": {
+      "title": "Pending Surveys",
+      "backToDashboard": "Dashboard",
+      "loading": "Loading surveys...",
+      "pending": "pending",
+      "noSurveys": "No pending surveys",
+      "noSurveysDescription": "All survey submissions have been processed.",
+      "showDetails": "Show details",
+      "hideDetails": "Hide details",
+      "approve": "Approve",
+      "approving": "Approving...",
+      "personalInfo": "Personal Info",
+      "nationality": "Nationality",
+      "gender": "Gender",
+      "height": "Height",
+      "weight": "Weight",
+      "performanceTests": "Performance Tests",
+      "trainingInfo": "Training Info",
+      "stressLevel": "Stress level",
+      "sessionsPerWeek": "Sessions/week",
+      "maxSessions": "Max sessions",
+      "viewFullProfile": "View full profile"
+    },
+    "credentials": {
+      "title": "Login Credentials",
+      "hasAccess": "Client has login access",
+      "noAccess": "Client does not have login access yet",
+      "createAccess": "Create Login",
+      "creating": "Creating...",
+      "created": "Credentials created successfully!",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "copyWarning": "Copy this password now - it won't be shown again!",
+      "active": "Active",
+      "sendInvite": "Send Invite",
+      "sending": "Sending...",
+      "inviteSent": "Invitation sent!",
+      "inviteSentDesc": "The client will receive an email with a registration link.",
+      "inviteCreated": "Invitation created",
+      "inviteCreatedDesc": "Email not configured. Share this link with the client:",
+      "copyLink": "Copy Link",
+      "linkCopied": "Copied!",
+      "pendingInvite": "Invitation pending"
     },
     "clientDetail": {
       "loading": "Loading client...",
@@ -551,6 +614,61 @@
       "calculatedTargets": "Calculated Targets",
       "noSessions": "This program does not have sessions yet (only targets)."
     }
+  },
+  "client": {
+    "dashboard": {
+      "loading": "Loading...",
+      "accessDenied": "Access denied",
+      "welcome": "Welcome",
+      "currentOneRM": "Current 1RM",
+      "noOneRM": "No 1RM recorded yet",
+      "lastUpdated": "Last updated",
+      "activeProgram": "Active Program",
+      "noActiveProgram": "No active program",
+      "weeks": "weeks",
+      "started": "Started",
+      "viewProgram": "View Program",
+      "survey": "Survey",
+      "surveyCompleted": "Completed",
+      "surveyNotCompleted": "Please fill out the survey to help us create your program",
+      "updateSurvey": "Update Survey",
+      "fillSurvey": "Fill Out Survey",
+      "allPrograms": "All Programs",
+      "noPrograms": "No programs yet",
+      "morePrograms": "more"
+    },
+    "survey": {
+      "title": "Training Survey",
+      "backToDashboard": "Dashboard",
+      "description": "Please fill out this survey to help us understand your training needs.",
+      "submit": "Save Survey",
+      "submitting": "Saving...",
+      "success": "Survey saved successfully!",
+      "error": "Failed to save survey"
+    }
+  },
+  "register": {
+    "title": "Complete Registration",
+    "welcomeBack": "Welcome, {name}! Create your password to access StrongCode.",
+    "email": "Email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password (min 6 characters)",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "submit": "Create Account",
+    "submitting": "Creating account...",
+    "validating": "Validating invitation...",
+    "noToken": "No Invitation Token",
+    "noTokenDesc": "Please use the link from your invitation email.",
+    "invalidToken": "Invalid Invitation",
+    "tokenExpired": "This invitation has expired. Please contact your coach for a new one.",
+    "tokenUsed": "This invitation has already been used.",
+    "tokenInvalid": "This invitation link is invalid. Please contact your coach.",
+    "success": "Registration Complete!",
+    "successDesc": "Your account has been created. Redirecting to login...",
+    "errorPasswordTooShort": "Password must be at least 6 characters",
+    "errorPasswordMismatch": "Passwords do not match",
+    "errorGeneric": "Registration failed. Please try again."
   },
   "common": {
     "loading": "Loading...",

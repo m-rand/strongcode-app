@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 export default function LoginPage() {
   const t = useTranslations('login')
+  const locale = useLocale()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,8 +32,14 @@ export default function LoginPage() {
         return
       }
 
-      // Redirect based on role - we'll get this from session
-      router.push('/admin/dashboard')
+      // Get session to determine role and redirect accordingly
+      const session = await getSession()
+
+      if (session?.user?.role === 'client') {
+        router.push(`/${locale}/client/dashboard`)
+      } else {
+        router.push(`/${locale}/admin/dashboard`)
+      }
       router.refresh()
     } catch (err) {
       setError(t('error'))

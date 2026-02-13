@@ -5,5 +5,13 @@
     "password": "$2b$10$Rm4swej8vjcCaObXPCETIOkQRaj4M.pZ5Br296PdZppN1ALWfrrWm",
     "role": "admin",
     "name": "Admin"
+  },
+  {
+    "id": "2",
+    "email": "bestrongbrno@gmail.com",
+    "password": "$2b$10$8KhHWPm8fUhFnso7kqCWlueQmk2AlLdcZbH9vyBpmpk8oQ4bBujyu",
+    "role": "client",
+    "name": "Be Strong Test",
+    "client_slug": "be-strong-test"
   }
 ]

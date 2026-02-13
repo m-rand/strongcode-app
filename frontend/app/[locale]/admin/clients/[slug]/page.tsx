@@ -94,19 +94,45 @@ interface Program {
   hasSessions: boolean
 }
 
+interface UserCredentials {
+  id: string
+  email: string
+  name: string
+  role: string
+  client_slug?: string
+}
+
 export default function ClientDetailPage() {
   const params = useParams()
   const t = useTranslations('admin.clientDetail')
   const tClients = useTranslations('admin.clients')
+  const tCreds = useTranslations('admin.credentials')
   const locale = useLocale()
   const [client, setClient] = useState<Client | null>(null)
   const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  // Credentials state
+  const [userCredentials, setUserCredentials] = useState<UserCredentials | null>(null)
+  const [creatingCredentials, setCreatingCredentials] = useState(false)
+  const [newPassword, setNewPassword] = useState<string | null>(null)
+  const [credentialsError, setCredentialsError] = useState('')
+
+  // Invite state
+  const [sendingInvite, setSendingInvite] = useState(false)
+  const [inviteResult, setInviteResult] = useState<{ emailSent: boolean; registerUrl?: string } | null>(null)
+  const [linkCopied, setLinkCopied] = useState(false)
+
   useEffect(() => {
     fetchClient()
   }, [params.slug])
+
+  useEffect(() => {
+    if (client?.slug) {
+      fetchCredentials()
+    }
+  }, [client?.slug])
 
   const fetchClient = async () => {
     try {
@@ -120,6 +146,103 @@ export default function ClientDetailPage() {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCredentials = async () => {
+    try {
+      const response = await fetch(`/api/users?client_slug=${params.slug}`)
+      if (response.ok) {
+        const data = await response.json()
+        setUserCredentials(data.user)
+      }
+    } catch (err) {
+      console.error('Failed to fetch credentials:', err)
+    }
+  }
+
+  const createCredentials = async () => {
+    if (!client) return
+    setCreatingCredentials(true)
+    setCredentialsError('')
+    setNewPassword(null)
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: client.email,
+          name: client.name,
+          role: 'client',
+          client_slug: client.slug
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create credentials')
+      }
+
+      setUserCredentials(data.user)
+      setNewPassword(data.temporaryPassword)
+    } catch (err: any) {
+      setCredentialsError(err.message)
+    } finally {
+      setCreatingCredentials(false)
+    }
+  }
+
+  const sendInvite = async () => {
+    if (!client) return
+    setSendingInvite(true)
+    setCredentialsError('')
+    setInviteResult(null)
+
+    try {
+      const response = await fetch('/api/invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientSlug: client.slug,
+          email: client.email,
+          name: client.name
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send invitation')
+      }
+
+      setInviteResult({
+        emailSent: data.emailSent,
+        registerUrl: data.registerUrl
+      })
+    } catch (err: any) {
+      setCredentialsError(err.message)
+    } finally {
+      setSendingInvite(false)
+    }
+  }
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
     }
   }
 
@@ -228,6 +351,67 @@ export default function ClientDetailPage() {
             <div className="mt-4 pt-4 border-t">
               <p className="text-sm text-gray-600 mb-1">{t('notes')}</p>
               <p className="text-gray-900">{client.notes}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Login Credentials */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">{tCreds('title')}</h2>
+
+          {credentialsError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
+              {credentialsError}
+            </div>
+          )}
+
+          {inviteResult && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded">
+              <p className="text-green-800 font-semibold mb-2">
+                {inviteResult.emailSent ? tCreds('inviteSent') : tCreds('inviteCreated')}
+              </p>
+              <p className="text-sm text-green-700 mb-2">
+                {inviteResult.emailSent ? tCreds('inviteSentDesc') : tCreds('inviteCreatedDesc')}
+              </p>
+              {inviteResult.registerUrl && (
+                <div className="flex items-center gap-2 mt-3">
+                  <input
+                    type="text"
+                    readOnly
+                    value={inviteResult.registerUrl}
+                    className="flex-1 px-3 py-2 bg-white border rounded text-sm font-mono text-gray-700"
+                  />
+                  <button
+                    onClick={() => copyToClipboard(inviteResult.registerUrl!)}
+                    className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm whitespace-nowrap"
+                  >
+                    {linkCopied ? tCreds('linkCopied') : tCreds('copyLink')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {userCredentials ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">{tCreds('hasAccess')}</p>
+                <p className="font-semibold text-gray-900">{userCredentials.email}</p>
+              </div>
+              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                {tCreds('active')}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">{tCreds('noAccess')}</p>
+              <button
+                onClick={sendInvite}
+                disabled={sendingInvite}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm"
+              >
+                {sendingInvite ? tCreds('sending') : tCreds('sendInvite')}
+              </button>
             </div>
           )}
         </div>
