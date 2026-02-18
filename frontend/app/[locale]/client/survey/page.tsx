@@ -276,10 +276,10 @@ export default function ClientSurveyPage() {
                       key={lift}
                       type="number"
                       placeholder={lift.charAt(0).toUpperCase() + lift.slice(1)}
-                      value={formData[key as keyof typeof formData][lift as 'squat' | 'bench' | 'deadlift']}
+                      value={(formData[key as keyof typeof formData] as Record<string, string>)[lift]}
                       onChange={e => setFormData({
                         ...formData,
-                        [key]: {...formData[key as keyof typeof formData], [lift]: e.target.value}
+                        [key]: {...(formData[key as keyof typeof formData] as Record<string, string>), [lift]: e.target.value}
                       })}
                       className="px-3 py-2 border rounded-md"
                     />

@@ -1,32 +1,8 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import fs from 'fs/promises'
-import path from 'path'
-import crypto from 'crypto'
-
-interface User {
-  id: string
-  email: string
-  password: string
-  role: 'admin' | 'client'
-  name: string
-  client_slug?: string
-}
-
-async function getUsers(): Promise<User[]> {
-  const usersPath = path.join(process.cwd(), '..', 'data', 'users.json')
-  try {
-    const data = await fs.readFile(usersPath, 'utf-8')
-    return JSON.parse(data)
-  } catch {
-    return []
-  }
-}
-
-async function saveUsers(users: User[]): Promise<void> {
-  const usersPath = path.join(process.cwd(), '..', 'data', 'users.json')
-  await fs.writeFile(usersPath, JSON.stringify(users, null, 2))
-}
+import { db } from '@/db'
+import { users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 
 // Generate a random password
 function generatePassword(length = 12): string {
@@ -57,46 +33,36 @@ export async function POST(request: Request) {
       )
     }
 
-    const users = await getUsers()
-
-    // Check if user with this email already exists
-    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+    // Check if user exists
+    const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1)
+    if (existing) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 409 }
       )
     }
 
-    // Generate or use provided password
     const plainPassword = providedPassword || generatePassword()
     const hashedPassword = await bcrypt.hash(plainPassword, 10)
 
-    // Generate unique ID
-    const maxId = users.reduce((max, u) => Math.max(max, parseInt(u.id) || 0), 0)
-    const newId = (maxId + 1).toString()
-
-    const newUser: User = {
-      id: newId,
+    const [newUser] = await db.insert(users).values({
       email,
       password: hashedPassword,
       role: role || 'client',
       name,
-      ...(client_slug && { client_slug })
-    }
-
-    users.push(newUser)
-    await saveUsers(users)
+      clientSlug: client_slug || null,
+      createdAt: new Date().toISOString(),
+    }).returning()
 
     return NextResponse.json({
       success: true,
       user: {
-        id: newUser.id,
+        id: newUser.id.toString(),
         email: newUser.email,
         name: newUser.name,
         role: newUser.role,
-        client_slug: newUser.client_slug
+        client_slug: newUser.clientSlug,
       },
-      // Return plain password only on creation (it's hashed in storage)
       temporaryPassword: plainPassword
     })
   } catch (error) {
@@ -121,8 +87,11 @@ export async function GET(request: Request) {
       )
     }
 
-    const users = await getUsers()
-    const user = users.find(u => u.client_slug === clientSlug)
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.clientSlug, clientSlug))
+      .limit(1)
 
     if (!user) {
       return NextResponse.json({ user: null })
@@ -130,11 +99,11 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       user: {
-        id: user.id,
+        id: user.id.toString(),
         email: user.email,
         name: user.name,
         role: user.role,
-        client_slug: user.client_slug
+        client_slug: user.clientSlug,
       }
     })
   } catch (error) {
@@ -159,26 +128,27 @@ export async function DELETE(request: Request) {
       )
     }
 
-    const users = await getUsers()
-    const userIndex = users.findIndex(u => u.id === userId)
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, parseInt(userId)))
+      .limit(1)
 
-    if (userIndex === -1) {
+    if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
 
-    // Don't allow deleting admin users
-    if (users[userIndex].role === 'admin') {
+    if (user.role === 'admin') {
       return NextResponse.json(
         { error: 'Cannot delete admin users' },
         { status: 403 }
       )
     }
 
-    users.splice(userIndex, 1)
-    await saveUsers(users)
+    await db.delete(users).where(eq(users.id, parseInt(userId)))
 
     return NextResponse.json({ success: true })
   } catch (error) {

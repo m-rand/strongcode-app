@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs/promises'
-import path from 'path'
+import { db } from '@/db'
+import { programs, clients } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 
 // Simple validation function
 function validateProgram(data: any): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
-  // Required top-level fields
   if (!data.schema_version) errors.push('Missing schema_version')
   if (!data.meta) errors.push('Missing meta')
   if (!data.client) errors.push('Missing client')
@@ -14,14 +14,12 @@ function validateProgram(data: any): { valid: boolean; errors: string[] } {
   if (!data.input) errors.push('Missing input')
   if (!data.calculated) errors.push('Missing calculated')
 
-  // Validate meta
   if (data.meta) {
     if (!data.meta.filename) errors.push('Missing meta.filename')
     if (!data.meta.created_at) errors.push('Missing meta.created_at')
     if (!data.meta.status) errors.push('Missing meta.status')
   }
 
-  // Validate client
   if (data.client) {
     if (!data.client.name) errors.push('Missing client.name')
     if (!data.client.one_rm) errors.push('Missing client.one_rm')
@@ -32,31 +30,25 @@ function validateProgram(data: any): { valid: boolean; errors: string[] } {
     }
   }
 
-  // Validate program_info
   if (data.program_info) {
     if (!data.program_info.block) errors.push('Missing program_info.block')
     if (!data.program_info.start_date) errors.push('Missing program_info.start_date')
     if (!data.program_info.weeks) errors.push('Missing program_info.weeks')
   }
 
-  // Validate input (must have all 3 lifts)
   if (data.input) {
     if (!data.input.squat) errors.push('Missing input.squat')
     if (!data.input.bench_press) errors.push('Missing input.bench_press')
     if (!data.input.deadlift) errors.push('Missing input.deadlift')
   }
 
-  // Validate calculated (must have all 3 lifts)
   if (data.calculated) {
     if (!data.calculated.squat) errors.push('Missing calculated.squat')
     if (!data.calculated.bench_press) errors.push('Missing calculated.bench_press')
     if (!data.calculated.deadlift) errors.push('Missing calculated.deadlift')
   }
 
-  return {
-    valid: errors.length === 0,
-    errors,
-  }
+  return { valid: errors.length === 0, errors }
 }
 
 export async function POST(request: Request) {
@@ -67,60 +59,74 @@ export async function POST(request: Request) {
     const validation = validateProgram(programData)
     if (!validation.valid) {
       return NextResponse.json(
-        {
-          error: 'Invalid program format',
-          details: validation.errors,
-        },
+        { error: 'Invalid program format', details: validation.errors },
         { status: 400 }
       )
     }
 
     // Determine client slug
-    const clientSlug = programData.client.name.toLowerCase().replace(/\s+/g, '-')
+    const clientSlug = programData.client.name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-')
 
-    // Ensure directory exists
-    const clientDir = path.join(process.cwd(), '..', 'data', 'clients', clientSlug, 'programs')
-    await fs.mkdir(clientDir, { recursive: true })
+    // Find client in DB
+    const [client] = await db.select({ id: clients.id }).from(clients).where(eq(clients.slug, clientSlug)).limit(1)
 
-    // Generate filename if not provided or use existing
+    if (!client) {
+      return NextResponse.json(
+        { error: `Client "${clientSlug}" not found in database` },
+        { status: 404 }
+      )
+    }
+
+    // Generate filename if not provided
     let filename = programData.meta.filename
     if (!filename) {
       const date = new Date().toISOString().split('T')[0]
       const block = programData.program_info.block || 'unknown'
       filename = `${date}_${clientSlug}_${block}_all_lifts.json`
     }
-
-    // Ensure filename ends with .json
     if (!filename.endsWith('.json')) {
       filename += '.json'
     }
 
-    // Update meta with import info
+    // Update meta
     programData.meta.filename = filename
     programData.meta.imported_at = new Date().toISOString()
     if (!programData.meta.created_at) {
       programData.meta.created_at = new Date().toISOString()
     }
 
-    // Save to file
-    const filePath = path.join(clientDir, filename)
-    await fs.writeFile(filePath, JSON.stringify(programData, null, 2))
-
-    console.log(`✅ Program imported: ${filePath}`)
+    // Save to database
+    await db.insert(programs).values({
+      clientId: client.id,
+      filename,
+      schemaVersion: programData.schema_version || '1.0',
+      status: programData.meta.status || 'draft',
+      block: programData.program_info.block,
+      startDate: programData.program_info.start_date,
+      endDate: programData.program_info.end_date || '',
+      weeks: programData.program_info.weeks || 4,
+      clientSnapshot: programData.client,
+      input: programData.input,
+      calculated: programData.calculated,
+      sessionsData: programData.sessions || {},
+      createdAt: programData.meta.created_at,
+      createdBy: programData.meta.created_by || 'Import',
+    })
 
     return NextResponse.json({
       success: true,
       filename,
       client: clientSlug,
-      path: filePath,
       has_sessions: !!programData.sessions,
     })
   } catch (error: any) {
     console.error('Import error:', error)
     return NextResponse.json(
-      {
-        error: error.message || 'Failed to import program',
-      },
+      { error: error.message || 'Failed to import program' },
       { status: 500 }
     )
   }

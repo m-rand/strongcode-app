@@ -3,6 +3,9 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 import fs from 'fs/promises'
 import path from 'path'
+import { db } from '@/db'
+import { programs, clients } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 
 const execAsync = promisify(exec)
 
@@ -36,10 +39,12 @@ export async function POST(request: Request) {
 
     // Build INPUT JSON with all 3 lifts
     const clientSlug = formData.clientName.toLowerCase().replace(/\s+/g, '-')
+    const filename = `${new Date().toISOString().split('T')[0]}_${clientSlug}_${formData.block}_all_lifts.json`
+
     const programData = {
       schema_version: '1.0',
       meta: {
-        filename: `${new Date().toISOString().split('T')[0]}_${clientSlug}_${formData.block}_all_lifts.json`,
+        filename,
         created_at: new Date().toISOString(),
         created_by: 'Web Form',
         status: 'draft',
@@ -66,7 +71,7 @@ export async function POST(request: Request) {
       },
     }
 
-    // Save INPUT JSON to temp file
+    // Save INPUT JSON to temp file for Python script
     const tempDir = path.join(process.cwd(), '..', 'data', 'temp')
     await fs.mkdir(tempDir, { recursive: true })
 
@@ -79,33 +84,50 @@ export async function POST(request: Request) {
     const scriptPath = path.join(process.cwd(), '..', 'scripts', 'calculate_targets.py')
     const pythonPath = path.join(process.cwd(), '..', 'scripts', 'venv', 'bin', 'python')
 
-    console.log('Running:', pythonPath, scriptPath, tempPath)
-
     const { stdout, stderr } = await execAsync(`${pythonPath} ${scriptPath} ${tempPath}`)
 
     if (stderr) {
       console.error('Python stderr:', stderr)
     }
 
-    console.log('Python stdout:', stdout)
-
     // Read the calculated result
     const resultData = await fs.readFile(tempPath, 'utf8')
     const result = JSON.parse(resultData)
 
-    // Save to proper location
-    const clientDir = path.join(process.cwd(), '..', 'data', 'clients', clientSlug, 'programs')
-    await fs.mkdir(clientDir, { recursive: true })
-
-    const finalPath = path.join(clientDir, programData.meta.filename)
-    await fs.writeFile(finalPath, JSON.stringify(result, null, 2))
-
     // Clean up temp file
     await fs.unlink(tempPath)
 
+    // Find client in DB
+    const [client] = await db.select({ id: clients.id }).from(clients).where(eq(clients.slug, clientSlug)).limit(1)
+
+    if (!client) {
+      return NextResponse.json(
+        { error: `Client "${clientSlug}" not found in database` },
+        { status: 404 }
+      )
+    }
+
+    // Save to database
+    await db.insert(programs).values({
+      clientId: client.id,
+      filename,
+      schemaVersion: '1.0',
+      status: 'draft',
+      block: result.program_info?.block || formData.block,
+      startDate: result.program_info?.start_date || programData.program_info.start_date,
+      endDate: result.program_info?.end_date || programData.program_info.end_date,
+      weeks: result.program_info?.weeks || 4,
+      clientSnapshot: result.client || programData.client,
+      input: result.input || programData.input,
+      calculated: result.calculated || {},
+      sessionsData: result.sessions || {},
+      createdAt: new Date().toISOString(),
+      createdBy: 'Web Form',
+    })
+
     return NextResponse.json({
       success: true,
-      filename: programData.meta.filename,
+      filename,
       client: clientSlug,
     })
   } catch (error: any) {

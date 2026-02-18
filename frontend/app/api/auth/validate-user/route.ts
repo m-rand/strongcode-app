@@ -1,22 +1,8 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import fs from 'fs/promises'
-import path from 'path'
-
-interface User {
-  id: string
-  email: string
-  password: string
-  role: 'admin' | 'client'
-  name: string
-  client_slug?: string
-}
-
-async function getUsers(): Promise<User[]> {
-  const usersPath = path.join(process.cwd(), '..', 'data', 'users.json')
-  const data = await fs.readFile(usersPath, 'utf-8')
-  return JSON.parse(data)
-}
+import { db } from '@/db'
+import { users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 
 export async function POST(request: Request) {
   try {
@@ -26,8 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing credentials' }, { status: 400 })
     }
 
-    const users = await getUsers()
-    const user = users.find(u => u.email === email)
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1)
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
@@ -41,11 +26,11 @@ export async function POST(request: Request) {
 
     // Return user without password
     return NextResponse.json({
-      id: user.id,
+      id: user.id.toString(),
       email: user.email,
       name: user.name,
       role: user.role,
-      client_slug: user.client_slug,
+      client_slug: user.clientSlug,
     })
   } catch (error) {
     console.error('Validation error:', error)

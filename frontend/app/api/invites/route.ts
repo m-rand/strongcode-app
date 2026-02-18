@@ -1,32 +1,9 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import crypto from 'crypto'
-import fs from 'fs/promises'
-import path from 'path'
-
-interface InviteToken {
-  token: string
-  clientSlug: string
-  email: string
-  createdAt: string
-  expiresAt: string
-  used: boolean
-}
-
-const TOKENS_PATH = path.join(process.cwd(), '..', 'data', 'invite-tokens.json')
-
-async function getTokens(): Promise<InviteToken[]> {
-  try {
-    const data = await fs.readFile(TOKENS_PATH, 'utf-8')
-    return JSON.parse(data)
-  } catch {
-    return []
-  }
-}
-
-async function saveTokens(tokens: InviteToken[]): Promise<void> {
-  await fs.writeFile(TOKENS_PATH, JSON.stringify(tokens, null, 2))
-}
+import { db } from '@/db'
+import { inviteTokens, clients } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
 
 export async function POST(request: Request) {
   try {
@@ -44,22 +21,18 @@ export async function POST(request: Request) {
     const now = new Date()
     const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000) // 48 hours
 
-    // Save token
-    const tokens = await getTokens()
-
     // Remove any existing tokens for this client
-    const filteredTokens = tokens.filter(t => t.clientSlug !== clientSlug)
+    await db.delete(inviteTokens).where(eq(inviteTokens.clientSlug, clientSlug))
 
-    filteredTokens.push({
+    // Save new token
+    await db.insert(inviteTokens).values({
       token,
       clientSlug,
       email,
+      used: false,
       createdAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
-      used: false
     })
-
-    await saveTokens(filteredTokens)
 
     // Build registration URL
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
@@ -68,7 +41,6 @@ export async function POST(request: Request) {
     // Send email if Resend is configured
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY)
-
       const fromEmail = process.env.RESEND_FROM_EMAIL || 'info@strong-code.com'
 
       const result = await resend.emails.send({
@@ -98,7 +70,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
           success: false,
           error: result.error.message || 'Failed to send email',
-          registerUrl // Fallback - provide URL anyway
+          registerUrl
         }, { status: 500 })
       }
 
@@ -108,7 +80,6 @@ export async function POST(request: Request) {
         emailSent: true
       })
     } else {
-      // No email configured, return the link for manual sharing
       return NextResponse.json({
         success: true,
         message: 'Invitation created',
@@ -129,17 +100,20 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const token = searchParams.get('token')
+    const tokenValue = searchParams.get('token')
 
-    if (!token) {
+    if (!tokenValue) {
       return NextResponse.json(
         { error: 'Token is required' },
         { status: 400 }
       )
     }
 
-    const tokens = await getTokens()
-    const invite = tokens.find(t => t.token === token)
+    const [invite] = await db
+      .select()
+      .from(inviteTokens)
+      .where(eq(inviteTokens.token, tokenValue))
+      .limit(1)
 
     if (!invite) {
       return NextResponse.json(
@@ -162,22 +136,18 @@ export async function GET(request: Request) {
       )
     }
 
-    // Get client info
-    const clientPath = path.join(process.cwd(), '..', 'data', 'clients', invite.clientSlug, 'profile.json')
-    let clientName = ''
-    try {
-      const profileContent = await fs.readFile(clientPath, 'utf-8')
-      const profile = JSON.parse(profileContent)
-      clientName = profile.name
-    } catch {
-      // Client not found
-    }
+    // Get client name
+    const [client] = await db
+      .select({ name: clients.name })
+      .from(clients)
+      .where(eq(clients.slug, invite.clientSlug))
+      .limit(1)
 
     return NextResponse.json({
       valid: true,
       email: invite.email,
       clientSlug: invite.clientSlug,
-      clientName
+      clientName: client?.name || ''
     })
   } catch (error) {
     console.error('Error validating token:', error)

@@ -1,54 +1,8 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import fs from 'fs/promises'
-import path from 'path'
-
-interface InviteToken {
-  token: string
-  clientSlug: string
-  email: string
-  createdAt: string
-  expiresAt: string
-  used: boolean
-}
-
-interface User {
-  id: string
-  email: string
-  password: string
-  role: 'admin' | 'client'
-  name: string
-  client_slug?: string
-}
-
-const TOKENS_PATH = path.join(process.cwd(), '..', 'data', 'invite-tokens.json')
-const USERS_PATH = path.join(process.cwd(), '..', 'data', 'users.json')
-
-async function getTokens(): Promise<InviteToken[]> {
-  try {
-    const data = await fs.readFile(TOKENS_PATH, 'utf-8')
-    return JSON.parse(data)
-  } catch {
-    return []
-  }
-}
-
-async function saveTokens(tokens: InviteToken[]): Promise<void> {
-  await fs.writeFile(TOKENS_PATH, JSON.stringify(tokens, null, 2))
-}
-
-async function getUsers(): Promise<User[]> {
-  try {
-    const data = await fs.readFile(USERS_PATH, 'utf-8')
-    return JSON.parse(data)
-  } catch {
-    return []
-  }
-}
-
-async function saveUsers(users: User[]): Promise<void> {
-  await fs.writeFile(USERS_PATH, JSON.stringify(users, null, 2))
-}
+import { db } from '@/db'
+import { inviteTokens, users, clients } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 
 export async function POST(request: Request) {
   try {
@@ -69,8 +23,11 @@ export async function POST(request: Request) {
     }
 
     // Validate token
-    const tokens = await getTokens()
-    const invite = tokens.find(t => t.token === token)
+    const [invite] = await db
+      .select()
+      .from(inviteTokens)
+      .where(eq(inviteTokens.token, token))
+      .limit(1)
 
     if (!invite) {
       return NextResponse.json(
@@ -93,46 +50,45 @@ export async function POST(request: Request) {
       )
     }
 
-    // Get client info
-    const clientPath = path.join(process.cwd(), '..', 'data', 'clients', invite.clientSlug, 'profile.json')
-    let clientName = invite.email
-    try {
-      const profileContent = await fs.readFile(clientPath, 'utf-8')
-      const profile = JSON.parse(profileContent)
-      clientName = profile.name
-    } catch {
-      // Use email as fallback
-    }
+    // Get client name
+    const [client] = await db
+      .select({ name: clients.name })
+      .from(clients)
+      .where(eq(clients.slug, invite.clientSlug))
+      .limit(1)
+
+    const clientName = client?.name || invite.email
 
     // Check if user already exists
-    const users = await getUsers()
-    if (users.find(u => u.email.toLowerCase() === invite.email.toLowerCase())) {
+    const [existingUser] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, invite.email))
+      .limit(1)
+
+    if (existingUser) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 409 }
       )
     }
 
-    // Hash password
+    // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user
-    const maxId = users.reduce((max, u) => Math.max(max, parseInt(u.id) || 0), 0)
-    const newUser: User = {
-      id: (maxId + 1).toString(),
+    await db.insert(users).values({
       email: invite.email,
       password: hashedPassword,
       role: 'client',
       name: clientName,
-      client_slug: invite.clientSlug
-    }
-
-    users.push(newUser)
-    await saveUsers(users)
+      clientSlug: invite.clientSlug,
+      createdAt: new Date().toISOString(),
+    })
 
     // Mark token as used
-    invite.used = true
-    await saveTokens(tokens)
+    await db.update(inviteTokens)
+      .set({ used: true })
+      .where(eq(inviteTokens.token, token))
 
     return NextResponse.json({
       success: true,

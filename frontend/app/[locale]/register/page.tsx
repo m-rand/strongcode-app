@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 
@@ -12,7 +12,7 @@ interface TokenInfo {
   error?: string
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const t = useTranslations('register')
   const locale = useLocale()
   const router = useRouter()
@@ -221,5 +221,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
   )
 }

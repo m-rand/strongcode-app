@@ -1,38 +1,54 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs/promises'
-import path from 'path'
+import { db } from '@/db'
+import { programs, clients } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ client: string; filename: string }> }
 ) {
   try {
-    const { client, filename } = await params
+    const { client: clientSlug, filename } = await params
     const decodedFilename = decodeURIComponent(filename)
 
-    const filePath = path.join(
-      process.cwd(),
-      '..',
-      'data',
-      'clients',
-      client,
-      'programs',
-      decodedFilename
-    )
+    const [client] = await db.select({ id: clients.id }).from(clients).where(eq(clients.slug, clientSlug)).limit(1)
 
-    // Check if file exists
-    try {
-      await fs.access(filePath)
-    } catch {
-      return NextResponse.json(
-        { error: 'Program not found' },
-        { status: 404 }
-      )
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
-    // Read and parse program
-    const fileContent = await fs.readFile(filePath, 'utf-8')
-    const programData = JSON.parse(fileContent)
+    const [program] = await db
+      .select()
+      .from(programs)
+      .where(and(
+        eq(programs.clientId, client.id),
+        eq(programs.filename, decodedFilename)
+      ))
+      .limit(1)
+
+    if (!program) {
+      return NextResponse.json({ error: 'Program not found' }, { status: 404 })
+    }
+
+    const programData = {
+      schema_version: program.schemaVersion,
+      meta: {
+        filename: program.filename,
+        created_at: program.createdAt,
+        created_by: program.createdBy,
+        status: program.status,
+      },
+      client: program.clientSnapshot,
+      program_info: {
+        block: program.block,
+        start_date: program.startDate,
+        end_date: program.endDate,
+        weeks: program.weeks,
+      },
+      input: program.input,
+      calculated: program.calculated,
+      sessions: program.sessionsData,
+    }
 
     return NextResponse.json({ program: programData })
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs/promises'
-import path from 'path'
+import { db } from '@/db'
+import { clients, oneRmRecords, programs } from '@/db/schema'
+import { eq, sql } from 'drizzle-orm'
 
 export async function GET(
   request: Request,
@@ -9,68 +10,66 @@ export async function GET(
   try {
     const { slug } = await params
 
-    const clientPath = path.join(process.cwd(), '..', 'data', 'clients', slug)
-    const profilePath = path.join(clientPath, 'profile.json')
+    const [client] = await db.select().from(clients).where(eq(clients.slug, slug)).limit(1)
 
-    // Check if client exists
-    try {
-      await fs.access(profilePath)
-    } catch {
+    if (!client) {
       return NextResponse.json(
         { error: 'Client not found' },
         { status: 404 }
       )
     }
 
-    // Read profile
-    const profileContent = await fs.readFile(profilePath, 'utf-8')
-    const profile = JSON.parse(profileContent)
+    // Get 1RM history
+    const rmHistory = await db
+      .select()
+      .from(oneRmRecords)
+      .where(eq(oneRmRecords.clientId, client.id))
+      .orderBy(sql`date DESC`)
 
     // Get programs
-    const programsDir = path.join(clientPath, 'programs')
-    const programs = []
+    const clientPrograms = await db
+      .select()
+      .from(programs)
+      .where(eq(programs.clientId, client.id))
+      .orderBy(sql`start_date DESC`)
 
-    try {
-      const files = await fs.readdir(programsDir)
+    const programList = clientPrograms.map(p => ({
+      filename: p.filename,
+      block: p.block,
+      startDate: p.startDate,
+      weeks: p.weeks,
+      status: p.status,
+      hasSessions: !!p.sessionsData && Object.keys(p.sessionsData as object).length > 0,
+    }))
 
-      for (const filename of files) {
-        if (!filename.endsWith('.json')) continue
-
-        const filePath = path.join(programsDir, filename)
-        const fileContent = await fs.readFile(filePath, 'utf-8')
-
-        try {
-          const programData = JSON.parse(fileContent)
-
-          programs.push({
-            filename,
-            block: programData.program_info?.block || 'unknown',
-            startDate: programData.program_info?.start_date || 'N/A',
-            weeks: programData.program_info?.weeks || 4,
-            status: programData.meta?.status || 'draft',
-            hasSessions: !!programData.sessions,
-          })
-        } catch (parseError) {
-          console.error(`Failed to parse ${filePath}:`, parseError)
-        }
-      }
-    } catch {
-      // Programs directory doesn't exist
+    // Build profile-like response for backward compatibility
+    const profile = {
+      schema_version: client.schemaVersion,
+      status: client.status,
+      name: client.name,
+      email: client.email,
+      skill_level: client.skillLevel,
+      preferences: client.preferences,
+      survey: client.survey,
+      notes: client.notes,
+      one_rm_history: rmHistory.map(r => ({
+        date: r.date,
+        squat: r.squat,
+        bench_press: r.benchPress,
+        deadlift: r.deadlift,
+        tested: r.tested,
+        notes: r.notes,
+      })),
+      created_at: client.createdAt,
+      _meta: {
+        created_by: client.createdBy,
+        last_modified: client.lastModified,
+      },
     }
 
-    // Sort programs by start date (newest first)
-    programs.sort((a, b) => {
-      if (a.startDate === 'N/A') return 1
-      if (b.startDate === 'N/A') return -1
-      return b.startDate.localeCompare(a.startDate)
-    })
-
     return NextResponse.json({
-      client: {
-        slug,
-        ...profile
-      },
-      programs
+      client: { slug, ...profile },
+      programs: programList,
     })
   } catch (error) {
     console.error('Error loading client:', error)

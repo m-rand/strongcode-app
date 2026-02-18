@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs/promises'
-import path from 'path'
+import { db } from '@/db'
+import { clients, oneRmRecords, programs } from '@/db/schema'
+import { eq, sql, ne } from 'drizzle-orm'
 
 // Helper to create slug from name
 function createSlug(name: string): string {
@@ -25,53 +26,42 @@ export async function POST(request: Request) {
     }
 
     const slug = createSlug(name)
-    const clientsDir = path.join(process.cwd(), '..', 'data', 'clients')
-    const clientDir = path.join(clientsDir, slug)
 
     // Check if client already exists
-    try {
-      await fs.access(clientDir)
+    const [existing] = await db.select({ id: clients.id }).from(clients).where(eq(clients.slug, slug)).limit(1)
+    if (existing) {
       return NextResponse.json(
         { error: 'Client with this name already exists' },
         { status: 409 }
       )
-    } catch {
-      // Client doesn't exist, which is what we want
     }
 
-    // Create client directory
-    await fs.mkdir(clientDir, { recursive: true })
-    await fs.mkdir(path.join(clientDir, 'programs'), { recursive: true })
-
-    // Create profile
     const now = new Date().toISOString()
-    const profile = {
-      schema_version: '1.0',
-      status: 'active', // Admin-created clients are immediately active
+
+    // Create client
+    const [inserted] = await db.insert(clients).values({
+      slug,
       name,
       email,
-      skill_level: skill_level || 'intermediate',
-      one_rm_history: one_rm ? [
-        {
-          date: new Date().toISOString().split('T')[0],
-          squat: one_rm.squat || 0,
-          bench_press: one_rm.bench_press || 0,
-          deadlift: one_rm.deadlift || 0,
-          tested: false,
-          notes: 'Initial entry'
-        }
-      ] : [],
-      created_at: now,
-      _meta: {
-        created_by: 'Web Form',
-        last_modified: now
-      }
-    }
+      status: 'active',
+      skillLevel: skill_level || 'intermediate',
+      createdAt: now,
+      createdBy: 'Web Form',
+      lastModified: now,
+    }).returning({ id: clients.id })
 
-    await fs.writeFile(
-      path.join(clientDir, 'profile.json'),
-      JSON.stringify(profile, null, 2)
-    )
+    // Add initial 1RM if provided
+    if (one_rm) {
+      await db.insert(oneRmRecords).values({
+        clientId: inserted.id,
+        date: new Date().toISOString().split('T')[0],
+        squat: one_rm.squat || 0,
+        benchPress: one_rm.bench_press || 0,
+        deadlift: one_rm.deadlift || 0,
+        tested: false,
+        notes: 'Initial entry',
+      })
+    }
 
     return NextResponse.json({
       success: true,
@@ -89,78 +79,49 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const clientsDir = path.join(process.cwd(), '..', 'data', 'clients')
+    // Get all active clients with program count and latest 1RM
+    const allClients = await db
+      .select()
+      .from(clients)
+      .where(ne(clients.status, 'pending'))
 
-    // Check if clients directory exists
-    try {
-      await fs.access(clientsDir)
-    } catch {
-      return NextResponse.json({ clients: [] })
-    }
+    const result = []
 
-    // Read all client directories
-    const clientSlugs = await fs.readdir(clientsDir)
-
-    const clients = []
-
-    for (const slug of clientSlugs) {
-      const clientPath = path.join(clientsDir, slug)
-      const stats = await fs.stat(clientPath)
-
-      if (!stats.isDirectory()) continue
-
-      // Try to read profile.json
-      const profilePath = path.join(clientPath, 'profile.json')
-      let profile = null
-
-      try {
-        const profileContent = await fs.readFile(profilePath, 'utf-8')
-        profile = JSON.parse(profileContent)
-      } catch {
-        // Profile doesn't exist, skip this client or use defaults
-        continue
-      }
-
-      // Only show active clients (skip pending)
-      // Clients without status field are treated as active (backward compatibility)
-      if (profile.status === 'pending') continue
-
+    for (const c of allClients) {
       // Count programs
-      const programsDir = path.join(clientPath, 'programs')
-      let programCount = 0
-
-      try {
-        const files = await fs.readdir(programsDir)
-        programCount = files.filter(f => f.endsWith('.json')).length
-      } catch {
-        // Programs directory doesn't exist
-        programCount = 0
-      }
+      const [programCount] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(programs)
+        .where(eq(programs.clientId, c.id))
 
       // Get latest 1RM
-      const latestOneRM = profile.one_rm_history?.[0] || null
+      const [latestRm] = await db
+        .select()
+        .from(oneRmRecords)
+        .where(eq(oneRmRecords.clientId, c.id))
+        .orderBy(sql`date DESC`)
+        .limit(1)
 
-      clients.push({
-        slug,
-        name: profile.name,
-        email: profile.email,
-        skill_level: profile.skill_level || 'intermediate',
-        latest_one_rm: latestOneRM ? {
-          squat: latestOneRM.squat,
-          bench_press: latestOneRM.bench_press,
-          deadlift: latestOneRM.deadlift,
-          date: latestOneRM.date
+      result.push({
+        slug: c.slug,
+        name: c.name,
+        email: c.email,
+        skill_level: c.skillLevel || 'intermediate',
+        latest_one_rm: latestRm ? {
+          squat: latestRm.squat,
+          bench_press: latestRm.benchPress,
+          deadlift: latestRm.deadlift,
+          date: latestRm.date,
         } : null,
-        program_count: programCount,
-        created_at: profile.created_at,
-        last_modified: profile._meta?.last_modified
+        program_count: programCount?.count || 0,
+        created_at: c.createdAt,
+        last_modified: c.lastModified,
       })
     }
 
-    // Sort by name
-    clients.sort((a, b) => a.name.localeCompare(b.name))
+    result.sort((a, b) => a.name.localeCompare(b.name))
 
-    return NextResponse.json({ clients })
+    return NextResponse.json({ clients: result })
   } catch (error) {
     console.error('Error listing clients:', error)
     return NextResponse.json(
