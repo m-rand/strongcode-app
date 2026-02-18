@@ -143,6 +143,14 @@ export default function HomePage() {
                   <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </a>
+
+              <Link
+                href="/intro"
+                className="block text-sm font-light transition-opacity hover:opacity-60 mt-2"
+                style={{ color: 'var(--accent-primary)' }}
+              >
+                {t('learnMore.intro')}
+              </Link>
             </div>
 
             {/* Right — Image */}
@@ -189,7 +197,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mt-16">
+          <div className="mt-16 flex flex-col sm:flex-row items-start gap-6">
             <Link
               href="/survey"
               className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
@@ -199,6 +207,13 @@ export default function HomePage() {
               <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
+            </Link>
+            <Link
+              href="/how-it-works"
+              className="text-sm font-light transition-opacity hover:opacity-60"
+              style={{ color: 'var(--accent-primary)' }}
+            >
+              {t('learnMore.howItWorks')}
             </Link>
           </div>
         </div>
@@ -240,6 +255,14 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
+
+              <Link
+                href="/look-inside"
+                className="text-sm font-light transition-opacity hover:opacity-60"
+                style={{ color: 'var(--accent-primary)' }}
+              >
+                {t('learnMore.lookInside')}
+              </Link>
             </div>
           </div>
         </div>
@@ -364,6 +387,14 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
+
+              <Link
+                href="/about"
+                className="text-sm font-light transition-opacity hover:opacity-60"
+                style={{ color: 'var(--accent-primary)' }}
+              >
+                {t('learnMore.about')}
+              </Link>
             </div>
 
             {/* Right — Photo with accent offset shadow */}

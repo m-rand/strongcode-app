@@ -21,186 +21,242 @@
       "dark": "Tmavý",
       "system": "Systémový"
     },
-    "quote": {
-      "text": "Zvedej co nejtěžší váhy, s co největším objemem, a přitom zůstaň co nejsvěžejší.",
-      "author": "Steve Freides"
+    "hero": {
+      "titleLine1": "PROLOMTE",
+      "titleLine2": "SVÁ PLATÓ",
+      "titleLine3": "S NÁMI.",
+      "subtitle": "Individuální silový program postavený na metodologii Plan Strong™. Objem a intenzita naplánované tak, abyste neustále sílili — bez toho, abyste se umlátili.",
+      "cta": "Začít dotazník",
+      "ctaNote": "Vyplnění trvá 10–15 min"
     },
-    "intro": {
-      "what": {
-        "navTitle": "Co je StrongCode",
-        "title": "StrongCode",
-        "description": "StrongCode je postaven na metodologii Plan Strong™ — programovacím systému vyvinutém na základě sovětského výzkumu vzpírání. Objem a intenzita jsou plánovány napříč měsíci, týdny a tréninky podle specifických distribučních principů. Výsledek: kontinuální silové zisky bez toho, abyste se umlátili.",
-        "sidebar1": "",
-        "sidebar2": ""
-      },
-      "who": {
-        "navTitle": "Pro koho je určen",
-        "title": "Pro koho je určen",
-        "description": "Tohle není program pro začátečníky. StrongCode je pro cvičence, kteří se zasekli na lineární progresi a potřebují chytřejší programování, aby se posunuli dál:",
-        "point1": "Zvládli správnou techniku ve svých zvolených cviků",
-        "point2": "Mají stanovené základní 1RM, které se nezlepšilo na lineární progresi",
-        "point3": "Chtějí prolomit plató v některém z těchto cviků:",
-        "lifts": {
-          "powerlifts": "Powerlifting cviky (dřep, bench press, mrtvý tah)",
-          "militaryPress": "Vojenský tisk (s činkou nebo kettlebell)",
-          "kettlebellSquat": "Dřep s kettlebell",
-          "pullups": "Shyby se zátěží"
-        }
-      },
-      "expect": {
-        "navTitle": "Co čekat",
-        "title": "Co čekat",
-        "paragraph1": "Očekávejte stabilní progres v řádu měsíců, ne dramatické vrcholy následované vyhoření. Málokdy budete trénovat do selhání. Budete zvedat těžké váhy častěji než jste zvyklí — ale odejdete z gymu s pocitem, že byste zvládli víc.",
-        "paragraph2": "Můžeme slíbit výjimečné výsledky? Ne. Výsledky závisí na mnoha faktorech mimo program.",
-        "paragraph3": "Výsledky závisí na regeneraci. Spánek, zvládání stresu a strava jsou důležité — program to za vás nevyřeší."
-      }
-    },
-    "features": {
-      "title": "Vlastnosti",
-      "sidebar1": "",
-      "sidebar2": "",
-      "tailored": {
-        "navTitle": "Individuálně přizpůsobený",
-        "title": "Individuálně přizpůsobený",
-        "description": "Váš program je vypočítán z vašich čísel — aktuální 1RM, tréninková historie, regenerační kapacita, dostupný čas. Dva cvičenci s různými profily dostanou různé programy. Žádné šablony."
-      },
-      "unique": {
-        "navTitle": "Jedinečný",
-        "title": "Jedinečný",
-        "paragraph1": "Pokud jste trénovali jen s fixními schématy série × opakování, tohle bude vypadat jinak. Objem a intenzita se mění mezi tréninky, týdny a měsíci — někdy dramaticky.",
-        "paragraph2": "Klíčové rozdíly oproti tradičním programům:",
-        "point1": "Vysoká variabilita objemu (mezi tréninky, týdny a měsíci)",
-        "point2": "Objem a intenzita jsou plánovány nezávisle",
-        "point3": "Více intenzitních zón v každém tréninku",
-        "paragraph3": "V jednom tréninku můžete pracovat na 65%, 80% a 90%. Objem v každé zóně se mění od tréninku k tréninku a od týdne k týdnu podle distribučních pravidel — ne náhodně."
-      },
-      "joyful": {
-        "navTitle": "Variabilita",
-        "title": "Variabilita",
-        "description": "Stejný trénink nezopakujete dvakrát v rámci jednoho bloku. Variabilita je zabudovaná do systému."
-      },
-      "longterm": {
-        "navTitle": "Dlouhodobý",
-        "title": "Dlouhodobý",
-        "paragraph1": "Pokud poskytnete správná data, nikdy byste neměli trénovat do selhání. To samo o sobě výrazně snižuje pravděpodobnost zranění.",
-        "paragraph2": "Objem vlní nahoru a dolů napříč týdny. To brání akumulaci únavy, která nakonec zastaví progres u většiny programů."
-      },
-      "hypertrophy": {
-        "navTitle": "Hypertrofie",
-        "title": "Hypertrofie?",
-        "description": "Chcete více svalů? Posuneme parametry. Chcete čistou sílu? Jiné nastavení. Systém se přizpůsobí vašemu cíli."
-      },
-      "benefits": {
-        "navTitle": "Výhody",
-        "title": "Výhody",
-        "point1": "Flexibilní plánování — tréninky lze přesouvat v rámci týdne, týdny v rámci měsíce.",
-        "point2": "Variabilita rozsahů opakování při dané zátěži odstraňuje psychologické bariéry spojené s těžkými vahami.",
-        "point3": "Submaximální úsilí. Vysoký objem bez dření.",
-        "point4": "Zisky, které vydrží.",
-        "point5": "Méně úrazů z přetížení a komplikací.",
-        "point6": "Časté těžké jedničky budují sebevědomí a konzistenci.",
-        "point7": "Zůstáváte blízko vrcholu celoročně. Když potřebujete podat výkon, taper je krátký."
-      }
+    "marquee": "SÍLA · PROGRAMOVÁNÍ · PERIODIZACE · VÝKON · PLÁNOVÁNÍ · PROGRES · DATA · METODIKA",
+    "what": {
+      "titleLine1": "CO JE",
+      "titleLine2": "STRONGCODE",
+      "description": "StrongCode je postaven na metodologii Plan Strong™ — programovacím systému vyvinutém na základě sovětského výzkumu vzpírání. Objem a intenzita jsou plánovány napříč měsíci, týdny a tréninky podle specifických distribučních principů.",
+      "highlight": "Výsledek: kontinuální silové zisky bez toho, abyste se umlátili."
     },
     "howItWorks": {
-      "title": "Jak to funguje",
-      "sidebar1": "",
-      "sidebar2": "",
-      "inputs": {
-        "navTitle": "Vstupy",
-        "paragraph1": "Vyplníte podrobný dotazník. Sbíráme vaše 1RM, tréninkovou historii, toleranci objemu, regenerační kapacitu, časová omezení. Z těchto dat se vypočítají parametry programu.",
-        "paragraph2": "Čísla pocházejí z výpočtů. Program pochází od kouče — někoho, kdo vytvořil stovky těchto plánů a ví, co funguje.",
-        "buttonText": "Začít dotazník (10-15 min)"
+      "titleLine1": "JAK TO",
+      "titleLine2": "FUNGUJE",
+      "step1": {
+        "number": "01",
+        "title": "Vyplníte dotazník",
+        "description": "Sbíráme vaše 1RM, tréninkovou historii, toleranci objemu, regenerační kapacitu a časová omezení."
       },
-      "result": {
-        "navTitle": "Výsledek",
-        "paragraph1": "Minimální délka programu je 2 měsíce: přípravná fáze plus peak.",
-        "paragraph2": "Delší přípravné fáze (3+ měsíce) přinášejí lepší výsledky — více času na budování síly před peakingem."
+      "step2": {
+        "number": "02",
+        "title": "Sestavíme program",
+        "description": "Z vašich dat se vypočítají parametry. Program pochází od kouče, který vytvořil stovky těchto plánů."
+      },
+      "step3": {
+        "number": "03",
+        "title": "Trénujte a rostěte",
+        "description": "Minimální program na 2 měsíce. Delší přípravné fáze přinášejí lepší výsledky."
       }
     },
-    "lookInside": {
-      "title": "Nahlédnutí",
-      "sidebar1": "",
-      "sidebar2": "",
-      "beginners": {
-        "navTitle": "Proč ne pro začátečníky",
-        "title": "Proč ne pro začátečníky?",
-        "description": "Pro začátečníky je progres převážně funkcí váhy na tyči. Programování je jednoduché: udržujte objem, přidávejte váhu. Jak postupujete, progres více závisí na objemu a jeho distribuci napříč tréninky, týdny a měsíci. Čím pokročilejší jste, tím víc záleží na programování. To je místo, kde tento systém prokazuje svou hodnotu."
+    "whoFor": {
+      "titleLine1": "PRO KOHO",
+      "titleLine2": "JE URČEN",
+      "description": "StrongCode není program pro začátečníky. Je pro cvičence, kteří se zasekli na lineární progresi a potřebují chytřejší programování.",
+      "point1": "Zvládli správnou techniku ve svých cvicích",
+      "point2": "Mají stanovené 1RM, které se nezlepšilo",
+      "point3": "Chtějí prolomit plató v powerliftingu",
+      "point4": "Hledají chytřejší, individuální programování"
+    },
+    "featureCards": {
+      "titleLine1": "PROČ",
+      "titleLine2": "STRONGCODE",
+      "tailored": {
+        "title": "Individuální",
+        "description": "Váš program je vypočítán z vašich čísel — aktuální 1RM, tréninková historie, regenerační kapacita. Dva cvičenci s různými profily dostanou různé programy."
       },
-      "model": {
-        "navTitle": "Tréninkový model",
-        "title": "Lineární, vlnový a dynamický model",
-        "description": "Lineární a vlnová periodizace svazují objem a intenzitu inverzně. Ve StrongCode jsou nezávislé. To umožňuje kombinace, které tradiční modely neumí vytvořit."
+      "unique": {
+        "title": "Jedinečný",
+        "description": "Objem a intenzita se mění mezi tréninky, týdny a měsíci. Žádný trénink nezopakujete dvakrát v rámci bloku."
       },
-      "factors": {
-        "navTitle": "Klíčové faktory",
-        "title": "Co sledujeme",
-        "paragraph1": "Programovací rozhodnutí jsou založena na měřitelných proměnných napříč různými časovými měřítky.",
-        "paragraph2": "Sledujeme:",
-        "point1": "objem za rok / měsíc / týden / trénink",
-        "point2": "průměrnou intenzitu za rok / měsíc / týden / trénink",
-        "point3": "distribuci objemu mezi měsíci / v měsíci / týdnu / tréninku",
-        "point4": "distribuci průměrné intenzity mezi měsíci / v měsíci / týdnu / tréninku"
+      "longterm": {
+        "title": "Dlouhodobý",
+        "description": "Objem vlní nahoru a dolů. To brání akumulaci únavy, snižuje pravděpodobnost zranění a udržuje progres."
       },
-      "dynamics": {
-        "navTitle": "Tréninková dynamika",
-        "title": "Tréninková dynamika",
-        "paragraph1": "Objem a intenzita se mění v průběhu tréninkového cyklu. Změny jsou vypočítány na základě vašeho profilu.",
-        "paragraph2": "Objem i průměrná intenzita se mění:",
-        "point1Title": "Z tréninku na trénink:",
-        "point1": "Každý trénink je jiný — těžké, střední a lehké váhy s měnícími se objemy.",
-        "point2Title": "Z týdne na týden:",
-        "point2": "Změny objemu mohou být dramatické. Týden 1: vysoký, týden 2: nízký, týden 3: vysoký, týden 4: střední.",
-        "point3Title": "Z měsíce na měsíc:",
-        "point3": "Dlouhodobá progrese je navržena tak, aby peakovala, když na tom záleží — soutěž nebo pokus o osobák.",
-        "keyTakeawayTitle": "",
-        "keyTakeaway": "Variabilita sleduje pravidla. Není náhodná."
-      },
-      "ladders": {
-        "navTitle": "Žebříky",
-        "title": "Proč používáme žebříky tak rozsáhle?",
-        "description": "Protože žebříky jsou skvělé pro řízení vysokých objemů a současně udržování neurální a metabolické únavy na nízké úrovni."
+      "flexible": {
+        "title": "Flexibilní",
+        "description": "Tréninky lze přesouvat v rámci týdne, týdny v rámci měsíce. Systém se přizpůsobí vašemu životu."
       }
     },
-    "price": {
-      "title": "Cena",
-      "sidebar1": "",
-      "sidebar2": "",
-      "base": {
-        "navTitle": "Základní cena",
-        "title": "Základní cena",
-        "amount": "39 USD / EUR za cvik za měsíc",
-        "exampleIntro": "Takže např.:",
-        "example1": "2měsíční program pro 3 powerliftingové cviky: 39×3×2 = 234 USD / EUR",
-        "example2": "3měsíční program pro 3 powerliftingové cviky: 39×3×3 = 351 USD / EUR"
-      }
+    "quote": {
+      "text": "Zvedej co nejtěžší váhy, s co největším objemem, a přitom zůstaň co nejsvěžejší.",
+      "author": "— Steve Freides"
     },
-    "about": {
-      "title": "O nás",
-      "sidebar1": "",
-      "sidebar2": "",
-      "intro": {
-        "navTitle": "Marcel Balas",
-        "title": "Marcel Balas",
-        "description": "Marcel Balas provozuje StrongCode. Pozadí:",
-        "point1": "Vývojář softwaru (high-performance computing)",
-        "point2": "Majitel fitka",
-        "point3": "Silový kouč",
-        "point4": "Vedoucí powerliftingového týmu"
-      },
-      "vision": {
-        "navTitle": "Vize StrongCode",
-        "title": "Vize",
-        "description": "Programy jsou nejprve vypočítány, pak zrevidovány a upraveny koučem. Čísla plus zkušenosti."
-      }
+    "pricing": {
+      "titleLine1": "CENÍK",
+      "amount": "39",
+      "currency": "USD / EUR",
+      "unit": "za cvik za měsíc",
+      "example1": "2 měsíce × 3 cviky = 234 USD / EUR",
+      "example2": "3 měsíce × 3 cviky = 351 USD / EUR"
     },
-    "cta": {
-      "title": "Máte zájem?",
+    "coach": {
+      "titleLine1": "VÁŠ",
+      "titleLine2": "KOUČ",
+      "name": "Marcel Balas",
+      "description": "Programy jsou nejprve vypočítány, pak zrevidovány a upraveny koučem. Čísla plus zkušenosti z procesu, kterým prošly stovky programů.",
+      "point1": "Software developer (HPC)",
+      "point2": "Majitel fitka",
+      "point3": "Silový kouč",
+      "point4": "Kouč Plan Strong™"
+    },
+    "ctaSection": {
+      "titleLine1": "MÁTE",
+      "titleLine2": "ZÁJEM?",
       "description": "Vyplňte dotazník. Projdeme vaše čísla a ozveme se.",
-      "buttonText": "Začít dotazník (10-15 min)"
+      "button": "Začít dotazník"
+    },
+    "learnMore": {
+      "intro": "Více o StrongCode →",
+      "features": "Všechny vlastnosti →",
+      "howItWorks": "Jak přesně to funguje →",
+      "lookInside": "Nahlédnout dovnitř →",
+      "about": "Více o nás →"
     },
     "footer": {
       "copyright": "© 2025 StrongCode 60. Založeno na metodologii PlanStrong™."
+    }
+  },
+  "introPage": {
+    "title": "ÚVOD DO\nSTRONGCODE",
+    "titleLine1": "ÚVOD DO",
+    "titleLine2": "STRONGCODE",
+    "what": {
+      "title": "CO JE STRONGCODE",
+      "description": "StrongCode je postaven na metodologii Plan Strong™ — programovacím systému vyvinutém na základě sovětského výzkumu vzpírání. Objem a intenzita jsou plánovány napříč měsíci, týdny a tréninky podle specifických distribučních principů. Výsledek: kontinuální silové zisky bez toho, abyste se umlátili."
+    },
+    "who": {
+      "title": "PRO KOHO JE URČEN",
+      "description": "Tohle není program pro začátečníky. StrongCode je pro cvičence, kteří se zasekli na lineární progresi a potřebují chytřejší programování, aby se posunuli dál:",
+      "point1": "Zvládli správnou techniku ve svých zvolených cviků",
+      "point2": "Mají stanovené základní 1RM, které se nezlepšilo na lineární progresi",
+      "point3": "Chtějí prolomit plató v některém z těchto cviků:",
+      "lifts": {
+        "powerlifts": "Powerlifting cviky (dřep, bench press, mrtvý tah)",
+        "militaryPress": "Vojenský tisk (s činkou nebo kettlebell)",
+        "kettlebellSquat": "Dřep s kettlebell",
+        "pullups": "Shyby se zátěží"
+      }
+    },
+    "expect": {
+      "title": "CO ČEKAT",
+      "paragraph1": "Očekávejte stabilní progres v řádu měsíců, ne dramatické vrcholy následované vyhoření. Málokdy budete trénovat do selhání. Budete zvedat těžké váhy častěji než jste zvyklí — ale odejdete z gymu s pocitem, že byste zvládli víc.",
+      "paragraph2": "Můžeme slíbit výjimečné výsledky? Ne. Výsledky závisí na mnoha faktorech mimo program.",
+      "paragraph3": "Výsledky závisí na regeneraci. Spánek, zvládání stresu a strava jsou důležité — program to za vás nevyřeší."
+    }
+  },
+  "featuresPage": {
+    "titleLine1": "VLASTNOSTI",
+    "titleLine2": "PROGRAMU",
+    "tailored": {
+      "title": "INDIVIDUÁLNĚ PŘIZPŮSOBENÝ",
+      "description": "Váš program je vypočítán z vašich čísel — aktuální 1RM, tréninková historie, regenerační kapacita, dostupný čas. Dva cvičenci s různými profily dostanou různé programy. Žádné šablony."
+    },
+    "unique": {
+      "title": "JEDINEČNÝ",
+      "paragraph1": "Pokud jste trénovali jen s fixními schématy série × opakování, tohle bude vypadat jinak. Objem a intenzita se mění mezi tréninky, týdny a měsíci — někdy dramaticky.",
+      "paragraph2": "Klíčové rozdíly oproti tradičním programům:",
+      "point1": "Vysoká variabilita objemu (mezi tréninky, týdny a měsíci)",
+      "point2": "Objem a intenzita jsou plánovány nezávisle",
+      "point3": "Více intenzitních zón v každém tréninku",
+      "paragraph3": "V jednom tréninku můžete pracovat na 65%, 80% a 90%. Objem v každé zóně se mění od tréninku k tréninku a od týdne k týdnu podle distribučních pravidel — ne náhodně."
+    },
+    "variety": {
+      "title": "VARIABILITA",
+      "description": "Stejný trénink nezopakujete dvakrát v rámci jednoho bloku. Variabilita je zabudovaná do systému."
+    },
+    "longterm": {
+      "title": "DLOUHODOBÝ",
+      "paragraph1": "Pokud poskytnete správná data, nikdy byste neměli trénovat do selhání. To samo o sobě výrazně snižuje pravděpodobnost zranění.",
+      "paragraph2": "Objem vlní nahoru a dolů napříč týdny. To brání akumulaci únavy, která nakonec zastaví progres u většiny programů."
+    },
+    "hypertrophy": {
+      "title": "HYPERTROFIE?",
+      "description": "Chcete více svalů? Posuneme parametry. Chcete čistou sílu? Jiné nastavení. Systém se přizpůsobí vašemu cíli."
+    },
+    "benefits": {
+      "title": "VÝHODY",
+      "point1": "Flexibilní plánování — tréninky lze přesouvat v rámci týdne, týdny v rámci měsíce.",
+      "point2": "Variabilita rozsahů opakování při dané zátěži odstraňuje psychologické bariéry spojené s těžkými vahami.",
+      "point3": "Submaximální úsilí. Vysoký objem bez dření.",
+      "point4": "Zisky, které vydrží.",
+      "point5": "Méně úrazů z přetížení a komplikací.",
+      "point6": "Časté těžké jedničky budují sebevědomí a konzistenci.",
+      "point7": "Zůstáváte blízko vrcholu celoročně. Když potřebujete podat výkon, taper je krátký."
+    }
+  },
+  "howItWorksPage": {
+    "titleLine1": "JAK TO",
+    "titleLine2": "FUNGUJE",
+    "inputs": {
+      "title": "VSTUPY",
+      "paragraph1": "Vyplníte podrobný dotazník. Sbíráme vaše 1RM, tréninkovou historii, toleranci objemu, regenerační kapacitu, časová omezení. Z těchto dat se vypočítají parametry programu.",
+      "paragraph2": "Čísla pocházejí z výpočtů. Program pochází od kouče — někoho, kdo vytvořil stovky těchto plánů a ví, co funguje.",
+      "buttonText": "Začít dotazník (10–15 min)"
+    },
+    "result": {
+      "title": "VÝSLEDEK",
+      "paragraph1": "Minimální délka programu je 2 měsíce: přípravná fáze plus peak.",
+      "paragraph2": "Delší přípravné fáze (3+ měsíce) přinášejí lepší výsledky — více času na budování síly před peakingem."
+    }
+  },
+  "lookInsidePage": {
+    "titleLine1": "NAHLÉDNUTÍ",
+    "titleLine2": "DOVNITŘ",
+    "beginners": {
+      "title": "PROČ NE PRO ZAČÁTEČNÍKY?",
+      "description": "Pro začátečníky je progres převážně funkcí váhy na tyči. Programování je jednoduché: udržujte objem, přidávejte váhu. Jak postupujete, progres více závisí na objemu a jeho distribuci napříč tréninky, týdny a měsíci. Čím pokročilejší jste, tím víc záleží na programování. To je místo, kde tento systém prokazuje svou hodnotu."
+    },
+    "model": {
+      "title": "LINEÁRNÍ, VLNOVÝ A DYNAMICKÝ MODEL",
+      "description": "Lineární a vlnová periodizace svazují objem a intenzitu inverzně. Ve StrongCode jsou nezávislé. To umožňuje kombinace, které tradiční modely neumí vytvořit."
+    },
+    "factors": {
+      "title": "CO SLEDUJEME",
+      "paragraph1": "Programovací rozhodnutí jsou založena na měřitelných proměnných napříč různými časovými měřítky.",
+      "paragraph2": "Sledujeme:",
+      "point1": "objem za rok / měsíc / týden / trénink",
+      "point2": "průměrnou intenzitu za rok / měsíc / týden / trénink",
+      "point3": "distribuci objemu mezi měsíci / v měsíci / týdnu / tréninku",
+      "point4": "distribuci průměrné intenzity mezi měsíci / v měsíci / týdnu / tréninku"
+    },
+    "dynamics": {
+      "title": "TRÉNINKOVÁ DYNAMIKA",
+      "paragraph1": "Objem a intenzita se mění v průběhu tréninkového cyklu. Změny jsou vypočítány na základě vašeho profilu.",
+      "paragraph2": "Objem i průměrná intenzita se mění:",
+      "point1Title": "Z tréninku na trénink:",
+      "point1": "Každý trénink je jiný — těžké, střední a lehké váhy s měnícími se objemy.",
+      "point2Title": "Z týdne na týden:",
+      "point2": "Změny objemu mohou být dramatické. Týden 1: vysoký, týden 2: nízký, týden 3: vysoký, týden 4: střední.",
+      "point3Title": "Z měsíce na měsíc:",
+      "point3": "Dlouhodobá progrese je navržena tak, aby peakovala, když na tom záleží — soutěž nebo pokus o osobák.",
+      "keyTakeaway": "Variabilita sleduje pravidla. Není náhodná."
+    },
+    "ladders": {
+      "title": "PROČ POUŽÍVÁME ŽEBŘÍKY TAK ROZSÁHLE?",
+      "description": "Protože žebříky jsou skvělé pro řízení vysokých objemů a současně udržování neurální a metabolické únavy na nízké úrovni."
+    }
+  },
+  "aboutPage": {
+    "titleLine1": "O",
+    "titleLine2": "NÁS",
+    "intro": {
+      "title": "MARCEL BALAS",
+      "description": "Marcel Balas provozuje StrongCode. Pozadí:",
+      "point1": "Vývojář softwaru (high-performance computing)",
+      "point2": "Majitel fitka",
+      "point3": "Silový kouč",
+      "point4": "Kouč Plan Strong™"
+    },
+    "vision": {
+      "title": "VIZE",
+      "description": "Programy jsou nejprve vypočítány, pak zrevidovány a upraveny koučem. Čísla plus zkušenosti."
     }
   },
   "survey": {

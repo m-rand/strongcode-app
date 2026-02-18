@@ -21,186 +21,241 @@
       "dark": "Dark",
       "system": "System"
     },
-    "quote": {
-      "text": "Lift as heavy as possible, as much volume as possible, while remaining as fresh as possible.",
-      "author": "Steve Freides"
+    "hero": {
+      "titleLine1": "BREAK",
+      "titleLine2": "YOUR PLATEAUS",
+      "titleLine3": "WITH US.",
+      "subtitle": "Individualized strength programming built on the Plan Strong™ methodology. Volume and intensity planned so you keep getting stronger — without grinding yourself into the ground.",
+      "cta": "Start Survey",
+      "ctaNote": "Takes 10–15 minutes"
     },
-    "intro": {
-      "what": {
-        "navTitle": "What is StrongCode",
-        "title": "StrongCode",
-        "description": "StrongCode is built on the Plan Strong™ methodology — the programming system developed from Soviet weightlifting research. Volume and intensity are planned across months, weeks, and sessions according to specific distribution principles. The result: continuous strength gains without grinding yourself into the ground.",
-        "sidebar1": "",
-        "sidebar2": ""
-      },
-      "who": {
-        "navTitle": "Who is it for",
-        "title": "Who is it for",
-        "description": "This is not a beginner program. StrongCode is for lifters who have plateaued on linear progression and need smarter programming to keep moving forward:",
-        "point1": "Have mastered proper technique in their chosen lifts",
-        "point2": "Have established baseline 1RMs that haven't improved on linear progression",
-        "point3": "Want to break through plateaus in any of these lifts:",
-        "lifts": {
-          "powerlifts": "Powerlifts (squat, bench press, deadlift)",
-          "militaryPress": "Military press (barbell or kettlebell)",
-          "kettlebellSquat": "Kettlebell squat",
-          "pullups": "Weighted pull-ups"
-        }
-      },
-      "expect": {
-        "navTitle": "What to expect",
-        "title": "What to expect",
-        "paragraph1": "Expect steady progress over months, not dramatic peaks followed by burnout. You will rarely train to failure. You will lift heavy weights more often than you're used to — but leave the gym feeling capable of more.",
-        "paragraph2": "Can we promise exceptional results? No. Outcomes depend on many factors outside the program.",
-        "paragraph3": "Results depend on recovery. Sleep, stress management, and nutrition matter — the program can't fix those for you."
-      }
-    },
-    "features": {
-      "title": "Features",
-      "sidebar1": "",
-      "sidebar2": "",
-      "tailored": {
-        "navTitle": "Individually Tailored",
-        "title": "Individually Tailored",
-        "description": "Your program is calculated from your numbers — current 1RMs, training history, recovery capacity, available time. Two lifters with different profiles will get different programs. There are no templates."
-      },
-      "unique": {
-        "navTitle": "Unique",
-        "title": "Unique",
-        "paragraph1": "If you've only trained with fixed set × rep schemes, this will look different. Volume and intensity vary between sessions, weeks, and months — sometimes dramatically.",
-        "paragraph2": "Key differences from traditional programs:",
-        "point1": "High variability of volume (between sessions, weeks, and months)",
-        "point2": "Volume and intensity are planned independently",
-        "point3": "Multiple intensity zones in each workout",
-        "paragraph3": "In a single session, you might work at 65%, 80%, and 90%. The volume at each zone shifts from session to session and week to week according to distribution rules — not randomly."
-      },
-      "joyful": {
-        "navTitle": "Variety",
-        "title": "Variety",
-        "description": "You won't do the same workout twice in a training block. The variability is built into the system."
-      },
-      "longterm": {
-        "navTitle": "Long term",
-        "title": "Long term",
-        "paragraph1": "If you provide correct data, you should never train to failure. This alone significantly lowers the probability of injuries.",
-        "paragraph2": "Volume waves up and down across weeks. This prevents the accumulation of fatigue that eventually stops progress on most programs."
-      },
-      "hypertrophy": {
-        "navTitle": "Hypertrophy",
-        "title": "Hypertrophy?",
-        "description": "Want more muscle? We shift the parameters. Want pure strength? Different settings. The system adapts to your goal."
-      },
-      "benefits": {
-        "navTitle": "Benefits",
-        "title": "Benefits",
-        "point1": "Flexible scheduling — sessions can be moved within a week, weeks within a month.",
-        "point2": "Variety of rep ranges at a given load removes psychological barriers associated with heavy weights.",
-        "point3": "Submaximal efforts. High volume without grinding.",
-        "point4": "Gains that stick.",
-        "point5": "Fewer overuse injuries and setbacks.",
-        "point6": "Frequent heavy singles build confidence and consistency.",
-        "point7": "You stay close to your peak year-round. When you need to perform, the taper is short."
-      }
+    "marquee": "STRENGTH · PROGRAMMING · PERIODIZATION · PERFORMANCE · PLANNING · PROGRESS · DATA · METHODOLOGY",
+    "what": {
+      "titleLine1": "WHAT IS",
+      "titleLine2": "STRONGCODE",
+      "description": "StrongCode is built on the Plan Strong™ methodology — the programming system developed from Soviet weightlifting research. Volume and intensity are planned across months, weeks, and sessions according to specific distribution principles.",
+      "highlight": "The result: continuous strength gains without grinding yourself into the ground."
     },
     "howItWorks": {
-      "title": "How it works",
-      "sidebar1": "",
-      "sidebar2": "",
-      "inputs": {
-        "navTitle": "Inputs",
-        "paragraph1": "You fill out a detailed questionnaire. We collect your 1RMs, training history, volume tolerance, recovery capacity, schedule constraints. From this data, program parameters are calculated.",
-        "paragraph2": "The numbers come from calculations. The program comes from the coach — someone who has built hundreds of these plans and knows what works.",
-        "buttonText": "Start Survey (10-15 min)"
+      "titleLine1": "HOW IT",
+      "titleLine2": "WORKS",
+      "step1": {
+        "number": "01",
+        "title": "Fill out the survey",
+        "description": "We collect your 1RMs, training history, volume tolerance, recovery capacity, and schedule constraints."
       },
-      "result": {
-        "navTitle": "Result",
-        "paragraph1": "Minimum program length is 2 months: preparatory phase plus peak.",
-        "paragraph2": "Longer prep phases (3+ months) produce better results — more time to build strength before peaking."
+      "step2": {
+        "number": "02",
+        "title": "We build your program",
+        "description": "Your data drives the calculations. The program comes from a coach who has built hundreds of these plans."
+      },
+      "step3": {
+        "number": "03",
+        "title": "Train and grow",
+        "description": "Minimum 2-month program. Longer prep phases produce better results."
       }
     },
-    "lookInside": {
-      "title": "Look inside",
-      "sidebar1": "",
-      "sidebar2": "",
-      "beginners": {
-        "navTitle": "Why not for beginners",
-        "title": "Why not for beginners?",
-        "description": "For beginners, progress is largely a function of weight on the bar. The programming is simple: keep volume steady, add weight. As you advance, progress depends more on volume and its distribution across sessions, weeks, and months. The more advanced you are, the more programming matters. That's where this system earns its value."
+    "whoFor": {
+      "titleLine1": "WHO IS",
+      "titleLine2": "IT FOR",
+      "description": "StrongCode is not a beginner program. It's for lifters who have plateaued on linear progression and need smarter programming.",
+      "point1": "Have mastered proper technique in their lifts",
+      "point2": "Have established 1RMs that stopped improving",
+      "point3": "Want to break through powerlifting plateaus",
+      "point4": "Looking for smarter, individualized programming"
+    },
+    "featureCards": {
+      "titleLine1": "WHY",
+      "titleLine2": "STRONGCODE",
+      "tailored": {
+        "title": "Individually Tailored",
+        "description": "Your program is calculated from your numbers — current 1RMs, training history, recovery capacity. Two lifters with different profiles get different programs."
       },
-      "model": {
-        "navTitle": "Training Model",
-        "title": "Linear, wave, and dynamic model",
-        "description": "Linear and wave periodization tie volume and intensity together inversely. In StrongCode, they're independent. This allows combinations that traditional models can't produce."
+      "unique": {
+        "title": "Unique",
+        "description": "Volume and intensity vary between sessions, weeks, and months. You won't repeat the same workout twice in a training block."
       },
-      "factors": {
-        "navTitle": "Key Factors",
-        "title": "What we track",
-        "paragraph1": "Programming decisions are based on measurable variables across different time scales.",
-        "paragraph2": "We track:",
-        "point1": "volume per year / month / week / session",
-        "point2": "average intensity per year / month / week / session",
-        "point3": "distribution of the volume between months / in a month / week / session",
-        "point4": "distribution of the average intensity between months / in a month / week / session"
+      "longterm": {
+        "title": "Long Term",
+        "description": "Volume waves up and down. This prevents fatigue accumulation, lowers injury risk, and keeps progress going."
       },
-      "dynamics": {
-        "navTitle": "Training Dynamics",
-        "title": "Training Dynamics",
-        "paragraph1": "Volume and intensity change throughout the training cycle. The changes are calculated based on your profile.",
-        "paragraph2": "Both volume and average intensity vary:",
-        "point1Title": "From session to session:",
-        "point1": "Each workout is different — heavy, moderate, and light weights with varying volumes.",
-        "point2Title": "From week to week:",
-        "point2": "Volume shifts can be dramatic. Week 1: high, week 2: low, week 3: high, week 4: moderate.",
-        "point3Title": "From month to month:",
-        "point3": "Long-term progression is designed to peak when it matters — competition or a PR attempt.",
-        "keyTakeawayTitle": "",
-        "keyTakeaway": "The variation follows rules. It's not random."
-      },
-      "ladders": {
-        "navTitle": "Ladders",
-        "title": "Why do we use ladders so extensively?",
-        "description": "Because ladders are great to manage high volumes and at the same time keep neural and metabolic fatigue low."
+      "flexible": {
+        "title": "Flexible",
+        "description": "Sessions can be moved within a week, weeks within a month. The system adapts to your life."
       }
     },
-    "price": {
-      "title": "Price",
-      "sidebar1": "",
-      "sidebar2": "",
-      "base": {
-        "navTitle": "Base Price",
-        "title": "Base Price",
-        "amount": "39 USD / EUR per lift per month",
-        "exampleIntro": "So e.g.:",
-        "example1": "2 month program for 3 powerlifts: 39×3×2 = 234 USD / EUR",
-        "example2": "3 month program for 3 powerlifts: 39×3×3 = 351 USD / EUR"
-      }
+    "quote": {
+      "text": "Lift as heavy as possible, as much volume as possible, while remaining as fresh as possible.",
+      "author": "— Steve Freides"
     },
-    "about": {
-      "title": "About",
-      "sidebar1": "",
-      "sidebar2": "",
-      "intro": {
-        "navTitle": "Marcel Balas",
-        "title": "Marcel Balas",
-        "description": "Marcel Balas runs StrongCode. Background:",
-        "point1": "Software developer (high-performance computing)",
-        "point2": "Gym owner",
-        "point3": "Strength coach",
-        "point4": "Head of a powerlifting team"
-      },
-      "vision": {
-        "navTitle": "StrongCode Vision",
-        "title": "Vision",
-        "description": "Programs are calculated first, then reviewed and adjusted by a coach. Numbers plus experience."
-      }
+    "pricing": {
+      "titleLine1": "PRICING",
+      "amount": "39",
+      "currency": "USD / EUR",
+      "unit": "per lift per month",
+      "example1": "2 months × 3 lifts = 234 USD / EUR",
+      "example2": "3 months × 3 lifts = 351 USD / EUR"
     },
-    "cta": {
-      "title": "Interested?",
+    "coach": {
+      "titleLine1": "YOUR",
+      "titleLine2": "COACH",
+      "name": "Marcel Balas",
+      "description": "Programs are calculated first, then reviewed and adjusted by a coach. Numbers plus experience from a process that has produced hundreds of programs.",
+      "point1": "Software developer (HPC)",
+      "point2": "Gym owner",
+      "point3": "Strength coach",
+      "point4": "Plan Strong™ coach"
+    },
+    "ctaSection": {
+      "titleLine1": "ARE YOU",
+      "titleLine2": "INTERESTED?",
       "description": "Fill out the survey. We'll review your numbers and get back to you.",
-      "buttonText": "Start Survey (10-15 min)"
+      "button": "Start Survey"
+    },
+    "learnMore": {
+      "intro": "More about StrongCode →",
+      "features": "All features →",
+      "howItWorks": "How exactly it works →",
+      "lookInside": "Look inside →",
+      "about": "More about us →"
     },
     "footer": {
       "copyright": "© 2025 StrongCode 60. Based on PlanStrong™ methodology."
+    }
+  },
+  "introPage": {
+    "titleLine1": "INTRODUCTION TO",
+    "titleLine2": "STRONGCODE",
+    "what": {
+      "title": "WHAT IS STRONGCODE",
+      "description": "StrongCode is built on the Plan Strong™ methodology — the programming system developed from Soviet weightlifting research. Volume and intensity are planned across months, weeks, and sessions according to specific distribution principles. The result: continuous strength gains without grinding yourself into the ground."
+    },
+    "who": {
+      "title": "WHO IS IT FOR",
+      "description": "This is not a beginner program. StrongCode is for lifters who have plateaued on linear progression and need smarter programming to keep moving forward:",
+      "point1": "Have mastered proper technique in their chosen lifts",
+      "point2": "Have established baseline 1RMs that haven't improved on linear progression",
+      "point3": "Want to break through plateaus in any of these lifts:",
+      "lifts": {
+        "powerlifts": "Powerlifts (squat, bench press, deadlift)",
+        "militaryPress": "Military press (barbell or kettlebell)",
+        "kettlebellSquat": "Kettlebell squat",
+        "pullups": "Weighted pull-ups"
+      }
+    },
+    "expect": {
+      "title": "WHAT TO EXPECT",
+      "paragraph1": "Expect steady progress over months, not dramatic peaks followed by burnout. You will rarely train to failure. You will lift heavy weights more often than you're used to — but leave the gym feeling capable of more.",
+      "paragraph2": "Can we promise exceptional results? No. Outcomes depend on many factors outside the program.",
+      "paragraph3": "Results depend on recovery. Sleep, stress management, and nutrition matter — the program can't fix those for you."
+    }
+  },
+  "featuresPage": {
+    "titleLine1": "PROGRAM",
+    "titleLine2": "FEATURES",
+    "tailored": {
+      "title": "INDIVIDUALLY TAILORED",
+      "description": "Your program is calculated from your numbers — current 1RMs, training history, recovery capacity, available time. Two lifters with different profiles will get different programs. There are no templates."
+    },
+    "unique": {
+      "title": "UNIQUE",
+      "paragraph1": "If you've only trained with fixed set × rep schemes, this will look different. Volume and intensity vary between sessions, weeks, and months — sometimes dramatically.",
+      "paragraph2": "Key differences from traditional programs:",
+      "point1": "High variability of volume (between sessions, weeks, and months)",
+      "point2": "Volume and intensity are planned independently",
+      "point3": "Multiple intensity zones in each workout",
+      "paragraph3": "In a single session, you might work at 65%, 80%, and 90%. The volume at each zone shifts from session to session and week to week according to distribution rules — not randomly."
+    },
+    "variety": {
+      "title": "VARIETY",
+      "description": "You won't do the same workout twice in a training block. The variability is built into the system."
+    },
+    "longterm": {
+      "title": "LONG TERM",
+      "paragraph1": "If you provide correct data, you should never train to failure. This alone significantly lowers the probability of injuries.",
+      "paragraph2": "Volume waves up and down across weeks. This prevents the accumulation of fatigue that eventually stops progress on most programs."
+    },
+    "hypertrophy": {
+      "title": "HYPERTROPHY?",
+      "description": "Want more muscle? We shift the parameters. Want pure strength? Different settings. The system adapts to your goal."
+    },
+    "benefits": {
+      "title": "BENEFITS",
+      "point1": "Flexible scheduling — sessions can be moved within a week, weeks within a month.",
+      "point2": "Variety of rep ranges at a given load removes psychological barriers associated with heavy weights.",
+      "point3": "Submaximal efforts. High volume without grinding.",
+      "point4": "Gains that stick.",
+      "point5": "Fewer overuse injuries and setbacks.",
+      "point6": "Frequent heavy singles build confidence and consistency.",
+      "point7": "You stay close to your peak year-round. When you need to perform, the taper is short."
+    }
+  },
+  "howItWorksPage": {
+    "titleLine1": "HOW IT",
+    "titleLine2": "WORKS",
+    "inputs": {
+      "title": "INPUTS",
+      "paragraph1": "You fill out a detailed questionnaire. We collect your 1RMs, training history, volume tolerance, recovery capacity, schedule constraints. From this data, program parameters are calculated.",
+      "paragraph2": "The numbers come from calculations. The program comes from the coach — someone who has built hundreds of these plans and knows what works.",
+      "buttonText": "Start Survey (10–15 min)"
+    },
+    "result": {
+      "title": "RESULT",
+      "paragraph1": "Minimum program length is 2 months: preparatory phase plus peak.",
+      "paragraph2": "Longer prep phases (3+ months) produce better results — more time to build strength before peaking."
+    }
+  },
+  "lookInsidePage": {
+    "titleLine1": "LOOK",
+    "titleLine2": "INSIDE",
+    "beginners": {
+      "title": "WHY NOT FOR BEGINNERS?",
+      "description": "For beginners, progress is largely a function of weight on the bar. The programming is simple: keep volume steady, add weight. As you advance, progress depends more on volume and its distribution across sessions, weeks, and months. The more advanced you are, the more programming matters. That's where this system earns its value."
+    },
+    "model": {
+      "title": "LINEAR, WAVE, AND DYNAMIC MODEL",
+      "description": "Linear and wave periodization tie volume and intensity together inversely. In StrongCode, they're independent. This allows combinations that traditional models can't produce."
+    },
+    "factors": {
+      "title": "WHAT WE TRACK",
+      "paragraph1": "Programming decisions are based on measurable variables across different time scales.",
+      "paragraph2": "We track:",
+      "point1": "volume per year / month / week / session",
+      "point2": "average intensity per year / month / week / session",
+      "point3": "distribution of the volume between months / in a month / week / session",
+      "point4": "distribution of the average intensity between months / in a month / week / session"
+    },
+    "dynamics": {
+      "title": "TRAINING DYNAMICS",
+      "paragraph1": "Volume and intensity change throughout the training cycle. The changes are calculated based on your profile.",
+      "paragraph2": "Both volume and average intensity vary:",
+      "point1Title": "From session to session:",
+      "point1": "Each workout is different — heavy, moderate, and light weights with varying volumes.",
+      "point2Title": "From week to week:",
+      "point2": "Volume shifts can be dramatic. Week 1: high, week 2: low, week 3: high, week 4: moderate.",
+      "point3Title": "From month to month:",
+      "point3": "Long-term progression is designed to peak when it matters — competition or a PR attempt.",
+      "keyTakeaway": "The variation follows rules. It's not random."
+    },
+    "ladders": {
+      "title": "WHY DO WE USE LADDERS SO EXTENSIVELY?",
+      "description": "Because ladders are great to manage high volumes and at the same time keep neural and metabolic fatigue low."
+    }
+  },
+  "aboutPage": {
+    "titleLine1": "ABOUT",
+    "titleLine2": "US",
+    "intro": {
+      "title": "MARCEL BALAS",
+      "description": "Marcel Balas runs StrongCode. Background:",
+      "point1": "Software developer (high-performance computing)",
+      "point2": "Gym owner",
+      "point3": "Strength coach",
+      "point4": "Plan Strong™ coach"
+    },
+    "vision": {
+      "title": "VISION",
+      "description": "Programs are calculated first, then reviewed and adjusted by a coach. Numbers plus experience."
     }
   },
   "survey": {
