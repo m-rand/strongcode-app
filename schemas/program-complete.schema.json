@@ -9,7 +9,7 @@
     "schema_version": {
       "type": "string",
       "description": "Schema version",
-      "enum": ["1.0", "1.1"]
+      "enum": ["1.0", "1.1", "1.2"]
     },
     "meta": {
       "type": "object",
@@ -175,12 +175,22 @@
           "type": "integer",
           "minimum": 2,
           "maximum": 5,
-          "description": "Number of training sessions per week"
+          "description": "Default sessions per week (used as fallback when weekly_plan is not specified)"
         },
         "session_distribution": {
           "type": "string",
-          "description": "Session volume distribution pattern",
+          "description": "Default session volume distribution pattern (used as fallback when weekly_plan is not specified)",
           "examples": ["d25_33_42", "d40_60"]
+        },
+        "weekly_plan": {
+          "type": "object",
+          "description": "Per-week session configuration. Overrides sessions_per_week and session_distribution when present. Allows varying session count and distribution pattern per week.",
+          "patternProperties": {
+            "^week_[1-6]$": {
+              "$ref": "#/definitions/weekPlan"
+            }
+          },
+          "additionalProperties": false
         }
       }
     },
@@ -375,6 +385,23 @@
               "rpe": { "type": "number" }
             }
           }
+        }
+      }
+    },
+    "weekPlan": {
+      "type": "object",
+      "required": ["sessions", "distribution"],
+      "properties": {
+        "sessions": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 5,
+          "description": "Number of training sessions this week"
+        },
+        "distribution": {
+          "type": "string",
+          "description": "Session volume distribution code for this week",
+          "examples": ["d25_33_42", "d40_60", "d20_35_45", "d15_22_28_35", "d10_15_20_25_30"]
         }
       }
     }

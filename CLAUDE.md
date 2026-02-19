@@ -238,6 +238,7 @@ bcryptjs
 - i18n (CZ/EN) with theme switching (light/dark)
 
 ### ⬜ Planned / Not Started
+- **AI Program Generation** — generate training programs via LLM prompt (see AGENTS.md)
 - Python backend (FastAPI) for calculation scripts
 - Tests — none exist yet
 - RPE recording by clients in sessions
@@ -245,3 +246,32 @@ bcryptjs
 - Image assets for landing page (currently placeholder backgrounds)
 - SEO metadata for subpages
 - Merge `feature/turso-database` → `main`
+
+## AI Program Generation
+
+Programs can be generated via structured LLM prompts. The system prompt describes the Chernyak methodology, volume distribution patterns, session distributions, rep ranges, and all domain rules. The LLM outputs a complete program JSON conforming to the schema.
+
+### Available AI Providers
+- **Claude (Anthropic)** — best for structured JSON output, strong at following complex domain rules
+- **OpenAI (GPT-4o)** — alternative, good structured output with JSON mode
+- **Vercel AI SDK** — unified API layer for both providers, integrates cleanly with Next.js
+
+### Architecture
+The prompt-based generation works as a pipeline:
+1. **System prompt** — domain rules, patterns, constraints (loaded from `scripts/constants.py` definitions)
+2. **User input** — client profile (1RM, skill level), block type, volume targets, sessions per week
+3. **LLM generates** — complete program JSON with `input`, `calculated`, and `sessions` sections
+4. **Validation** — output validated against `schemas/program-complete.schema.json`
+5. **Coach review** — admin reviews/adjusts before saving to DB
+
+### Key Files for Prompt Construction
+- `scripts/constants.py` — all Chernyak patterns, session distributions, volume distribution variants, rep ranges
+- `schemas/program-complete.schema.json` — JSON schema the output must conform to
+- `schemas/v1.0/program.schema.json` — versioned schema reference
+
+### Session Model
+- Sessions are abstract units labeled `A`, `B`, `C`, `D`... — **never day names**
+- The client decides which days to train on
+- `sessions_per_week` and `session_distribution` can vary per lift and per week
+- Session distribution codes: `d25_33_42`, `d40_60`, etc. — defined in constants
+- Volume Distribution Variants: 16 patterns with skill-level adjustments (base/advanced/elite)
