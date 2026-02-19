@@ -1,0 +1,1658 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "filename": "2025-01-01_katerina-balasova_prep_all_lifts.json",
+    "created_at": "2026-02-19T13:16:52.759607Z",
+    "created_by": "Excel import",
+    "status": "active",
+    "notes": "Converted from 2025-01 Katka SC60.xlsx",
+    "source_file": "2025-01 Katka SC60.xlsx"
+  },
+  "client": {
+    "name": "Kateřina Balášová",
+    "delta": "advanced",
+    "one_rm": {
+      "squat": 140.0,
+      "bench_press": 77.5,
+      "deadlift": 165.0
+    }
+  },
+  "program_info": {
+    "block": "prep",
+    "start_date": "2025-01-01",
+    "end_date": "2025-01-28",
+    "weeks": 4
+  },
+  "input": {
+    "squat": {
+      "volume": 220,
+      "rounding": 2.5,
+      "weights": {
+        "55": 80.0,
+        "65": 90.0,
+        "75": 105.0,
+        "85": 120.0,
+        "90": 130.0,
+        "95": 135.0
+      },
+      "intensity_distribution": {
+        "75_percent": 42.0,
+        "85_percent": 18.0,
+        "90_total_reps": 3,
+        "95_total_reps": 0
+      },
+      "volume_pattern_main": "3a",
+      "volume_pattern_8190": "2a",
+      "sessions_per_week": 3,
+      "session_distribution": "d25_33_42"
+    },
+    "bench_press": {
+      "volume": 250,
+      "rounding": 2.5,
+      "weights": {
+        "55": 45.0,
+        "65": 50.0,
+        "75": 60.0,
+        "85": 67.5,
+        "90": 72.5,
+        "95": 75.0
+      },
+      "intensity_distribution": {
+        "75_percent": 45.0,
+        "85_percent": 27.0,
+        "90_total_reps": 4,
+        "95_total_reps": 1
+      },
+      "volume_pattern_main": "2a",
+      "volume_pattern_8190": "1-3a",
+      "sessions_per_week": 3,
+      "session_distribution": "d25_33_42"
+    },
+    "deadlift": {
+      "volume": 2,
+      "rounding": 2.5,
+      "weights": {
+        "55": 90.0,
+        "65": 110.0,
+        "75": 125.0,
+        "85": 140.0,
+        "90": 152.5,
+        "95": 157.5
+      },
+      "intensity_distribution": {
+        "75_percent": 45.0,
+        "85_percent": 22.0,
+        "90_total_reps": 2,
+        "95_total_reps": 0
+      },
+      "volume_pattern_main": "4-2a",
+      "volume_pattern_8190": "3c",
+      "sessions_per_week": 3,
+      "session_distribution": "d25_33_42"
+    }
+  },
+  "calculated": {
+    "squat": {
+      "_summary": {
+        "total_nl": 220,
+        "actual_nl": 220,
+        "block_ari": 73.03,
+        "zone_totals": {
+          "55": 0,
+          "65": 85,
+          "75": 92,
+          "85": 40,
+          "90": 3,
+          "95": 0
+        },
+        "weights": {
+          "55": 80.0,
+          "65": 90.0,
+          "75": 105.0,
+          "85": 120.0,
+          "90": 130.0,
+          "95": 135.0
+        }
+      },
+      "week_1": {
+        "total_reps": 37,
+        "zones": {
+          "55": 0,
+          "65": 14,
+          "75": 16,
+          "85": 7,
+          "90": 0,
+          "95": 0
+        },
+        "ari": 73.1
+      },
+      "week_2": {
+        "total_reps": 48,
+        "zones": {
+          "55": 0,
+          "65": 19,
+          "75": 15,
+          "85": 13,
+          "90": 1,
+          "95": 0
+        },
+        "ari": 74.1
+      },
+      "week_3": {
+        "total_reps": 73,
+        "zones": {
+          "55": 0,
+          "65": 28,
+          "75": 33,
+          "85": 11,
+          "90": 1,
+          "95": 0
+        },
+        "ari": 72.9
+      },
+      "week_4": {
+        "total_reps": 62,
+        "zones": {
+          "55": 0,
+          "65": 24,
+          "75": 28,
+          "85": 9,
+          "90": 1,
+          "95": 0
+        },
+        "ari": 72.9
+      }
+    },
+    "bench_press": {
+      "_summary": {
+        "total_nl": 250,
+        "actual_nl": 249,
+        "block_ari": 77.01,
+        "zone_totals": {
+          "55": 0,
+          "65": 64,
+          "75": 113,
+          "85": 67,
+          "90": 4,
+          "95": 1
+        },
+        "weights": {
+          "55": 45.0,
+          "65": 50.0,
+          "75": 60.0,
+          "85": 67.5,
+          "90": 72.5,
+          "95": 75.0
+        }
+      },
+      "week_1": {
+        "total_reps": 42,
+        "zones": {
+          "55": 0,
+          "65": 11,
+          "75": 19,
+          "85": 11,
+          "90": 1,
+          "95": 0
+        },
+        "ari": 75.4
+      },
+      "week_2": {
+        "total_reps": 81,
+        "zones": {
+          "55": 0,
+          "65": 21,
+          "75": 37,
+          "85": 22,
+          "90": 1,
+          "95": 0
+        },
+        "ari": 75.3
+      },
+      "week_3": {
+        "total_reps": 70,
+        "zones": {
+          "55": 0,
+          "65": 18,
+          "75": 32,
+          "85": 19,
+          "90": 1,
+          "95": 0
+        },
+        "ari": 75.4
+      },
+      "week_4": {
+        "total_reps": 56,
+        "zones": {
+          "55": 0,
+          "65": 14,
+          "75": 25,
+          "85": 15,
+          "90": 1,
+          "95": 1
+        },
+        "ari": 75.8
+      }
+    },
+    "deadlift": {
+      "_summary": {
+        "total_nl": 2,
+        "actual_nl": 182,
+        "block_ari": 75.04,
+        "zone_totals": {
+          "55": 0,
+          "65": 58,
+          "75": 82,
+          "85": 40,
+          "90": 2,
+          "95": 0
+        },
+        "weights": {
+          "55": 90.0,
+          "65": 110.0,
+          "75": 125.0,
+          "85": 140.0,
+          "90": 152.5,
+          "95": 157.5
+        }
+      },
+      "week_1": {
+        "total_reps": 40,
+        "zones": {
+          "55": 0,
+          "65": 13,
+          "75": 18,
+          "85": 9,
+          "90": 0,
+          "95": 0
+        },
+        "ari": 74.0
+      },
+      "week_2": {
+        "total_reps": 51,
+        "zones": {
+          "55": 0,
+          "65": 16,
+          "75": 23,
+          "85": 11,
+          "90": 1,
+          "95": 0
+        },
+        "ari": 74.4
+      },
+      "week_3": {
+        "total_reps": 31,
+        "zones": {
+          "55": 0,
+          "65": 10,
+          "75": 14,
+          "85": 7,
+          "90": 0,
+          "95": 0
+        },
+        "ari": 74.0
+      },
+      "week_4": {
+        "total_reps": 60,
+        "zones": {
+          "55": 0,
+          "65": 19,
+          "75": 27,
+          "85": 13,
+          "90": 1,
+          "95": 0
+        },
+        "ari": 74.3
+      }
+    }
+  },
+  "sessions": {
+    "A": {
+      "week_1": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 90.0,
+                "reps": 5,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 57.5,
+                "reps": 5,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 65.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 65.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant max grip width"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 132.5,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 132.5,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 132.5,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 132.5,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 132.5,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              }
+            ]
+          }
+        ]
+      },
+      "week_2": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 80.0,
+                "reps": 5,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp paused"
+              },
+              {
+                "weight": 80.0,
+                "reps": 5,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp paused"
+              },
+              {
+                "weight": 95.0,
+                "reps": 2,
+                "zone_pct": 0.75,
+                "variant": "Comp paused"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 47.5,
+                "reps": 5,
+                "zone_pct": 0.6451612903,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 57.5,
+                "reps": 5,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 65.0,
+                "reps": 2,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 65.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 57.5,
+                "reps": 5,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant max grip width"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              }
+            ]
+          }
+        ]
+      },
+      "week_3": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 80.0,
+                "reps": 5,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp paused"
+              },
+              {
+                "weight": 95.0,
+                "reps": 5,
+                "zone_pct": 0.75,
+                "variant": "Comp paused"
+              },
+              {
+                "weight": 107.5,
+                "reps": 3,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp paused"
+              },
+              {
+                "weight": 95.0,
+                "reps": 5,
+                "zone_pct": 0.75,
+                "variant": "Comp paused"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 47.5,
+                "reps": 4,
+                "zone_pct": 0.6451612903,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 57.5,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 65.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 57.5,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 65.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant max grip width"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 125.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 125.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 125.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 125.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              }
+            ]
+          }
+        ]
+      },
+      "week_4": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 80.0,
+                "reps": 6,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp paused"
+              },
+              {
+                "weight": 95.0,
+                "reps": 5,
+                "zone_pct": 0.75,
+                "variant": "Comp paused"
+              },
+              {
+                "weight": 107.5,
+                "reps": 4,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp paused"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 50.0,
+                "reps": 5,
+                "zone_pct": 0.6451612903,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 60.0,
+                "reps": 5,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant max grip width"
+              },
+              {
+                "weight": 60.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant max grip width"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              },
+              {
+                "weight": 100.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Block / Rack"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "B": {
+      "week_1": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 90.0,
+                "reps": 5,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 120.0,
+                "reps": 2,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 120.0,
+                "reps": 2,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 60.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 67.5,
+                "reps": 2,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 72.5,
+                "reps": 1,
+                "zone_pct": 0.935483871,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 60.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 67.5,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 110.0,
+                "reps": 5,
+                "zone_pct": 0.6666666667,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 125.0,
+                "reps": 4,
+                "zone_pct": 0.7575757576,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Comp Variant"
+              }
+            ]
+          }
+        ]
+      },
+      "week_2": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 80.0,
+                "reps": 5,
+                "zone_pct": 0.6428571429,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 95.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 107.5,
+                "reps": 4,
+                "zone_pct": 0.8571428571,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 107.5,
+                "reps": 4,
+                "zone_pct": 0.8571428571,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 95.0,
+                "reps": 3,
+                "zone_pct": 0.75,
+                "variant": "High Bar"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 50.0,
+                "reps": 5,
+                "zone_pct": 0.6451612903,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 60.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 67.5,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 72.5,
+                "reps": 1,
+                "zone_pct": 0.935483871,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 60.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 67.5,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 60.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 67.5,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Comp variant"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 100.0,
+                "reps": 6,
+                "zone_pct": 0.6666666667,
+                "variant": "Sumo"
+              },
+              {
+                "weight": 112.5,
+                "reps": 4,
+                "zone_pct": 0.7575757576,
+                "variant": "Sumo"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Sumo"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Sumo"
+              },
+              {
+                "weight": 100.0,
+                "reps": 6,
+                "zone_pct": 0.6666666667,
+                "variant": "Sumo"
+              }
+            ]
+          }
+        ]
+      },
+      "week_3": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 80.0,
+                "reps": 6,
+                "zone_pct": 0.6428571429,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 95.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 107.5,
+                "reps": 3,
+                "zone_pct": 0.8571428571,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 80.0,
+                "reps": 5,
+                "zone_pct": 0.6428571429,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 95.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 107.5,
+                "reps": 3,
+                "zone_pct": 0.8571428571,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 80.0,
+                "reps": 6,
+                "zone_pct": 0.6428571429,
+                "variant": "High Bar"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 55.0,
+                "reps": 4,
+                "zone_pct": 0.6451612903,
+                "variant": "Board"
+              },
+              {
+                "weight": 65.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Board"
+              },
+              {
+                "weight": 75.0,
+                "reps": 2,
+                "zone_pct": 0.8709677419,
+                "variant": "Board"
+              },
+              {
+                "weight": 80.0,
+                "reps": 1,
+                "zone_pct": 0.935483871,
+                "variant": "Board"
+              },
+              {
+                "weight": 75.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Board"
+              },
+              {
+                "weight": 75.0,
+                "reps": 2,
+                "zone_pct": 0.8709677419,
+                "variant": "Board"
+              },
+              {
+                "weight": 75.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Board"
+              },
+              {
+                "weight": 65.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Board"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 87.5,
+                "reps": 5,
+                "zone_pct": 0.6666666667,
+                "variant": "Romanian Deadlift"
+              },
+              {
+                "weight": 100.0,
+                "reps": 4,
+                "zone_pct": 0.7575757576,
+                "variant": "Romanian Deadlift"
+              },
+              {
+                "weight": 112.5,
+                "reps": 4,
+                "zone_pct": 0.8484848485,
+                "variant": "Romanian Deadlift"
+              }
+            ]
+          }
+        ]
+      },
+      "week_4": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 80.0,
+                "reps": 7,
+                "zone_pct": 0.6428571429,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 95.0,
+                "reps": 7,
+                "zone_pct": 0.75,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 95.0,
+                "reps": 7,
+                "zone_pct": 0.75,
+                "variant": "High Bar"
+              },
+              {
+                "weight": 80.0,
+                "reps": 6,
+                "zone_pct": 0.6428571429,
+                "variant": "High Bar"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 50.0,
+                "reps": 4,
+                "zone_pct": 0.6451612903,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 60.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 75.0,
+                "reps": 2,
+                "zone_pct": 0.8709677419,
+                "variant": "Board"
+              },
+              {
+                "weight": 80.0,
+                "reps": 1,
+                "zone_pct": 0.935483871,
+                "variant": "Board"
+              },
+              {
+                "weight": 82.5,
+                "reps": 1,
+                "zone_pct": 0.9677419355,
+                "variant": "Board"
+              },
+              {
+                "weight": 75.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Board"
+              },
+              {
+                "weight": 75.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Board"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 110.0,
+                "reps": 8,
+                "zone_pct": 0.6666666667,
+                "variant": "Romanian Deadlift"
+              },
+              {
+                "weight": 125.0,
+                "reps": 5,
+                "zone_pct": 0.7575757576,
+                "variant": "Romanian Deadlift"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Romanian Deadlift"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Romanian Deadlift"
+              },
+              {
+                "weight": 110.0,
+                "reps": 7,
+                "zone_pct": 0.6666666667,
+                "variant": "Romanian Deadlift"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "C": {
+      "week_1": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 90.0,
+                "reps": 4,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 120.0,
+                "reps": 3,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp variant"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 42.5,
+                "reps": 6,
+                "zone_pct": 0.6451612903,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 50.0,
+                "reps": 6,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 42.5,
+                "reps": 6,
+                "zone_pct": 0.6451612903,
+                "variant": "Larsen Mid-Grip"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 105.0,
+                "reps": 8,
+                "zone_pct": 0.6666666667,
+                "variant": "Sumo"
+              },
+              {
+                "weight": 120.0,
+                "reps": 4,
+                "zone_pct": 0.7575757576,
+                "variant": "Sumo"
+              }
+            ]
+          }
+        ]
+      },
+      "week_2": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 90.0,
+                "reps": 4,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 3,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 120.0,
+                "reps": 2,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 130.0,
+                "reps": 1,
+                "zone_pct": 0.9285714286,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 3,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 120.0,
+                "reps": 3,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp variant"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 42.5,
+                "reps": 6,
+                "zone_pct": 0.6451612903,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 50.0,
+                "reps": 5,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 50.0,
+                "reps": 5,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 57.5,
+                "reps": 4,
+                "zone_pct": 0.8709677419,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 57.5,
+                "reps": 4,
+                "zone_pct": 0.8709677419,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 42.5,
+                "reps": 5,
+                "zone_pct": 0.6451612903,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 50.0,
+                "reps": 5,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 110.0,
+                "reps": 4,
+                "zone_pct": 0.6666666667,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 125.0,
+                "reps": 3,
+                "zone_pct": 0.7575757576,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 140.0,
+                "reps": 2,
+                "zone_pct": 0.8484848485,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 152.5,
+                "reps": 1,
+                "zone_pct": 0.9242424242,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 125.0,
+                "reps": 4,
+                "zone_pct": 0.7575757576,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Comp Variant"
+              }
+            ]
+          }
+        ]
+      },
+      "week_3": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 90.0,
+                "reps": 6,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 120.0,
+                "reps": 2,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 130.0,
+                "reps": 1,
+                "zone_pct": 0.9285714286,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 3,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 42.5,
+                "reps": 5,
+                "zone_pct": 0.6451612903,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 50.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 50.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 57.5,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 42.5,
+                "reps": 5,
+                "zone_pct": 0.6451612903,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 50.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 50.0,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 110.0,
+                "reps": 5,
+                "zone_pct": 0.6666666667,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 125.0,
+                "reps": 3,
+                "zone_pct": 0.7575757576,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Comp Variant"
+              }
+            ]
+          }
+        ]
+      },
+      "week_4": {
+        "lifts": [
+          {
+            "lift": "squat",
+            "sets": [
+              {
+                "weight": 90.0,
+                "reps": 5,
+                "zone_pct": 0.6428571429,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 4,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 120.0,
+                "reps": 2,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 130.0,
+                "reps": 1,
+                "zone_pct": 0.9285714286,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 105.0,
+                "reps": 5,
+                "zone_pct": 0.75,
+                "variant": "Comp variant"
+              },
+              {
+                "weight": 120.0,
+                "reps": 3,
+                "zone_pct": 0.8571428571,
+                "variant": "Comp variant"
+              }
+            ]
+          },
+          {
+            "lift": "bench_press",
+            "sets": [
+              {
+                "weight": 47.5,
+                "reps": 5,
+                "zone_pct": 0.6451612903,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 57.5,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 57.5,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 65.0,
+                "reps": 2,
+                "zone_pct": 0.8709677419,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 65.0,
+                "reps": 3,
+                "zone_pct": 0.8709677419,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 65.0,
+                "reps": 2,
+                "zone_pct": 0.8709677419,
+                "variant": "Larsen Mid-Grip"
+              },
+              {
+                "weight": 57.5,
+                "reps": 4,
+                "zone_pct": 0.7741935484,
+                "variant": "Larsen Mid-Grip"
+              }
+            ]
+          },
+          {
+            "lift": "deadlift",
+            "sets": [
+              {
+                "weight": 110.0,
+                "reps": 4,
+                "zone_pct": 0.6666666667,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 125.0,
+                "reps": 2,
+                "zone_pct": 0.7575757576,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 140.0,
+                "reps": 1,
+                "zone_pct": 0.8484848485,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 152.5,
+                "reps": 1,
+                "zone_pct": 0.9242424242,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 140.0,
+                "reps": 3,
+                "zone_pct": 0.8484848485,
+                "variant": "Comp Variant"
+              },
+              {
+                "weight": 125.0,
+                "reps": 4,
+                "zone_pct": 0.7575757576,
+                "variant": "Comp Variant"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "session_assignments": {
+    "1": {
+      "1": [
+        "SQ A",
+        "BP A",
+        "DL A"
+      ],
+      "2": [
+        "BP B"
+      ],
+      "3": [
+        "SQ B",
+        "DL B"
+      ],
+      "4": [
+        "SQ C",
+        "BP C",
+        "DL C"
+      ]
+    }
+  }
+}

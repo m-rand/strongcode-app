@@ -15,7 +15,7 @@
     "logout": "Odhlásit"
   },
   "home": {
-    "brand": "StrongCode 60",
+    "brand": "StrongCode",
     "theme": {
       "light": "Světlý",
       "dark": "Tmavý",
@@ -25,6 +25,7 @@
       "titleLine1": "PROLOMTE",
       "titleLine2": "SVÁ PLATÓ",
       "titleLine3": "S NÁMI.",
+      "tagline": "Strength, calculated.",
       "subtitle": "Individuální silový program postavený na metodologii Plan Strong™. Objem a intenzita naplánované tak, abyste neustále sílili — bez toho, abyste se umlátili.",
       "cta": "Začít dotazník",
       "ctaNote": "Vyplnění trvá 10–15 min"
@@ -113,20 +114,21 @@
       "button": "Začít dotazník"
     },
     "learnMore": {
-      "intro": "Více o StrongCode →",
-      "features": "Všechny vlastnosti →",
-      "howItWorks": "Jak přesně to funguje →",
-      "lookInside": "Nahlédnout dovnitř →",
-      "about": "Více o nás →"
+      "intro": "Více o StrongCode",
+      "features": "Všechny vlastnosti",
+      "howItWorks": "Jak přesně to funguje",
+      "lookInside": "Nahlédnout dovnitř",
+      "about": "Více o nás"
     },
     "footer": {
-      "copyright": "© 2025 StrongCode 60. Založeno na metodologii PlanStrong™."
+      "copyright": "© 2025 StrongCode. Založeno na metodologii PlanStrong™."
     }
   },
   "introPage": {
     "title": "ÚVOD DO\nSTRONGCODE",
     "titleLine1": "ÚVOD DO",
     "titleLine2": "STRONGCODE",
+    "subtitle": "Silový programovací systém postavený na vědeckém výzkumu.",
     "what": {
       "title": "CO JE STRONGCODE",
       "description": "StrongCode je postaven na metodologii Plan Strong™ — programovacím systému vyvinutém na základě sovětského výzkumu vzpírání. Objem a intenzita jsou plánovány napříč měsíci, týdny a tréninky podle specifických distribučních principů. Výsledek: kontinuální silové zisky bez toho, abyste se umlátili."
@@ -154,6 +156,7 @@
   "featuresPage": {
     "titleLine1": "VLASTNOSTI",
     "titleLine2": "PROGRAMU",
+    "subtitle": "Co dělá StrongCode jiným než ostatní programy.",
     "tailored": {
       "title": "INDIVIDUÁLNĚ PŘIZPŮSOBENÝ",
       "description": "Váš program je vypočítán z vašich čísel — aktuální 1RM, tréninková historie, regenerační kapacita, dostupný čas. Dva cvičenci s různými profily dostanou různé programy. Žádné šablony."
@@ -194,6 +197,7 @@
   "howItWorksPage": {
     "titleLine1": "JAK TO",
     "titleLine2": "FUNGUJE",
+    "subtitle": "Od dotazníku k hotovému programu.",
     "inputs": {
       "title": "VSTUPY",
       "paragraph1": "Vyplníte podrobný dotazník. Sbíráme vaše 1RM, tréninkovou historii, toleranci objemu, regenerační kapacitu, časová omezení. Z těchto dat se vypočítají parametry programu.",
@@ -209,6 +213,7 @@
   "lookInsidePage": {
     "titleLine1": "NAHLÉDNUTÍ",
     "titleLine2": "DOVNITŘ",
+    "subtitle": "Principy, které stojí za každým programem.",
     "beginners": {
       "title": "PROČ NE PRO ZAČÁTEČNÍKY?",
       "description": "Pro začátečníky je progres převážně funkcí váhy na tyči. Programování je jednoduché: udržujte objem, přidávejte váhu. Jak postupujete, progres více závisí na objemu a jeho distribuci napříč tréninky, týdny a měsíci. Čím pokročilejší jste, tím víc záleží na programování. To je místo, kde tento systém prokazuje svou hodnotu."
@@ -246,6 +251,7 @@
   "aboutPage": {
     "titleLine1": "O",
     "titleLine2": "NÁS",
+    "subtitle": "Kdo stojí za StrongCode.",
     "intro": {
       "title": "MARCEL BALAS",
       "description": "Marcel Balas provozuje StrongCode. Pozadí:",
@@ -373,7 +379,7 @@
     "required": "*"
   },
   "login": {
-    "title": "StrongCode 60",
+    "title": "StrongCode",
     "subtitle": "Přihlášení do systému",
     "email": "Email",
     "password": "Heslo",

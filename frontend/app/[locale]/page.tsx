@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-import { ThemeSwitcher } from '@/components/ThemeSwitcher'
+import { SubpageHeader } from '@/components/SubpageHeader'
 
 export default function HomePage() {
   const t = useTranslations('home')
@@ -12,45 +11,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
 
-      {/* ──────────────────────── HEADER ──────────────────────── */}
-      <header
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md"
-        style={{
-          background: 'rgba(var(--bg-primary-rgb), 0.92)',
-          borderBottom: '1px solid var(--border-color)',
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <a href="#" className="text-xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            {t('brand')}
-          </a>
-
-          <nav className="hidden md:flex items-center gap-8 text-sm font-light tracking-wide uppercase">
-            {(['features', 'howItWorks', 'price', 'about'] as const).map((key) => (
-              <a
-                key={key}
-                href={`#${key === 'howItWorks' ? 'how-it-works' : key}`}
-                className="transition-opacity hover:opacity-60"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {tNav(key)}
-              </a>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <ThemeSwitcher />
-            <LanguageSwitcher />
-            <Link
-              href="/login"
-              className="text-sm font-light transition-opacity hover:opacity-60 ml-2"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {tNav('login')}
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SubpageHeader />
 
       {/* ──────────────────────── HERO ──────────────────────── */}
       <section className="min-h-screen pt-16 px-6 flex items-center">
@@ -63,6 +24,10 @@ export default function HomePage() {
                 <span style={{ color: 'var(--accent-primary)' }}>{t('hero.titleLine2')}</span><br />
                 {t('hero.titleLine3')}
               </h1>
+
+              <p className="text-sm font-bold uppercase tracking-[0.25em]" style={{ color: 'var(--text-secondary)' }}>
+                {t('hero.tagline')}
+              </p>
 
               <p className="text-subtitle max-w-lg">
                 {t('hero.subtitle')}
@@ -146,10 +111,13 @@ export default function HomePage() {
 
               <Link
                 href="/intro"
-                className="block text-sm font-light transition-opacity hover:opacity-60 mt-2"
+                className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
                 style={{ color: 'var(--accent-primary)' }}
               >
-                {t('learnMore.intro')}
+                <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.intro')}</span>
+                <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </Link>
             </div>
 
@@ -210,10 +178,13 @@ export default function HomePage() {
             </Link>
             <Link
               href="/how-it-works"
-              className="text-sm font-light transition-opacity hover:opacity-60"
+              className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
               style={{ color: 'var(--accent-primary)' }}
             >
-              {t('learnMore.howItWorks')}
+              <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.howItWorks')}</span>
+              <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
             </Link>
           </div>
         </div>
@@ -258,10 +229,13 @@ export default function HomePage() {
 
               <Link
                 href="/look-inside"
-                className="text-sm font-light transition-opacity hover:opacity-60"
+                className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
                 style={{ color: 'var(--accent-primary)' }}
               >
-                {t('learnMore.lookInside')}
+                <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.lookInside')}</span>
+                <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </Link>
             </div>
           </div>
@@ -390,10 +364,13 @@ export default function HomePage() {
 
               <Link
                 href="/about"
-                className="text-sm font-light transition-opacity hover:opacity-60"
+                className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
                 style={{ color: 'var(--accent-primary)' }}
               >
-                {t('learnMore.about')}
+                <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.about')}</span>
+                <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </Link>
             </div>
 
@@ -443,9 +420,12 @@ export default function HomePage() {
 
       {/* ──────────────────────── FOOTER ──────────────────────── */}
       <footer className="border-t py-8" style={{ borderColor: 'var(--border-color)' }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-meta">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-meta">
             {t('footer.copyright')}
+          </p>
+          <p className="text-sm font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--text-secondary)' }}>
+            {t('hero.tagline')}
           </p>
         </div>
       </footer>

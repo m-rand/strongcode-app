@@ -15,7 +15,7 @@
     "logout": "Logout"
   },
   "home": {
-    "brand": "StrongCode 60",
+    "brand": "StrongCode",
     "theme": {
       "light": "Light",
       "dark": "Dark",
@@ -25,6 +25,7 @@
       "titleLine1": "BREAK",
       "titleLine2": "YOUR PLATEAUS",
       "titleLine3": "WITH US.",
+      "tagline": "Strength, calculated.",
       "subtitle": "Individualized strength programming built on the Plan Strong™ methodology. Volume and intensity planned so you keep getting stronger — without grinding yourself into the ground.",
       "cta": "Start Survey",
       "ctaNote": "Takes 10–15 minutes"
@@ -113,19 +114,20 @@
       "button": "Start Survey"
     },
     "learnMore": {
-      "intro": "More about StrongCode →",
-      "features": "All features →",
-      "howItWorks": "How exactly it works →",
-      "lookInside": "Look inside →",
-      "about": "More about us →"
+      "intro": "More about StrongCode",
+      "features": "All features",
+      "howItWorks": "How exactly it works",
+      "lookInside": "Look inside",
+      "about": "More about us"
     },
     "footer": {
-      "copyright": "© 2025 StrongCode 60. Based on PlanStrong™ methodology."
+      "copyright": "© 2025 StrongCode. Based on PlanStrong™ methodology."
     }
   },
   "introPage": {
     "titleLine1": "INTRODUCTION TO",
     "titleLine2": "STRONGCODE",
+    "subtitle": "A strength programming system built on scientific research.",
     "what": {
       "title": "WHAT IS STRONGCODE",
       "description": "StrongCode is built on the Plan Strong™ methodology — the programming system developed from Soviet weightlifting research. Volume and intensity are planned across months, weeks, and sessions according to specific distribution principles. The result: continuous strength gains without grinding yourself into the ground."
@@ -153,6 +155,7 @@
   "featuresPage": {
     "titleLine1": "PROGRAM",
     "titleLine2": "FEATURES",
+    "subtitle": "What makes StrongCode different from other programs.",
     "tailored": {
       "title": "INDIVIDUALLY TAILORED",
       "description": "Your program is calculated from your numbers — current 1RMs, training history, recovery capacity, available time. Two lifters with different profiles will get different programs. There are no templates."
@@ -193,6 +196,7 @@
   "howItWorksPage": {
     "titleLine1": "HOW IT",
     "titleLine2": "WORKS",
+    "subtitle": "From questionnaire to finished program.",
     "inputs": {
       "title": "INPUTS",
       "paragraph1": "You fill out a detailed questionnaire. We collect your 1RMs, training history, volume tolerance, recovery capacity, schedule constraints. From this data, program parameters are calculated.",
@@ -208,6 +212,7 @@
   "lookInsidePage": {
     "titleLine1": "LOOK",
     "titleLine2": "INSIDE",
+    "subtitle": "The principles behind every program.",
     "beginners": {
       "title": "WHY NOT FOR BEGINNERS?",
       "description": "For beginners, progress is largely a function of weight on the bar. The programming is simple: keep volume steady, add weight. As you advance, progress depends more on volume and its distribution across sessions, weeks, and months. The more advanced you are, the more programming matters. That's where this system earns its value."
@@ -245,6 +250,7 @@
   "aboutPage": {
     "titleLine1": "ABOUT",
     "titleLine2": "US",
+    "subtitle": "Who is behind StrongCode.",
     "intro": {
       "title": "MARCEL BALAS",
       "description": "Marcel Balas runs StrongCode. Background:",
@@ -372,7 +378,7 @@
     "required": "*"
   },
   "login": {
-    "title": "StrongCode 60",
+    "title": "StrongCode",
     "subtitle": "System Login",
     "email": "Email",
     "password": "Password",
