@@ -117,3 +117,29 @@ export const auditLog = sqliteTable("audit_log", {
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
 });
+
+// ─── Training Log ───────────────────────────────────────────
+// Client records actual performance per set (RPE, actual weight/reps, notes).
+// Program (prescription) stays untouched — this table tracks what was actually done.
+export const trainingLog = sqliteTable("training_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  programId: integer("program_id")
+    .notNull()
+    .references(() => programs.id, { onDelete: "cascade" }),
+  week: integer("week").notNull(), // 1-4 (or up to 6)
+  session: text("session").notNull(), // "A", "B", "C", "D"
+  lift: text("lift").notNull(), // "squat", "bench_press", "deadlift"
+  setIndex: integer("set_index").notNull(), // 0-based index within lift's sets
+  // Prescription (copied from program for easy comparison)
+  prescribedWeight: real("prescribed_weight"),
+  prescribedReps: integer("prescribed_reps"),
+  // Actual performance (what the client did)
+  actualWeight: real("actual_weight"),
+  actualReps: integer("actual_reps"),
+  rpe: real("rpe"), // 1-10, supports half values (7.5, 8.5)
+  completed: integer("completed", { mode: "boolean" }).notNull().default(false),
+  notes: text("notes"),
+  loggedAt: text("logged_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});

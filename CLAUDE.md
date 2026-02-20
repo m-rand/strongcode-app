@@ -245,7 +245,31 @@ bcryptjs
 - **Excel conversion**: 3 Excel programs converted to JSON + enriched with per-session NL
 - **Scripts**: `enrich_calculated.py` (per-session NL), `fix-sessions.ts` (DB day-name fix)
 
-### ⬜ Planned — AI Program Generation (next milestone)
+### ⬜ Planned — Client Training Log (next milestone)
+Oddělená tabulka `training_log` pro záznam skutečného provedení tréninku klientem.
+Program (předpis) zůstane netknutý — klient zapisuje co skutečně udělal.
+
+1. **`training_log` tabulka** — nová tabulka v `db/schema.ts`
+   - `programId`, `week` (1-4), `session` ("A"/"B"/"C"), `lift`, `setIndex`
+   - `prescribedWeight`, `prescribedReps` — kopie předpisu pro porovnání
+   - `actualWeight`, `actualReps` — co klient skutečně zvedl
+   - `rpe` (real, 1-10, půl body: 7.5, 8.5...) — subjektivní hodnocení námahy
+   - `completed` (boolean), `notes` (text), `loggedAt` (timestamp)
+2. **API routes** — CRUD pro training log (`/api/training-log/`)
+   - POST: zapsat set (klient)
+   - GET: načíst log pro program/week/session (klient + admin)
+   - PATCH: upravit záznam (klient)
+3. **Program detail page** — `/client/programs/[id]`
+   - Zobrazení předepsaných setů (weight × reps) po týdnech a sessions
+   - Výběr týden + session (A/B/C) → seznam setů
+4. **RPE logging UI** — klient u každého setu:
+   - Checkmark ✓ (completed), RPE slider/input (1-10, step 0.5), notes
+   - Možnost zadat actual weight/reps pokud se liší od předpisu
+   - Save → zápis do `training_log`
+5. **Coach view** — admin vidí klientův log
+   - Adherence (% splněných setů), průměrné RPE, porovnání předpis vs. realita
+
+### ⬜ Planned — AI Program Generation (later)
 1. **Zod schema** — Create TypeScript Zod schema from `program-complete.schema.json` for `generateObject`
 2. **Install Vercel AI SDK** — `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`
 3. **System prompt template** — Build prompt from constants, domain rules, schema, examples
@@ -257,7 +281,6 @@ bcryptjs
 ### ⬜ Planned — Other
 - Python backend (FastAPI) for calculation scripts
 - Tests — none exist yet
-- RPE recording by clients in sessions
 - Vercel deployment configuration
 - Image assets for landing page (currently placeholder backgrounds)
 - SEO metadata for subpages

@@ -31,6 +31,7 @@ export async function GET(
     }
 
     const programData = {
+      id: program.id,
       schema_version: program.schemaVersion,
       meta: {
         filename: program.filename,
