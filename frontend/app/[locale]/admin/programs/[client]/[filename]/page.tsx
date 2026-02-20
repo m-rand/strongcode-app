@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 
 interface Program {
+  id: number
   schema_version: string
   meta: {
     filename: string
@@ -34,6 +35,36 @@ interface Program {
   sessions?: any
 }
 
+interface LogEntry {
+  id: number
+  programId: number
+  week: number
+  session: string
+  lift: string
+  setIndex: number
+  prescribedWeight: number
+  prescribedReps: number
+  actualWeight: number | null
+  actualReps: number | null
+  rpe: number | null
+  completed: boolean
+  notes: string | null
+  loggedAt: string
+}
+
+function liftDisplayName(lift: string): string {
+  if (lift === 'bench_press') return 'Bench Press'
+  return lift.charAt(0).toUpperCase() + lift.slice(1)
+}
+
+function rpeColor(rpe: number | null): string {
+  if (rpe === null) return 'text-gray-400'
+  if (rpe <= 6) return 'text-green-600'
+  if (rpe <= 7.5) return 'text-yellow-600'
+  if (rpe <= 8.5) return 'text-orange-500'
+  return 'text-red-600'
+}
+
 export default function ProgramDetailPage() {
   const params = useParams()
   const t = useTranslations('admin.programDetail')
@@ -41,10 +72,18 @@ export default function ProgramDetailPage() {
   const [program, setProgram] = useState<Program | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [trainingLog, setTrainingLog] = useState<LogEntry[]>([])
+  const [logLoading, setLogLoading] = useState(false)
 
   useEffect(() => {
     fetchProgram()
   }, [params.client, params.filename])
+
+  useEffect(() => {
+    if (program?.id) {
+      fetchTrainingLog()
+    }
+  }, [program?.id])
 
   const fetchProgram = async () => {
     try {
@@ -61,6 +100,75 @@ export default function ProgramDetailPage() {
       setLoading(false)
     }
   }
+
+  const fetchTrainingLog = async () => {
+    setLogLoading(true)
+    try {
+      const response = await fetch(`/api/training-log?programId=${program!.id}`)
+      if (!response.ok) return
+      const data = await response.json()
+      setTrainingLog(data.logs || [])
+    } catch {
+      // Silently fail
+    } finally {
+      setLogLoading(false)
+    }
+  }
+
+  // ─── Training Log Stats ─────────────────────────────────
+  const logStats = (() => {
+    if (trainingLog.length === 0) return null
+
+    const completed = trainingLog.filter(e => e.completed)
+    const withRpe = trainingLog.filter(e => e.rpe !== null)
+    const avgRpe = withRpe.length > 0
+      ? withRpe.reduce((sum, e) => sum + e.rpe!, 0) / withRpe.length
+      : null
+
+    // Per-week breakdown
+    const weekStats: Record<number, { total: number; completed: number; avgRpe: number | null }> = {}
+    for (const entry of trainingLog) {
+      if (!weekStats[entry.week]) {
+        weekStats[entry.week] = { total: 0, completed: 0, avgRpe: null }
+      }
+      weekStats[entry.week].total++
+      if (entry.completed) weekStats[entry.week].completed++
+    }
+    for (const week of Object.keys(weekStats).map(Number)) {
+      const weekRpe = trainingLog.filter(e => e.week === week && e.rpe !== null)
+      weekStats[week].avgRpe = weekRpe.length > 0
+        ? weekRpe.reduce((sum, e) => sum + e.rpe!, 0) / weekRpe.length
+        : null
+    }
+
+    return {
+      totalSets: trainingLog.length,
+      completedSets: completed.length,
+      adherence: Math.round((completed.length / trainingLog.length) * 100),
+      avgRpe,
+      weekStats,
+    }
+  })()
+
+  // Group log entries by week → session → lift
+  const groupedLog = (() => {
+    const grouped: Record<number, Record<string, Record<string, LogEntry[]>>> = {}
+    for (const entry of trainingLog) {
+      if (!grouped[entry.week]) grouped[entry.week] = {}
+      if (!grouped[entry.week][entry.session]) grouped[entry.week][entry.session] = {}
+      if (!grouped[entry.week][entry.session][entry.lift]) grouped[entry.week][entry.session][entry.lift] = []
+      grouped[entry.week][entry.session][entry.lift].push(entry)
+    }
+    // Sort sets by setIndex within each lift
+    for (const week of Object.values(grouped)) {
+      for (const session of Object.values(week)) {
+        for (const lift of Object.keys(session)) {
+          session[lift].sort((a, b) => a.setIndex - b.setIndex)
+        }
+      }
+    }
+    return grouped
+  })()
 
   if (loading) {
     return (
@@ -433,6 +541,150 @@ export default function ProgramDetailPage() {
             <p className="text-gray-600 text-center">
               {t('noSessions')}
             </p>
+          </div>
+        )}
+
+        {/* ─── Training Log (Coach View) ─────────────────── */}
+        {!logLoading && trainingLog.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">📋 Client Training Log</h2>
+
+            {/* Summary Stats */}
+            {logStats && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 rounded-lg p-4 text-center">
+                  <p className="text-sm text-blue-600 font-medium">Adherence</p>
+                  <p className="text-3xl font-bold text-blue-900">{logStats.adherence}%</p>
+                  <p className="text-xs text-blue-500">{logStats.completedSets}/{logStats.totalSets} sets</p>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4 text-center">
+                  <p className="text-sm text-orange-600 font-medium">Avg RPE</p>
+                  <p className={`text-3xl font-bold ${rpeColor(logStats.avgRpe)}`}>
+                    {logStats.avgRpe !== null ? logStats.avgRpe.toFixed(1) : '—'}
+                  </p>
+                  <p className="text-xs text-orange-500">across all sets</p>
+                </div>
+                {Object.entries(logStats.weekStats)
+                  .sort(([a], [b]) => Number(a) - Number(b))
+                  .slice(0, 2)
+                  .map(([week, stats]) => (
+                    <div key={week} className="bg-gray-50 rounded-lg p-4 text-center">
+                      <p className="text-sm text-gray-600 font-medium">Week {week}</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%
+                        <span className="text-sm font-normal text-gray-500 ml-1">
+                          ({stats.completed}/{stats.total})
+                        </span>
+                      </p>
+                      {stats.avgRpe !== null && (
+                        <p className={`text-sm font-medium ${rpeColor(stats.avgRpe)}`}>
+                          RPE {stats.avgRpe.toFixed(1)}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* Detailed Log */}
+            <div className="space-y-6">
+              {Object.entries(groupedLog)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([week, sessions]) => (
+                  <div key={week}>
+                    <h3 className="font-semibold text-lg text-gray-800 mb-3 border-b pb-1">
+                      Week {week}
+                    </h3>
+                    <div className="space-y-4 pl-2">
+                      {Object.entries(sessions)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([session, lifts]) => (
+                          <div key={session}>
+                            <h4 className="font-medium text-sm text-green-700 mb-2">
+                              Session {session}
+                            </h4>
+                            {Object.entries(lifts).map(([lift, entries]) => (
+                              <div key={lift} className="mb-3">
+                                <p className="text-sm font-semibold text-gray-700 mb-1">
+                                  {liftDisplayName(lift)}
+                                </p>
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full text-sm">
+                                    <thead>
+                                      <tr className="border-b text-gray-500">
+                                        <th className="text-left py-1 px-2">Set</th>
+                                        <th className="text-right py-1 px-2">Prescribed</th>
+                                        <th className="text-right py-1 px-2">Actual</th>
+                                        <th className="text-center py-1 px-2">RPE</th>
+                                        <th className="text-center py-1 px-2">Done</th>
+                                        <th className="text-left py-1 px-2">Notes</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {entries.map((entry) => {
+                                        const weightDiff = entry.actualWeight !== null && entry.prescribedWeight
+                                          ? entry.actualWeight - entry.prescribedWeight
+                                          : null
+                                        const repsDiff = entry.actualReps !== null && entry.prescribedReps
+                                          ? entry.actualReps - entry.prescribedReps
+                                          : null
+                                        return (
+                                          <tr key={entry.id} className={`border-b ${
+                                            entry.completed ? 'bg-green-50' : ''
+                                          }`}>
+                                            <td className="py-1 px-2 text-gray-600">{entry.setIndex + 1}</td>
+                                            <td className="text-right py-1 px-2">
+                                              {entry.prescribedWeight} kg × {entry.prescribedReps}
+                                            </td>
+                                            <td className="text-right py-1 px-2 font-medium">
+                                              {entry.actualWeight !== null ? (
+                                                <>
+                                                  {entry.actualWeight} kg × {entry.actualReps}
+                                                  {weightDiff !== null && weightDiff !== 0 && (
+                                                    <span className={`ml-1 text-xs ${
+                                                      weightDiff > 0 ? 'text-green-600' : 'text-red-500'
+                                                    }`}>
+                                                      ({weightDiff > 0 ? '+' : ''}{weightDiff})
+                                                    </span>
+                                                  )}
+                                                </>
+                                              ) : (
+                                                <span className="text-gray-300">—</span>
+                                              )}
+                                            </td>
+                                            <td className={`text-center py-1 px-2 font-medium ${rpeColor(entry.rpe)}`}>
+                                              {entry.rpe !== null ? entry.rpe : '—'}
+                                            </td>
+                                            <td className="text-center py-1 px-2">
+                                              {entry.completed ? (
+                                                <span className="text-green-600">✓</span>
+                                              ) : (
+                                                <span className="text-gray-300">✗</span>
+                                              )}
+                                            </td>
+                                            <td className="py-1 px-2 text-gray-500 text-xs max-w-[200px] truncate">
+                                              {entry.notes || ''}
+                                            </td>
+                                          </tr>
+                                        )
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {!logLoading && trainingLog.length === 0 && program.sessions && Object.keys(program.sessions).length > 0 && (
+          <div className="bg-gray-50 rounded-lg shadow-sm p-6 mt-6 text-center">
+            <p className="text-gray-500">No training log entries yet — client hasn&apos;t logged any sets.</p>
           </div>
         )}
       </main>
