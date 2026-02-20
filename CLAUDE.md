@@ -55,6 +55,7 @@ strong-code/
 ├── scripts/                 # Python calculation scripts
 │   ├── calculate_targets.py # Main: Excel formulas → JSON targets
 │   ├── constants.py         # Chernyak patterns, intensity zones, session distributions
+│   ├── enrich_calculated.py # Compute per-session NL from actual session sets
 │   ├── utilities.py         # Volume distribution, ARI calculation helpers
 │   └── validate.py          # JSON schema validation
 ├── schemas/                 # JSON Schema definitions
@@ -73,7 +74,9 @@ strong-code/
 - **Skill levels**: beginner, intermediate, advanced, elite (affects volume variability)
 - **Blocks**: prep (preparation) or comp (competition)
 - **Intensity zones**: 65%, 75%, 85%, 90%, 95% of 1RM
+- **Zone boundaries**: ≤0.60→"55", ≤0.70→"65", ≤0.80→"75", ≤0.90→"85", ≤0.94→"90", >0.94→"95"
 - **Session distribution**: d25_33_42, d40_60, etc. — how volume splits across sessions/week
+- **Sessions**: Abstract units `A`, `B`, `C`, `D`... — **never** day names (monday, etc.)
 
 ## Database (Turso + Drizzle ORM)
 
@@ -236,9 +239,22 @@ bcryptjs
 - Client dashboard with 1RM display, program list, survey
 - Client registration via invite token
 - i18n (CZ/EN) with theme switching (light/dark)
+- **Data quality**: All 17 programs in DB use letter keys (`A`, `B`, `C`) — no day names
+- **Schema v1.2**: Added `weekly_plan` to `liftInput` (per-week `sessions` + `distribution`)
+- **Constants expanded**: `constants.py` has base/advanced/elite patterns, 2/3/4/5 session distributions
+- **Excel conversion**: 3 Excel programs converted to JSON + enriched with per-session NL
+- **Scripts**: `enrich_calculated.py` (per-session NL), `fix-sessions.ts` (DB day-name fix)
 
-### ⬜ Planned / Not Started
-- **AI Program Generation** — generate training programs via LLM prompt (see AGENTS.md)
+### ⬜ Planned — AI Program Generation (next milestone)
+1. **Zod schema** — Create TypeScript Zod schema from `program-complete.schema.json` for `generateObject`
+2. **Install Vercel AI SDK** — `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`
+3. **System prompt template** — Build prompt from constants, domain rules, schema, examples
+4. **`/api/generate-program` route** — Accept input, build prompt, call LLM, validate output
+5. **Admin create UI** — Form for program config → generate → review/edit → save
+6. **Validation pipeline** — ARI check, NL totals, rep range limits, constraint verification
+7. **Testing & iteration** — Generate programs, compare to manual ones, tune prompt
+
+### ⬜ Planned — Other
 - Python backend (FastAPI) for calculation scripts
 - Tests — none exist yet
 - RPE recording by clients in sessions

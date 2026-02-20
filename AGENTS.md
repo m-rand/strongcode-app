@@ -140,22 +140,107 @@ For 3-session distributions: Three-week rotation patterns available
 - `session_distribution` can vary per lift and per week
 - Use `input.{lift}.weekly_plan` for per-week configuration
 
+### Zone Boundaries (for calculations)
+Used by `enrich_calculated.py` and validation to map percentage → zone:
+| Percentage | Zone |
+|-----------|------|
+| ≤ 0.60 | 55% |
+| ≤ 0.70 | 65% |
+| ≤ 0.80 | 75% |
+| ≤ 0.90 | 85% |
+| ≤ 0.94 | 90% |
+| > 0.94 | 95% |
+
+### Schema v1.2 — `weekly_plan`
+The `liftInput` definition now supports per-week session configuration via `weekly_plan`:
+
+```json
+"weekly_plan": {
+  "week_1": { "sessions": 3, "distribution": "d25_33_42" },
+  "week_2": { "sessions": 3, "distribution": "d20_35_45" },
+  "week_3": { "sessions": 2, "distribution": "d40_60" },
+  "week_4": { "sessions": 2, "distribution": "d35_65" }
+}
+```
+
+When `weekly_plan` is present, its values override the top-level `sessions_per_week` and `session_distribution` for that lift. The top-level fields remain as fallback defaults.
+
 ## File Structure
 
 ```
 scripts/constants.py          # All pattern tables and domain constants
-schemas/program-complete.schema.json  # Output JSON schema
+scripts/enrich_calculated.py  # Compute per-session NL from actual session sets
+schemas/program-complete.schema.json  # Output JSON schema (v1.2 with weekly_plan)
 schemas/v1.0/program.schema.json      # Versioned schema
-frontend/app/api/create-program/      # API route for program creation
+frontend/app/api/create-program/      # API route for program creation (existing, manual)
+frontend/app/api/generate-program/    # API route for AI generation (planned)
 frontend/app/[locale]/admin/create/   # Admin UI for program creation
 ```
+
+## Implementation Roadmap
+
+### Phase 1: Foundation
+1. **Create Zod schema** (`frontend/schemas/program.ts`)
+   - Mirror `program-complete.schema.json` as Zod types
+   - Needed for Vercel AI SDK `generateObject()` — enforces typed output
+   - Include `liftInput`, `weekPlan`, `calculated`, `session` definitions
+
+2. **Install Vercel AI SDK**
+   ```bash
+   cd frontend && npm install ai @ai-sdk/anthropic @ai-sdk/openai zod
+   ```
+
+3. **Add API keys to `.env.local`**
+   ```
+   ANTHROPIC_API_KEY=<key>
+   OPENAI_API_KEY=<key>  # optional, for fallback
+   ```
+
+### Phase 2: Prompt Engineering
+4. **Build system prompt template** (`frontend/lib/prompts/system.ts`)
+   - Load constants from `scripts/constants.py` into TypeScript constants
+   - Include: Chernyak patterns (by skill level), session distributions, rep ranges, zone rules
+   - Include: output schema description, constraints, rounding rules
+   - Include: 1-2 example programs for few-shot learning
+
+5. **Build user prompt builder** (`frontend/lib/prompts/user.ts`)
+   - Takes: client profile (1RM, skill level), block type, per-lift config
+   - Outputs: structured user prompt with all parameters
+
+### Phase 3: API Route
+6. **Create `/api/generate-program` route** (`frontend/app/api/generate-program/route.ts`)
+   - POST handler: parse input → build system+user prompts → `generateObject()` → validate → return
+   - Use Claude as primary model, OpenAI as fallback option
+   - Add streaming support for progress indication
+   - Validate output: ARI range, NL totals, rep ranges within zone limits
+
+### Phase 4: Admin UI
+7. **Update admin create page** to support AI generation
+   - Form: client selector, block type, per-lift config (NL, pattern, sessions, distribution)
+   - Support `weekly_plan` — per-week overrides for sessions/distribution
+   - "Generate" button → calls API → displays result
+   - Review/edit mode — coach can manually adjust generated program
+   - "Save" button → persists to Turso DB
+
+### Phase 5: Validation & Quality
+8. **Validation pipeline** (`frontend/lib/validation/program.ts`)
+   - Check ARI is within target range (±0.5)
+   - Check NL totals match input targets
+   - Check rep ranges are within zone limits (from constants)
+   - Check session count matches `sessions_per_week` / `weekly_plan`
+   - Return structured errors/warnings for UI display
+
+9. **Testing & iteration**
+   - Generate programs with various inputs, compare to manually created ones
+   - Tune system prompt based on output quality
+   - Add edge cases: deload weeks, peaking, single-lift programs
 
 ## Future: API Route for AI Generation
 
 ```
 POST /api/generate-program
-Body: { clientId, block, lifts: { squat: { volume, pattern, sessions_per_week, ... }, ... } }
-Response: { program: { ... complete JSON ... }, validation: { ... } }
+Body: { clientId, block, lifts: { squat: { volume, pattern, sessions_per_week, weekly_plan?, ... }, ... } }
+Response: { program: { ... complete JSON ... }, validation: { errors: [], warnings: [] } }
 ```
 
 The admin UI will call this endpoint, display the generated program for review, and allow the coach to edit before saving to the database.
