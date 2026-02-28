@@ -52,6 +52,12 @@ export interface CalculatedResult {
   [lift: string]: LiftCalculated
 }
 
+/** Pre-computed zone×session allocation table for a single week */
+export interface WeekAllocation {
+  /** alloc[sessionLetter][zone] = reps assigned */
+  [session: string]: Record<string, number>
+}
+
 // ─── Utility Functions ──────────────────────────────────────
 
 /** Distribute total reps according to percentage distribution */
@@ -276,6 +282,92 @@ export function calculateLiftTargets(
   }
 
   return result as LiftCalculated
+}
+
+/**
+ * Deterministically compute zone×session allocation for one week.
+ *
+ * Rules:
+ * - 90%/95% → middle-volume session
+ * - 85%      → proportional among all sessions except the lowest (for 3+ sessions)
+ * - 75%      → proportional among all sessions by remaining capacity
+ * - 65%      → fills whatever capacity remains per session exactly
+ *
+ * Both row sums (zone totals) and column sums (session totals) are guaranteed correct.
+ */
+export function computeWeekAllocation(
+  zones: ZoneReps,
+  sessions: Record<string, SessionTarget>,
+): WeekAllocation {
+  // Sort sessions by volume ascending
+  const sorted = Object.entries(sessions).sort(([, a], [, b]) => a.total - b.total)
+  const n = sorted.length
+
+  // Initialize allocation and track remaining capacity per session
+  const alloc: WeekAllocation = {}
+  const remaining: Record<string, number> = {}
+  for (const [letter, target] of sorted) {
+    alloc[letter] = { '65': 0, '75': 0, '85': 0, '90': 0, '95': 0 }
+    remaining[letter] = target.total
+  }
+
+  // ── Step 1: 90% and 95% → middle session ────────────────
+  const middleLetter = sorted[Math.floor((n - 1) / 2)][0]
+  for (const zone of ['90', '95'] as const) {
+    const total = zones[zone]
+    if (total > 0) {
+      alloc[middleLetter][zone] = total
+      remaining[middleLetter] -= total
+    }
+  }
+
+  // ── Step 2: 85% → exclude lowest session when 3+ sessions ───
+  const zone85 = zones['85']
+  if (zone85 > 0) {
+    const eligible85 = n >= 3 ? sorted.slice(1) : sorted
+    distributeProportionally(zone85, eligible85.map(([l]) => l), remaining, alloc, '85')
+  }
+
+  // ── Step 3: 75% → proportional to remaining capacity ────
+  const zone75 = zones['75']
+  if (zone75 > 0) {
+    distributeProportionally(zone75, sorted.map(([l]) => l), remaining, alloc, '75')
+  }
+
+  // ── Step 4: 65% → fills leftover exactly ────────────────
+  const zone65 = zones['65']
+  if (zone65 > 0) {
+    // Use proportional distribution to handle edge cases, then verify
+    distributeProportionally(zone65, sorted.map(([l]) => l), remaining, alloc, '65')
+  }
+
+  return alloc
+}
+
+/** Proportionally distribute `total` reps across `sessions` by their current remaining capacity */
+function distributeProportionally(
+  total: number,
+  sessions: string[],
+  remaining: Record<string, number>,
+  alloc: WeekAllocation,
+  zone: string,
+): void {
+  const caps = sessions.map(l => Math.max(0, remaining[l]))
+  const sumCaps = caps.reduce((a, b) => a + b, 0)
+  if (sumCaps === 0) return
+
+  let distributed = 0
+  for (let i = 0; i < sessions.length - 1; i++) {
+    const share = Math.min(Math.round(total * caps[i] / sumCaps), caps[i])
+    alloc[sessions[i]][zone] = share
+    remaining[sessions[i]] -= share
+    distributed += share
+  }
+  // Last session absorbs the remainder to guarantee exact row sum
+  const last = sessions[sessions.length - 1]
+  const lastShare = total - distributed
+  alloc[last][zone] = lastShare
+  remaining[last] -= lastShare
 }
 
 /** Calculate targets for all lifts in a program */

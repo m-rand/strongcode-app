@@ -7,7 +7,8 @@ import { programs, clients } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { liftSessionsSchema, type GenerateInput, type LiftSessionsOutput, type SessionsOutput } from '@/lib/ai/schema'
 import { getPromptVersion, buildLiftPrompt } from '@/lib/ai/prompt'
-import { calculateAllTargets } from '@/lib/ai/calculate'
+import { calculateAllTargets, computeWeekAllocation } from '@/lib/ai/calculate'
+import type { ZoneReps, SessionTarget } from '@/lib/ai/calculate'
 import { TARGET_ARI } from '@/lib/ai/constants'
 
 type AIProvider = 'anthropic' | 'openai'
@@ -159,6 +160,18 @@ export async function POST(request: Request) {
       }
     }
 
+    // ── Step 1b: Pre-compute allocations (for debug visibility) ─────────
+    const allocations: Record<string, Record<string, Record<string, Record<string, number>>>> = {}
+    for (const [lift, liftCalc] of Object.entries(calculated)) {
+      allocations[lift] = {}
+      for (let w = 1; w <= weeks; w++) {
+        const weekKey = `week_${w}`
+        const week = liftCalc[weekKey] as { zones: ZoneReps; sessions: Record<string, SessionTarget> } | undefined
+        if (!week) continue
+        allocations[lift][weekKey] = computeWeekAllocation(week.zones, week.sessions)
+      }
+    }
+
     // ── Step 2: AI generates concrete sessions (per lift, with retry) ───
     const MAX_RETRIES = 2
     console.log(`[generate-program] Step 2: Generating sessions per lift (AI: ${provider}/${modelId})...`)
@@ -260,6 +273,7 @@ export async function POST(request: Request) {
           success: false,
           error: `AI output does not match deterministic targets (after ${MAX_RETRIES} retries)`,
           program: { calculated, sessions },
+          allocations,
           validation: {
             errors: [...validationErrors, ...aiOutputErrors],
             warnings: validationWarnings,
@@ -334,6 +348,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       program: { calculated, sessions },
+      allocations,
       validation: {
         errors: validationErrors,
         warnings: validationWarnings,

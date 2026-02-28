@@ -231,9 +231,10 @@ interface ApiResponse {
   success: boolean
   error?: string
   program?: {
-    calculated: Record<string, unknown>
+    calculated: Record<string, Record<string, unknown>>
     sessions: Record<string, Record<string, { lifts: { lift: string; sets: SetData[] }[] }>>
   }
+  allocations?: Record<string, Record<string, Record<string, Record<string, number>>>>
   validation?: {
     errors: string[]
     warnings: string[]
@@ -282,7 +283,7 @@ export default function AIDebugPage() {
   const [result, setResult] = useState<ApiResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'input' | 'system' | 'user' | 'output' | 'sessions'>('input')
+  const [activeTab, setActiveTab] = useState<'input' | 'system' | 'user' | 'output' | 'sessions' | 'alloc'>('input')
   const [elapsed, setElapsed] = useState<number | null>(null)
   const [sessionsView, setSessionsView] = useState<'cards' | 'excel'>('excel')
   const [promptVersion, setPromptVersion] = useState(DEFAULT_PROMPT_VERSION)
@@ -359,7 +360,8 @@ export default function AIDebugPage() {
     { key: 'system' as const, label: '2. System Prompt' },
     { key: 'user' as const, label: '3. User Prompt(y)' },
     { key: 'output' as const, label: '4. Calculated (determin.)' },
-    { key: 'sessions' as const, label: '5. Sessions (AI výstup)' },
+    { key: 'alloc' as const, label: '5. Alokace' },
+    { key: 'sessions' as const, label: '6. Sessions (AI výstup)' },
   ]
 
   return (
@@ -666,7 +668,93 @@ export default function AIDebugPage() {
           </div>
         )}
 
-        {/* === TAB 5: AI Sessions Output === */}
+        {/* === TAB 5: Allocation tables === */}
+        {activeTab === 'alloc' && (
+          <div>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.25rem' }}>Alokační tabulky (deterministické)</h2>
+            <p style={{ color: '#888', fontSize: '0.8rem', marginBottom: '1rem' }}>
+              Předpočítané rozdělení opakování per zóna per session. AI dostane tyto přesné hodnoty — nepočítá je sám.
+            </p>
+            {result?.allocations ? (
+              Object.entries(result.allocations as Record<string, Record<string, Record<string, Record<string, number>>>>).map(([lift, liftAlloc]) => (
+                <div key={lift} style={{ marginBottom: '2rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#f65d2e', marginBottom: '0.75rem' }}>
+                    {lift === 'bench_press' ? 'Bench Press' : lift.charAt(0).toUpperCase() + lift.slice(1)}
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+                    {['week_1', 'week_2', 'week_3', 'week_4'].map(weekKey => {
+                      const weekAlloc = liftAlloc[weekKey]
+                      if (!weekAlloc) return null
+                      const sessionLetters = Object.keys(weekAlloc).sort()
+                      const zones = ['65', '75', '85', '90', '95']
+                      const weekCalc = result?.program?.calculated?.[lift]?.[weekKey] as {
+                        zones?: Record<string, number>
+                        sessions?: Record<string, { total?: number }>
+                      } | undefined
+                      return (
+                        <div key={weekKey} style={{ background: '#1a1a2e', borderRadius: 6, padding: '0.75rem', border: '1px solid #333' }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem' }}>
+                            {weekKey.replace('_', ' ').toUpperCase()}
+                            <span style={{ color: '#555', fontWeight: 400, marginLeft: '0.5rem' }}>— 1 řešení (deterministické)</span>
+                          </div>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '1px solid #333' }}>
+                                <th style={{ textAlign: 'left', padding: '3px 6px', color: '#666' }}>Zóna</th>
+                                {sessionLetters.map(s => (
+                                  <th key={s} style={{ textAlign: 'center', padding: '3px 6px', color: '#aaa' }}>Session {s}</th>
+                                ))}
+                                <th style={{ textAlign: 'center', padding: '3px 6px', color: '#666' }}>Cíl</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {zones.map(z => {
+                                const rowValues = sessionLetters.map(s => weekAlloc[s]?.[z] ?? 0)
+                                const rowSum = rowValues.reduce((a, b) => a + b, 0)
+                                const target = weekCalc?.zones?.[z] ?? 0
+                                if (target === 0 && rowSum === 0) return null
+                                const ok = rowSum === target
+                                return (
+                                  <tr key={z} style={{ borderBottom: '1px solid #222' }}>
+                                    <td style={{ padding: '3px 6px', color: getZoneColor(Number(z)), fontWeight: 600 }}>{z}%</td>
+                                    {rowValues.map((v, i) => (
+                                      <td key={i} style={{ textAlign: 'center', padding: '3px 6px', color: v > 0 ? '#e0e0e0' : '#444' }}>{v || '—'}</td>
+                                    ))}
+                                    <td style={{ textAlign: 'center', padding: '3px 6px', color: ok ? '#81c784' : '#e57373', fontWeight: 700 }}>
+                                      {rowSum}/{target} {ok ? '✓' : '✗'}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                              <tr style={{ borderTop: '2px solid #444', background: '#111' }}>
+                                <td style={{ padding: '3px 6px', color: '#666', fontSize: '0.7rem' }}>celkem</td>
+                                {sessionLetters.map(s => {
+                                  const colSum = zones.reduce((a, z) => a + (weekAlloc[s]?.[z] ?? 0), 0)
+                                  const targetTotal = weekCalc?.sessions?.[s]?.total ?? 0
+                                  const ok = colSum === targetTotal
+                                  return (
+                                    <td key={s} style={{ textAlign: 'center', padding: '3px 6px', color: ok ? '#81c784' : '#e57373', fontWeight: 700 }}>
+                                      {colSum}/{targetTotal} {ok ? '✓' : '✗'}
+                                    </td>
+                                  )
+                                })}
+                                <td style={{ textAlign: 'center', padding: '3px 6px', color: '#555' }}></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: '#666', fontStyle: 'italic' }}>Nejdříve spusť generování.</p>
+            )}
+          </div>
+        )}
+
+        {/* === TAB 6: AI Sessions Output === */}
         {activeTab === 'sessions' && (
           <div>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>Sessions (AI výstup)</h2>

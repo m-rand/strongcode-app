@@ -10,6 +10,7 @@
 
 import { REP_RANGES } from './constants'
 import type { CalculatedResult, WeekCalculated, SessionTarget } from './calculate'
+import { computeWeekAllocation } from './calculate'
 import { getPromptVersion, DEFAULT_PROMPT_VERSION } from './prompts/registry'
 
 export { getPromptVersion, listPromptVersions, PROMPT_REGISTRY, DEFAULT_PROMPT_VERSION } from './prompts/registry'
@@ -80,13 +81,14 @@ export function buildLiftPrompt(
       sections.push(`- Session ${letter}: ${t.total} reps [${ranks[letter]}]`)
     }
 
-    // Allocation table skeleton — forces AI to fill in numbers explicitly
+    // Pre-computed allocation table — AI just writes sets to match these numbers
+    const allocation = computeWeekAllocation(week.zones, week.sessions)
     const sessionLetters = sessionEntries.map(([l]) => l)
-    const colHeader = sessionLetters.map(l => `${l}=?`).join(', ')
     const colSums = sessionLetters.map(l => `${l}=${(week.sessions[l] as SessionTarget).total}`).join('  ')
-    sections.push(`\nAllocation table (fill in before generating sets):`)
+    sections.push(`\nAllocation table (pre-computed — use these exact numbers):`)
     for (const z of activeZones) {
-      sections.push(`  zone ${z}%: ${colHeader}  → must sum to ${week.zones[z]}`)
+      const cells = sessionLetters.map(l => `${l}=${allocation[l]?.[z] ?? 0}`).join('  ')
+      sections.push(`  zone ${z}%: ${cells}  → sum = ${week.zones[z]}`)
     }
     sections.push(`  ${'─'.repeat(40)}`)
     sections.push(`  col sums: ${colSums}`)
