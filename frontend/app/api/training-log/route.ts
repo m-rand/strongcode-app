@@ -2,16 +2,10 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { trainingLog, programs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { auth } from "@/lib/auth";
 
 // GET /api/training-log?programId=1&week=1&session=A
 export async function GET(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const programId = searchParams.get("programId");
 
@@ -60,11 +54,6 @@ export async function GET(request: Request) {
 // Body: { entries: [{ programId, week, session, lift, setIndex, prescribedWeight, prescribedReps, actualWeight?, actualReps?, rpe?, completed, notes? }] }
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
     const { entries } = body;
 

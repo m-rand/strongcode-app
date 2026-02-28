@@ -150,7 +150,7 @@ export default function ProgramDetailPage() {
     }
   })()
 
-  // Group log entries by week → session → lift
+  // Group log entries by week → session → lift for quick lookup
   const groupedLog = (() => {
     const grouped: Record<number, Record<string, Record<string, LogEntry[]>>> = {}
     for (const entry of trainingLog) {
@@ -159,7 +159,6 @@ export default function ProgramDetailPage() {
       if (!grouped[entry.week][entry.session][entry.lift]) grouped[entry.week][entry.session][entry.lift] = []
       grouped[entry.week][entry.session][entry.lift].push(entry)
     }
-    // Sort sets by setIndex within each lift
     for (const week of Object.values(grouped)) {
       for (const session of Object.values(week)) {
         for (const lift of Object.keys(session)) {
@@ -169,6 +168,13 @@ export default function ProgramDetailPage() {
     }
     return grouped
   })()
+
+  // Lookup helper: find log entry for a specific set
+  const findLogEntry = (weekNum: number, sessionLetter: string, lift: string, setIndex: number): LogEntry | undefined => {
+    return groupedLog[weekNum]?.[sessionLetter]?.[lift]?.[setIndex]
+  }
+
+  const hasAnyLog = trainingLog.length > 0
 
   if (loading) {
     return (
@@ -470,10 +476,28 @@ export default function ProgramDetailPage() {
           </div>
         )}
 
-        {/* Sessions */}
+        {/* Sessions — integrated with Training Log */}
         {program.sessions && Object.keys(program.sessions).length > 0 ? (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Sessions</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Sessions</h2>
+              {logStats && (
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 font-medium">
+                    ✓ {logStats.adherence}% ({logStats.completedSets}/{logStats.totalSets})
+                  </span>
+                  {logStats.avgRpe !== null && (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-medium ${
+                      logStats.avgRpe <= 7.5 ? 'bg-green-100 text-green-800' :
+                      logStats.avgRpe <= 8.5 ? 'bg-orange-100 text-orange-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      RPE {logStats.avgRpe.toFixed(1)}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="space-y-6">
               {Object.entries(program.sessions).map(([sessionLetter, sessionData]: [string, any]) => (
                 <div key={sessionLetter} className="border-l-4 border-green-500 pl-4">
@@ -481,7 +505,9 @@ export default function ProgramDetailPage() {
                   <div className="space-y-4">
                     {Object.entries(sessionData)
                       .filter(([key]) => key.startsWith('week_'))
-                      .map(([week, weekData]: [string, any]) => (
+                      .map(([week, weekData]: [string, any]) => {
+                        const weekNum = parseInt(week.replace('week_', ''))
+                        return (
                         <div key={week} className="bg-gray-50 rounded p-4">
                           <h4 className="font-medium text-sm text-gray-700 mb-3">
                             {week.replace('_', ' ').toUpperCase()}
@@ -499,22 +525,79 @@ export default function ProgramDetailPage() {
                                       <th className="text-left py-1 px-2">Variant</th>
                                       <th className="text-right py-1 px-2">Weight</th>
                                       <th className="text-right py-1 px-2">Reps</th>
-                                      <th className="text-right py-1 px-2">RPE</th>
+                                      {hasAnyLog && (
+                                        <>
+                                          <th className="text-right py-1 px-2 border-l-2 border-blue-300 bg-blue-50/50">Actual kg</th>
+                                          <th className="text-right py-1 px-2 bg-blue-50/50">Reps</th>
+                                          <th className="text-center py-1 px-2 bg-blue-50/50">RPE</th>
+                                          <th className="text-center py-1 px-2 bg-blue-50/50">✓</th>
+                                        </>
+                                      )}
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {liftData.sets?.map((set: any, setIdx: number) => (
-                                      <tr key={setIdx} className="border-b">
+                                    {liftData.sets?.map((set: any, setIdx: number) => {
+                                      const logEntry = findLogEntry(weekNum, sessionLetter, liftData.lift, setIdx)
+                                      const weightDiff = logEntry?.actualWeight != null && set.weight
+                                        ? logEntry.actualWeight - set.weight : null
+                                      return (
+                                      <tr key={setIdx} className={`border-b ${logEntry?.completed ? 'bg-green-50/40' : ''}`}>
                                         <td className="py-1 px-2">{setIdx + 1}</td>
                                         <td className="py-1 px-2 text-gray-600">{set.variant}</td>
                                         <td className="text-right py-1 px-2 font-medium">{set.weight} kg</td>
                                         <td className="text-right py-1 px-2 font-medium">{set.reps}</td>
-                                        <td className="text-right py-1 px-2">{set.rpe}</td>
+                                        {hasAnyLog && (
+                                          <>
+                                            <td className="text-right py-1 px-2 border-l-2 border-blue-300 font-medium">
+                                              {logEntry?.actualWeight != null ? (
+                                                <>
+                                                  {logEntry.actualWeight}
+                                                  {weightDiff != null && weightDiff !== 0 && (
+                                                    <span className={`ml-1 text-xs ${weightDiff > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                      {weightDiff > 0 ? '+' : ''}{weightDiff}
+                                                    </span>
+                                                  )}
+                                                </>
+                                              ) : (
+                                                <span className="text-gray-300">—</span>
+                                              )}
+                                            </td>
+                                            <td className="text-right py-1 px-2 font-medium">
+                                              {logEntry?.actualReps != null ? logEntry.actualReps : <span className="text-gray-300">—</span>}
+                                            </td>
+                                            <td className={`text-center py-1 px-2 font-medium ${rpeColor(logEntry?.rpe ?? null)}`}>
+                                              {logEntry?.rpe != null ? logEntry.rpe : <span className="text-gray-300">—</span>}
+                                            </td>
+                                            <td className="text-center py-1 px-2">
+                                              {logEntry?.completed ? (
+                                                <span className="text-green-600 font-bold">✓</span>
+                                              ) : logEntry ? (
+                                                <span className="text-gray-400">✗</span>
+                                              ) : null}
+                                            </td>
+                                          </>
+                                        )}
                                       </tr>
-                                    ))}
+                                      )
+                                    })}
                                   </tbody>
                                 </table>
                               </div>
+                              {/* Notes from log entries for this lift */}
+                              {(() => {
+                                const liftNotes = (groupedLog[weekNum]?.[sessionLetter]?.[liftData.lift] || [])
+                                  .filter(e => e.notes)
+                                if (liftNotes.length === 0) return null
+                                return (
+                                  <div className="mt-1 pl-2">
+                                    {liftNotes.map(e => (
+                                      <p key={e.id} className="text-xs text-blue-600 italic">
+                                        Set {e.setIndex + 1}: {e.notes}
+                                      </p>
+                                    ))}
+                                  </div>
+                                )
+                              })()}
                             </div>
                           ))}
                           {weekData.accessories && weekData.accessories.length > 0 && (
@@ -530,7 +613,8 @@ export default function ProgramDetailPage() {
                             </div>
                           )}
                         </div>
-                      ))}
+                        )
+                      })}
                   </div>
                 </div>
               ))}
@@ -544,149 +628,6 @@ export default function ProgramDetailPage() {
           </div>
         )}
 
-        {/* ─── Training Log (Coach View) ─────────────────── */}
-        {!logLoading && trainingLog.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">📋 Client Training Log</h2>
-
-            {/* Summary Stats */}
-            {logStats && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 rounded-lg p-4 text-center">
-                  <p className="text-sm text-blue-600 font-medium">Adherence</p>
-                  <p className="text-3xl font-bold text-blue-900">{logStats.adherence}%</p>
-                  <p className="text-xs text-blue-500">{logStats.completedSets}/{logStats.totalSets} sets</p>
-                </div>
-                <div className="bg-orange-50 rounded-lg p-4 text-center">
-                  <p className="text-sm text-orange-600 font-medium">Avg RPE</p>
-                  <p className={`text-3xl font-bold ${rpeColor(logStats.avgRpe)}`}>
-                    {logStats.avgRpe !== null ? logStats.avgRpe.toFixed(1) : '—'}
-                  </p>
-                  <p className="text-xs text-orange-500">across all sets</p>
-                </div>
-                {Object.entries(logStats.weekStats)
-                  .sort(([a], [b]) => Number(a) - Number(b))
-                  .slice(0, 2)
-                  .map(([week, stats]) => (
-                    <div key={week} className="bg-gray-50 rounded-lg p-4 text-center">
-                      <p className="text-sm text-gray-600 font-medium">Week {week}</p>
-                      <p className="text-lg font-bold text-gray-900">
-                        {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%
-                        <span className="text-sm font-normal text-gray-500 ml-1">
-                          ({stats.completed}/{stats.total})
-                        </span>
-                      </p>
-                      {stats.avgRpe !== null && (
-                        <p className={`text-sm font-medium ${rpeColor(stats.avgRpe)}`}>
-                          RPE {stats.avgRpe.toFixed(1)}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            )}
-
-            {/* Detailed Log */}
-            <div className="space-y-6">
-              {Object.entries(groupedLog)
-                .sort(([a], [b]) => Number(a) - Number(b))
-                .map(([week, sessions]) => (
-                  <div key={week}>
-                    <h3 className="font-semibold text-lg text-gray-800 mb-3 border-b pb-1">
-                      Week {week}
-                    </h3>
-                    <div className="space-y-4 pl-2">
-                      {Object.entries(sessions)
-                        .sort(([a], [b]) => a.localeCompare(b))
-                        .map(([session, lifts]) => (
-                          <div key={session}>
-                            <h4 className="font-medium text-sm text-green-700 mb-2">
-                              Session {session}
-                            </h4>
-                            {Object.entries(lifts).map(([lift, entries]) => (
-                              <div key={lift} className="mb-3">
-                                <p className="text-sm font-semibold text-gray-700 mb-1">
-                                  {liftDisplayName(lift)}
-                                </p>
-                                <div className="overflow-x-auto">
-                                  <table className="min-w-full text-sm">
-                                    <thead>
-                                      <tr className="border-b text-gray-500">
-                                        <th className="text-left py-1 px-2">Set</th>
-                                        <th className="text-right py-1 px-2">Prescribed</th>
-                                        <th className="text-right py-1 px-2">Actual</th>
-                                        <th className="text-center py-1 px-2">RPE</th>
-                                        <th className="text-center py-1 px-2">Done</th>
-                                        <th className="text-left py-1 px-2">Notes</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {entries.map((entry) => {
-                                        const weightDiff = entry.actualWeight !== null && entry.prescribedWeight
-                                          ? entry.actualWeight - entry.prescribedWeight
-                                          : null
-                                        const repsDiff = entry.actualReps !== null && entry.prescribedReps
-                                          ? entry.actualReps - entry.prescribedReps
-                                          : null
-                                        return (
-                                          <tr key={entry.id} className={`border-b ${
-                                            entry.completed ? 'bg-green-50' : ''
-                                          }`}>
-                                            <td className="py-1 px-2 text-gray-600">{entry.setIndex + 1}</td>
-                                            <td className="text-right py-1 px-2">
-                                              {entry.prescribedWeight} kg × {entry.prescribedReps}
-                                            </td>
-                                            <td className="text-right py-1 px-2 font-medium">
-                                              {entry.actualWeight !== null ? (
-                                                <>
-                                                  {entry.actualWeight} kg × {entry.actualReps}
-                                                  {weightDiff !== null && weightDiff !== 0 && (
-                                                    <span className={`ml-1 text-xs ${
-                                                      weightDiff > 0 ? 'text-green-600' : 'text-red-500'
-                                                    }`}>
-                                                      ({weightDiff > 0 ? '+' : ''}{weightDiff})
-                                                    </span>
-                                                  )}
-                                                </>
-                                              ) : (
-                                                <span className="text-gray-300">—</span>
-                                              )}
-                                            </td>
-                                            <td className={`text-center py-1 px-2 font-medium ${rpeColor(entry.rpe)}`}>
-                                              {entry.rpe !== null ? entry.rpe : '—'}
-                                            </td>
-                                            <td className="text-center py-1 px-2">
-                                              {entry.completed ? (
-                                                <span className="text-green-600">✓</span>
-                                              ) : (
-                                                <span className="text-gray-300">✗</span>
-                                              )}
-                                            </td>
-                                            <td className="py-1 px-2 text-gray-500 text-xs max-w-[200px] truncate">
-                                              {entry.notes || ''}
-                                            </td>
-                                          </tr>
-                                        )
-                                      })}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {!logLoading && trainingLog.length === 0 && program.sessions && Object.keys(program.sessions).length > 0 && (
-          <div className="bg-gray-50 rounded-lg shadow-sm p-6 mt-6 text-center">
-            <p className="text-gray-500">No training log entries yet — client hasn&apos;t logged any sets.</p>
-          </div>
-        )}
       </main>
     </div>
   )
