@@ -40,7 +40,7 @@ Rep style:
 - Repeated heavy singles are acceptable.
 
 Exception:
-- If zone total is below that zone minimum, one sub-minimum set is allowed, usually as a warm-up.
+- If zone total is below that zone minimum, one sub-minimum set is allowed.
 
 ## PLANNING PROCEDURE
 
@@ -68,7 +68,8 @@ These constraints are hard requirements, but there may be multiple valid solutio
 4. Use these live remainders to guide your choices — avoid assigning so much to one session that another zone cannot fit, or so little that you cannot reach the zone target.
 5. When you finish, both row_remaining and col_remaining must be 0 for all zones and sessions. If not, backtrack and try different values.
 
-If you cannot find a valid distribution, try one that violates these rules by at most 1 rep.
+If you cannot find a valid distribution, backtrack and find a different one.
+Do NOT violate row sums, column sums, or weekly totals, even by 1 rep.
 
 When planning the distribution, follow these rules:
 - The week can have variable number of sessions (usually 2-3, but sometimes even 4 or 5). All with different volumes. All sessions must also have different average intensity.
