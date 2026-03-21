@@ -1,20 +1,83 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import LiftColumn from './LiftColumn'
+import { calculateAllTargets } from '@/lib/ai/calculate'
+
+type LiftKey = 'squat' | 'bench_press' | 'deadlift'
+type WeekKey = 'week_1' | 'week_2' | 'week_3' | 'week_4'
+
+interface SetData {
+  weight: number
+  reps: number
+  percentage: number
+}
+
+interface SessionLift {
+  lift: LiftKey
+  sets: SetData[]
+}
+
+interface SessionWeek {
+  lifts: SessionLift[]
+}
+
+type SessionsData = Record<string, {
+  week_1: SessionWeek
+  week_2: SessionWeek
+  week_3: SessionWeek
+  week_4: SessionWeek
+}>
+
+interface LiftInputPayload {
+  volume: number
+  rounding: number
+  one_rm: number
+  weights: {
+    '65': number
+    '75': number
+    '85': number
+    '90': number
+    '95': number
+  }
+  intensity_distribution: {
+    '75_percent': number
+    '85_percent': number
+    '90_total_reps': number
+    '95_total_reps': number
+  }
+  volume_pattern_main: string
+  volume_pattern_8190: string
+  sessions_per_week: number
+  session_distribution: string
+}
 
 interface ProgramData {
+  schema_version: string
+  meta: {
+    filename: string
+    created_at: string
+    created_by: string
+    status: string
+  }
   client: {
     name: string
-    delta: string
+    delta: 'beginner' | 'intermediate' | 'advanced' | 'elite'
+    one_rm: {
+      squat: number
+      bench_press: number
+      deadlift: number
+    }
   }
   program_info: {
-    block: string
+    block: 'prep' | 'comp'
     start_date: string
+    end_date: string
     weeks: number
   }
+  input: Record<LiftKey, LiftInputPayload>
   calculated: {
     [lift: string]: {
       _summary: {
@@ -26,7 +89,38 @@ interface ProgramData {
       [key: string]: any
     }
   }
+  sessions: SessionsData
 }
+
+interface GenerateProgramResponse {
+  success: boolean
+  error?: string
+  program?: {
+    calculated: ProgramData['calculated']
+    sessions: SessionsData
+  }
+}
+
+const DEFAULT_SESSIONS_PER_WEEK = 3
+const DEFAULT_SESSION_DISTRIBUTION = 'd25_33_42'
+
+const getLiftLabel = (lift: string) => (
+  lift === 'squat' ? 'Squat' :
+  lift === 'bench_press' ? 'Bench Press' :
+  lift === 'deadlift' ? 'Deadlift' : lift
+)
+
+const toClientSlug = (name: string) => (
+  name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+)
+
+const toApiBlock = (block: string): 'prep' | 'comp' => (
+  block === 'comp' ? 'comp' : 'prep'
+)
 
 export default function CreateProgram() {
   const router = useRouter()
@@ -37,7 +131,6 @@ export default function CreateProgram() {
   const [isSaved, setIsSaved] = useState(false)
   const [isNewClient, setIsNewClient] = useState(true)
   const [isEditMode, setIsEditMode] = useState(false)
-  const [autoCalculateEnabled, setAutoCalculateEnabled] = useState(true)
 
   // Default lift configuration
   const defaultLiftConfig = (oneRM: number, volume: number) => ({
@@ -61,10 +154,8 @@ export default function CreateProgram() {
   const [formData, setFormData] = useState({
     // Shared client info
     clientName: 'Katerina Balasova',
-    delta: 'advanced',
+    delta: 'advanced' as const,
     block: 'prep',
-    sessions_per_week: 3,
-    session_distribution: 'd25_33_42',
 
     // Per-lift configurations
     lifts: {
@@ -74,35 +165,131 @@ export default function CreateProgram() {
     }
   })
 
-  // Auto-calculation with debouncing
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const isInitialMount = useRef(true)
+  const buildLiftPayload = (liftData: typeof formData.lifts.squat): LiftInputPayload => ({
+    volume: liftData.volume,
+    rounding: liftData.rounding,
+    one_rm: liftData.oneRM,
+    weights: {
+      '65': liftData.weight_65,
+      '75': liftData.weight_75,
+      '85': liftData.weight_85,
+      '90': liftData.weight_90,
+      '95': liftData.weight_95,
+    },
+    intensity_distribution: {
+      '75_percent': liftData.zone_75_percent,
+      '85_percent': liftData.zone_85_percent,
+      '90_total_reps': liftData.zone_90_total_reps,
+      '95_total_reps': liftData.zone_95_total_reps,
+    },
+    volume_pattern_main: liftData.volume_pattern_main,
+    volume_pattern_8190: liftData.volume_pattern_8190,
+    sessions_per_week: DEFAULT_SESSIONS_PER_WEEK,
+    session_distribution: DEFAULT_SESSION_DISTRIBUTION,
+  })
+
+  const buildGeneratePayload = () => {
+    const clientSlug = toClientSlug(formData.clientName)
+    const block = toApiBlock(formData.block)
+
+    return {
+      clientSlug,
+      save: false,
+      provider: 'anthropic' as const,
+      model: 'claude-opus-4-6',
+      promptVersion: 'v2_7',
+      client: {
+        name: formData.clientName,
+        delta: formData.delta,
+        one_rm: {
+          squat: formData.lifts.squat.oneRM,
+          bench_press: formData.lifts.bench_press.oneRM,
+          deadlift: formData.lifts.deadlift.oneRM,
+        },
+      },
+      block,
+      weeks: 4,
+      lifts: {
+        squat: buildLiftPayload(formData.lifts.squat),
+        bench_press: buildLiftPayload(formData.lifts.bench_press),
+        deadlift: buildLiftPayload(formData.lifts.deadlift),
+      },
+    }
+  }
+
+  const buildProgramData = (
+    payload: ReturnType<typeof buildGeneratePayload>,
+    generated: NonNullable<GenerateProgramResponse['program']>,
+  ): ProgramData => {
+    const today = new Date().toISOString().split('T')[0]
+    const endDate = new Date(Date.now() + payload.weeks * 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0]
+
+    return {
+      schema_version: '1.2',
+      meta: {
+        filename: `${today}_${payload.clientSlug}_${payload.block}_all_lifts.json`,
+        created_at: new Date().toISOString(),
+        created_by: 'AI Generator',
+        status: 'draft',
+      },
+      client: payload.client,
+      program_info: {
+        block: payload.block,
+        start_date: today,
+        end_date: endDate,
+        weeks: payload.weeks,
+      },
+      input: payload.lifts,
+      calculated: generated.calculated,
+      sessions: generated.sessions,
+    }
+  }
+
+  const recalculateDeterministic = () => {
+    try {
+      const payload = buildGeneratePayload()
+      const calculated = calculateAllTargets(payload.lifts, payload.client.delta, payload.weeks)
+      const programData = buildProgramData(payload, {
+        calculated,
+        sessions: {} as SessionsData,
+      })
+
+      setCalculatedResults(programData)
+      setIsSaved(false)
+    } catch (error) {
+      console.error('Error in deterministic calculation:', error)
+    }
+  }
 
   const triggerCalculation = async () => {
-    if (!autoCalculateEnabled) return
 
     setLoading(true)
     setIsSaved(false)
 
     try {
-      // Call API to calculate targets
-      const response = await fetch('/api/create-program', {
+      const payload = buildGeneratePayload()
+
+      // Call AI generation API (preview only, no DB save)
+      const response = await fetch('/api/generate-program', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to calculate program')
+      const result: GenerateProgramResponse = await response.json()
+
+      if (!result.program) {
+        throw new Error(result.error || 'Failed to generate program')
       }
 
-      const result = await response.json()
-
-      // Load the calculated program data
-      const programResponse = await fetch(`/api/program?client=${result.client}&filename=${result.filename}`)
-      const programData = await programResponse.json()
-
+      const programData = buildProgramData(payload, result.program)
       setCalculatedResults(programData)
+
+      if (!response.ok) {
+        console.warn('Program generated with validation issues:', result.error)
+      }
     } catch (error) {
       console.error('Error calculating program:', error)
       // Don't show alert for auto-calculation errors
@@ -111,36 +298,10 @@ export default function CreateProgram() {
     }
   }
 
-  // Initial calculation on mount
+  // Deterministic recalculation on every input change
   useEffect(() => {
-    if (autoCalculateEnabled) {
-      triggerCalculation()
-    }
-  }, []) // Empty deps = runs once on mount
-
-  // Auto-calculation on changes (with debounce)
-  useEffect(() => {
-    // Skip auto-calculation on initial mount
-    if (isInitialMount.current) {
-      isInitialMount.current = false
-      return
-    }
-
-    // Debounce: wait 800ms after last change before calculating
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      triggerCalculation()
-    }, 800)
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-      }
-    }
-  }, [formData, autoCalculateEnabled])
+    recalculateDeterministic()
+  }, [formData])
 
   const handleCalculate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -148,9 +309,30 @@ export default function CreateProgram() {
   }
 
   const handleSave = async () => {
-    // Program is already saved by the API, just mark as saved
-    setIsSaved(true)
-    alert(t('programSaved'))
+    if (!calculatedResults) return
+
+    try {
+      setLoading(true)
+
+      const response = await fetch('/api/import-program', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(calculatedResults),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save program')
+      }
+
+      setIsSaved(true)
+      alert(t('programSaved'))
+    } catch (error) {
+      console.error('Error saving program:', error)
+      alert(error instanceof Error ? error.message : 'Failed to save program')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleDownload = () => {
@@ -296,7 +478,7 @@ export default function CreateProgram() {
   }
 
   // Handle number input with decimal comma/point support
-  const handleLiftNumberInput = (lift: 'squat' | 'bench_press' | 'deadlift', field: string, inputValue: string) => {
+  const handleLiftNumberInput = (lift: LiftKey, field: string, inputValue: string) => {
     // Replace comma with dot for decimal separator
     const normalized = inputValue.replace(',', '.')
 
@@ -308,6 +490,56 @@ export default function CreateProgram() {
         updateLiftField(lift, field, numValue)
       }
     }
+  }
+
+  const getLiftWeekSessions = (lift: LiftKey, weekNum: number) => {
+    if (!calculatedResults?.sessions) return []
+
+    const weekKey = `week_${weekNum}` as WeekKey
+    return Object.entries(calculatedResults.sessions)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([sessionLetter, sessionData]) => {
+        const liftSession = sessionData?.[weekKey]?.lifts?.find(item => item.lift === lift)
+        return {
+          session: sessionLetter,
+          sets: liftSession?.sets ?? [],
+        }
+      })
+      .filter(session => session.sets.length > 0)
+  }
+
+  const updateSessionSet = (
+    lift: LiftKey,
+    weekNum: number,
+    sessionLetter: string,
+    setIndex: number,
+    field: 'weight' | 'reps' | 'percentage',
+    rawValue: number,
+  ) => {
+    setCalculatedResults(prev => {
+      if (!prev) return prev
+
+      const weekKey = `week_${weekNum}` as WeekKey
+      const nextSessions: SessionsData = JSON.parse(JSON.stringify(prev.sessions))
+      const weekData = nextSessions[sessionLetter]?.[weekKey]
+      if (!weekData) return prev
+
+      const liftEntry = weekData.lifts.find(item => item.lift === lift)
+      if (!liftEntry || !liftEntry.sets[setIndex]) return prev
+
+      const value = Number.isFinite(rawValue) ? rawValue : 0
+      liftEntry.sets[setIndex] = {
+        ...liftEntry.sets[setIndex],
+        [field]: value,
+      }
+
+      return {
+        ...prev,
+        sessions: nextSessions,
+      }
+    })
+
+    setIsSaved(false)
   }
 
   return (
@@ -399,7 +631,7 @@ export default function CreateProgram() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
                 >
                   <option value="prep">Prep</option>
-                  <option value="peak">Peak</option>
+                  <option value="comp">Comp</option>
                 </select>
               </div>
             </div>
@@ -435,72 +667,10 @@ export default function CreateProgram() {
             />
           </div>
 
-          {/* Sessions */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">{t('trainingSessions')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('sessionsPerWeek')}
-                </label>
-                <select
-                  value={formData.sessions_per_week}
-                  onChange={(e) => updateSharedField('sessions_per_week', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
-                >
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('sessionDistribution')}
-                </label>
-                <select
-                  value={formData.session_distribution}
-                  onChange={(e) => updateSharedField('session_distribution', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
-                >
-                  {formData.sessions_per_week === 3 ? (
-                    <>
-                      <option value="d25_33_42">d25_33_42 (L-M-H)</option>
-                      <option value="d20_35_45">d20_35_45</option>
-                      <option value="d22_28_50">d22_28_50</option>
-                      <option value="d20_30_50">d20_30_50</option>
-                      <option value="d15_35_50">d15_35_50</option>
-                      <option value="d15_30_55">d15_30_55</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="d40_60">d40_60</option>
-                      <option value="d35_65">d35_65</option>
-                      <option value="d30_70">d30_70</option>
-                      <option value="d25_75">d25_75</option>
-                      <option value="d20_80">d20_80</option>
-                    </>
-                  )}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Auto-calculate toggle and Submit Button */}
+          {/* AI generation trigger */}
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autoCalculateEnabled}
-                  onChange={(e) => setAutoCalculateEnabled(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">
-                  {t('autoRecalculate')} {autoCalculateEnabled && loading && <span className="text-blue-600">({t('calculating')})</span>}
-                </span>
-              </label>
-              {autoCalculateEnabled && !loading && calculatedResults && (
-                <span className="text-xs text-green-600">✓ {t('current')}</span>
-              )}
+            <div className="text-sm text-gray-700">
+              Deterministic calculations update automatically. AI sessions generate only after clicking “{t('calculateProgram')}”.
             </div>
 
             <div className="flex gap-4">
@@ -511,15 +681,13 @@ export default function CreateProgram() {
               >
                 {t('cancel')}
               </button>
-              {!autoCalculateEnabled && (
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-                >
-                  {loading ? t('calculating') : t('calculateProgram')}
-                </button>
-              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                {loading ? t('calculating') : t('calculateProgram')}
+              </button>
             </div>
           </div>
         </form>
@@ -596,9 +764,8 @@ export default function CreateProgram() {
                 const summary = liftData._summary
 
                 // Format lift name (e.g., "bench_press" -> "Bench Press")
-                const liftLabel = lift === 'squat' ? 'Squat' :
-                                 lift === 'bench_press' ? 'Bench Press' :
-                                 lift === 'deadlift' ? 'Deadlift' : lift
+                const liftLabel = getLiftLabel(lift)
+                const liftKey = lift as LiftKey
 
                 // Get target zone distribution from formData
                 const liftConfig = formData.lifts[lift as keyof typeof formData.lifts]
@@ -612,20 +779,6 @@ export default function CreateProgram() {
                   '90': liftConfig.zone_90_total_reps,
                   '95': liftConfig.zone_95_total_reps,
                 }
-
-                // Get session distribution pattern info
-                const sessionDistPattern = formData.session_distribution
-                const sessionPercentages = sessionDistPattern === 'd25_33_42' ? [25, 33, 42] :
-                                          sessionDistPattern === 'd20_35_45' ? [20, 35, 45] :
-                                          sessionDistPattern === 'd22_28_50' ? [22, 28, 50] :
-                                          sessionDistPattern === 'd20_30_50' ? [20, 30, 50] :
-                                          sessionDistPattern === 'd15_35_50' ? [15, 35, 50] :
-                                          sessionDistPattern === 'd15_30_55' ? [15, 30, 55] :
-                                          sessionDistPattern === 'd40_60' ? [40, 60] :
-                                          sessionDistPattern === 'd35_65' ? [35, 65] :
-                                          sessionDistPattern === 'd30_70' ? [30, 70] :
-                                          sessionDistPattern === 'd25_75' ? [25, 75] :
-                                          sessionDistPattern === 'd20_80' ? [20, 80] : [25, 33, 42]
 
                 return (
                   <div key={lift}>
@@ -732,56 +885,85 @@ export default function CreateProgram() {
                       </table>
                     </div>
 
-                    {/* Table 2: Session Distribution */}
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full border-collapse border border-gray-300">
-                        <thead>
-                          <tr className="bg-green-100">
-                            <th className="border border-gray-300 px-4 py-2 text-center text-gray-900">
-                              {formData.sessions_per_week}
-                            </th>
-                            <th className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900" colSpan={4}>
-                              days / week
-                            </th>
-                          </tr>
-                          <tr className="bg-gray-50">
-                            <th className="border border-gray-300 px-4 py-2 text-center text-gray-900">
-                              {sessionDistPattern}
-                            </th>
-                            <th className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900" colSpan={4}>
-                              distribution in a week
-                            </th>
-                          </tr>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2 text-center text-gray-900">LMH</th>
-                            <th className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900">#reps</th>
-                            <th className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900">#reps</th>
-                            <th className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900">#reps</th>
-                            <th className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900">#reps</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sessionPercentages.map((pct, sessionIdx) => (
-                            <tr key={sessionIdx}>
-                              <td className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900">
-                                {pct}
-                              </td>
-                              {[1, 2, 3, 4].map(weekNum => {
-                                const weekData = liftData[`week_${weekNum}`]
-                                const sessions = weekData?.sessions || {}
-                                const sessionKeys = Object.keys(sessions)
-                                const sessionData = sessions[sessionKeys[sessionIdx]]
-                                const reps = sessionData?.total || 0
-                                return (
-                                  <td key={weekNum} className="border border-gray-300 px-4 py-2 text-center text-gray-900">
-                                    {reps}
-                                  </td>
-                                )
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    {/* AI Sessions (manual set editing) */}
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-gray-900">AI Sessions</h4>
+                      <AISessionLiftTable sessions={calculatedResults.sessions} lift={liftKey} />
+
+                      {isEditMode && (
+                        <div className="space-y-4">
+                          <h5 className="text-sm font-semibold text-gray-800">Manual Set Editor</h5>
+                          {[1, 2, 3, 4].map(weekNum => {
+                            const weekSessions = getLiftWeekSessions(liftKey, weekNum)
+
+                            return (
+                              <div key={weekNum} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                <div className="font-semibold text-gray-900 mb-3">Week {weekNum}</div>
+                                {weekSessions.length === 0 ? (
+                                  <p className="text-sm text-gray-500">No generated sessions for this week.</p>
+                                ) : (
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    {weekSessions.map(({ session, sets }) => (
+                                      <div key={session} className="bg-white border border-gray-200 rounded-md p-3">
+                                        <div className="font-semibold text-blue-800 mb-2">Session {session}</div>
+                                        <div className="overflow-x-auto">
+                                          <table className="min-w-full border-collapse border border-gray-200 text-sm">
+                                            <thead>
+                                              <tr className="bg-gray-100">
+                                                <th className="border border-gray-200 px-2 py-1 text-center text-gray-900">#</th>
+                                                <th className="border border-gray-200 px-2 py-1 text-center text-gray-900">kg</th>
+                                                <th className="border border-gray-200 px-2 py-1 text-center text-gray-900">reps</th>
+                                                <th className="border border-gray-200 px-2 py-1 text-center text-gray-900">%1RM</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {sets.map((set, setIndex) => (
+                                                <tr key={`${session}-${weekNum}-${setIndex}`}>
+                                                  <td className="border border-gray-200 px-2 py-1 text-center text-gray-900">{setIndex + 1}</td>
+                                                  <td className="border border-gray-200 px-2 py-1 text-center text-gray-900">
+                                                    <input
+                                                      type="number"
+                                                      step="0.5"
+                                                      min="0"
+                                                      value={set.weight}
+                                                      onChange={(e) => updateSessionSet(liftKey, weekNum, session, setIndex, 'weight', parseFloat(e.target.value) || 0)}
+                                                      className="w-20 px-1 py-1 text-center border border-blue-300 rounded"
+                                                    />
+                                                  </td>
+                                                  <td className="border border-gray-200 px-2 py-1 text-center text-gray-900">
+                                                    <input
+                                                      type="number"
+                                                      step="1"
+                                                      min="0"
+                                                      value={set.reps}
+                                                      onChange={(e) => updateSessionSet(liftKey, weekNum, session, setIndex, 'reps', parseInt(e.target.value) || 0)}
+                                                      className="w-16 px-1 py-1 text-center border border-blue-300 rounded"
+                                                    />
+                                                  </td>
+                                                  <td className="border border-gray-200 px-2 py-1 text-center text-gray-900">
+                                                    <input
+                                                      type="number"
+                                                      step="0.5"
+                                                      min="0"
+                                                      value={set.percentage}
+                                                      onChange={(e) => updateSessionSet(liftKey, weekNum, session, setIndex, 'percentage', parseFloat(e.target.value) || 0)}
+                                                      className="w-20 px-1 py-1 text-center border border-blue-300 rounded"
+                                                    />
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                     </div>
                   </div>
@@ -816,4 +998,196 @@ export default function CreateProgram() {
       </div>
     </main>
   )
+}
+
+const ZONE_ROWS = [
+  { key: 65, label: '65%' },
+  { key: 75, label: '75%' },
+  { key: 85, label: '85%' },
+  { key: 92.5, label: '90%' },
+  { key: 95, label: '95%' },
+] as const
+
+function AISessionLiftTable({
+  sessions,
+  lift,
+}: {
+  sessions: SessionsData
+  lift: LiftKey
+}) {
+  const sessionKeys = Object.keys(sessions).sort()
+  const weekKeys: WeekKey[] = ['week_1', 'week_2', 'week_3', 'week_4']
+  const rowsPerWeek = ZONE_ROWS.length + 2
+
+  const getAllSets = (sessionKey: string, weekKey: WeekKey): SetData[] => {
+    const weekData = sessions[sessionKey]?.[weekKey]
+    const liftData = weekData?.lifts?.find(item => item.lift === lift)
+    return liftData?.sets ?? []
+  }
+
+  const getWeightForZone = (zonePct: number): number | null => {
+    for (const sessionKey of sessionKeys) {
+      for (const weekKey of weekKeys) {
+        const set = getAllSets(sessionKey, weekKey).find(item => item.percentage === zonePct)
+        if (set) return set.weight
+      }
+    }
+    return null
+  }
+
+  const maxSetsPerSession: Record<string, number> = {}
+  for (const sessionKey of sessionKeys) {
+    let max = 0
+    for (const weekKey of weekKeys) {
+      const n = getAllSets(sessionKey, weekKey).length
+      if (n > max) max = n
+    }
+    maxSetsPerSession[sessionKey] = Math.max(max, 1)
+  }
+
+  if (sessionKeys.length === 0) {
+    return <p className="text-sm text-gray-500">No AI sessions generated yet.</p>
+  }
+
+  return (
+    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+      <table className="min-w-full border-collapse text-sm">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">week</th>
+            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">lift</th>
+            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">%1RM</th>
+            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">kg</th>
+            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">#reps</th>
+            {sessionKeys.map(sessionKey => {
+              const nCols = maxSetsPerSession[sessionKey]
+              return Array.from({ length: nCols }, (_, idx) => (
+                <th
+                  key={`${sessionKey}-${idx}`}
+                  className={`border border-gray-300 px-2 py-1 font-semibold ${idx === 0 ? 'border-l-2 border-l-gray-500' : ''} text-gray-900`}
+                >
+                  {idx === 0 ? `Session ${sessionKey}` : `#${idx + 1}`}
+                </th>
+              ))
+            })}
+          </tr>
+        </thead>
+        {weekKeys.map((weekKey, weekIdx) => (
+          <tbody key={weekKey}>
+              {ZONE_ROWS.map((zone, zoneIdx) => {
+                let totalZoneReps = 0
+                for (const sessionKey of sessionKeys) {
+                  totalZoneReps += getAllSets(sessionKey, weekKey)
+                    .filter(set => set.percentage === zone.key)
+                    .reduce((sum, set) => sum + set.reps, 0)
+                }
+
+                return (
+                  <tr key={`${weekKey}-${zone.key}`} className={zoneIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    {zoneIdx === 0 && (
+                      <td
+                        rowSpan={rowsPerWeek}
+                        className="border border-gray-300 px-2 py-1 text-center font-bold text-gray-900 align-middle"
+                      >
+                        {weekIdx + 1}
+                      </td>
+                    )}
+                    {zoneIdx === 0 && (
+                      <td
+                        rowSpan={rowsPerWeek}
+                        className="border border-gray-300 px-2 py-1 text-center font-semibold text-gray-800 align-middle"
+                      >
+                        {getLiftLabel(lift)}
+                      </td>
+                    )}
+
+                    <td className="border border-gray-300 px-2 py-1 text-center font-semibold" style={{ color: getZoneColor(zone.key) }}>
+                      {zone.label}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1 text-center text-gray-700">
+                      {getWeightForZone(zone.key) ?? ''}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1 text-center font-semibold text-gray-900">
+                      {totalZoneReps || ''}
+                    </td>
+
+                    {sessionKeys.map(sessionKey => {
+                      const allSessionSets = getAllSets(sessionKey, weekKey)
+                      const nCols = maxSetsPerSession[sessionKey]
+
+                      return Array.from({ length: nCols }, (_, idx) => {
+                        const set = allSessionSets[idx]
+                        const isThisZone = !!set && set.percentage === zone.key
+
+                        return (
+                          <td
+                            key={`${weekKey}-${sessionKey}-${zone.key}-${idx}`}
+                            className={`border border-gray-300 px-2 py-1 text-center font-semibold ${idx === 0 ? 'border-l-2 border-l-gray-500' : ''} ${isThisZone ? '' : 'text-transparent'}`}
+                            style={{
+                              backgroundColor: isThisZone ? `${getZoneColor(zone.key)}22` : undefined,
+                              color: isThisZone ? '#111' : 'transparent',
+                            }}
+                          >
+                            {isThisZone ? set.reps : ''}
+                          </td>
+                        )
+                      })
+                    })}
+                  </tr>
+                )
+              })}
+
+              <tr className="bg-blue-50">
+                <td colSpan={3} className="border border-gray-300 px-2 py-1 text-right text-xs font-semibold text-blue-800">
+                  ARI
+                </td>
+                {sessionKeys.map(sessionKey => {
+                  const sets = getAllSets(sessionKey, weekKey)
+                  const totalReps = sets.reduce((sum, set) => sum + set.reps, 0)
+                  const ari = totalReps > 0
+                    ? sets.reduce((sum, set) => sum + (set.reps * set.percentage), 0) / totalReps
+                    : null
+
+                  return (
+                    <td
+                      key={`${weekKey}-${sessionKey}-ari`}
+                      colSpan={maxSetsPerSession[sessionKey]}
+                      className="border border-gray-300 px-2 py-1 text-center font-semibold text-blue-900 border-l-2 border-l-gray-500"
+                    >
+                      {ari !== null ? `${ari.toFixed(2)}%` : ''}
+                    </td>
+                  )
+                })}
+              </tr>
+
+              <tr className="bg-green-50 border-b-2 border-b-gray-400">
+                <td colSpan={3} className="border border-gray-300 px-2 py-1 text-right text-xs font-semibold text-green-800">
+                  NL
+                </td>
+                {sessionKeys.map(sessionKey => {
+                  const total = getAllSets(sessionKey, weekKey).reduce((sum, set) => sum + set.reps, 0)
+                  return (
+                    <td
+                      key={`${weekKey}-${sessionKey}-nl`}
+                      colSpan={maxSetsPerSession[sessionKey]}
+                      className="border border-gray-300 px-2 py-1 text-center font-bold text-green-800 border-l-2 border-l-gray-500"
+                    >
+                      {total || ''}
+                    </td>
+                  )
+                })}
+              </tr>
+          </tbody>
+        ))}
+      </table>
+    </div>
+  )
+}
+
+function getZoneColor(percentage: number): string {
+  if (percentage <= 65) return '#16a34a'
+  if (percentage <= 75) return '#2563eb'
+  if (percentage <= 85) return '#ea580c'
+  if (percentage <= 92.5) return '#dc2626'
+  return '#9333ea'
 }

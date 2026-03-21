@@ -60,6 +60,32 @@ export const sessionsOutputSchema = z.record(
 
 export type SessionsOutput = z.infer<typeof sessionsOutputSchema>
 
+// ─── v2.7 week-first schema (variable sessions per week) ────
+// Used when AI decides session count dynamically from zone totals.
+const weekSessionSchema = z.object({
+  session: z.string().describe('Session letter A, B, C, D'),
+  sets: z.array(setSchema).describe('Ordered sets for this session/week'),
+})
+
+const weekOutputSchema = z.object({
+  sessions_used: z.number().describe('Number of sessions this week (2, 3, or 4)'),
+  distribution_code: z.string().describe('Distribution code used, e.g. d25_33_42'),
+  tried_distributions: z.array(z.string()).describe('Ordered list of attempted distribution codes for this week'),
+  selection_reason: z.string().describe('Short explanation why this distribution/session-count was selected'),
+  sessions: z.array(weekSessionSchema).describe('Sessions for this week'),
+})
+
+export const liftWeeksSchema = z.object({
+  weeks: z.object({
+    week_1: weekOutputSchema,
+    week_2: weekOutputSchema,
+    week_3: weekOutputSchema,
+    week_4: weekOutputSchema,
+  }).describe('Per-week sessions with dynamically chosen distribution'),
+})
+
+export type LiftWeeksOutput = z.infer<typeof liftWeeksSchema>
+
 // ─── Input types (provided by coach, not AI) ────────────────
 
 export interface WeekPlanEntry {

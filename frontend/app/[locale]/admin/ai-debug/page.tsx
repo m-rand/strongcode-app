@@ -16,7 +16,7 @@ const DEFAULT_INPUT = {
   weeks: 4,
   lifts: {
     squat: {
-      volume: 350,
+      volume: 280,
       rounding: 2.5,
       one_rm: 147.5,
       weights: { '65': 95, '75': 110, '85': 125, '90': 135, '95': 140 },
@@ -58,7 +58,7 @@ const EXAMPLE_INPUTS: Array<{ id: string; label: string; input: object }> = [
       weeks: 4,
       lifts: {
         bench_press: {
-          volume: 300,
+          volume: 320,
           rounding: 2.5,
           one_rm: 80,
           weights: { '65': 52.5, '75': 60, '85': 67.5, '90': 72.5, '95': 77.5 },
@@ -128,7 +128,7 @@ const EXAMPLE_INPUTS: Array<{ id: string; label: string; input: object }> = [
       weeks: 4,
       lifts: {
         squat: {
-          volume: 350,
+          volume: 280,
           rounding: 2.5,
           one_rm: 147.5,
           weights: { '65': 95, '75': 110, '85': 125, '90': 135, '95': 140 },
@@ -146,7 +146,7 @@ const EXAMPLE_INPUTS: Array<{ id: string; label: string; input: object }> = [
           session_distribution: 'd25_33_42',
         },
         bench_press: {
-          volume: 300,
+          volume: 320,
           rounding: 2.5,
           one_rm: 80,
           weights: { '65': 52.5, '75': 60, '85': 67.5, '90': 72.5, '95': 77.5 },
@@ -231,9 +231,16 @@ interface ApiResponse {
   success: boolean
   error?: string
   program?: {
-    calculated: Record<string, unknown>
+    calculated: Record<string, Record<string, unknown>>
     sessions: Record<string, Record<string, { lifts: { lift: string; sets: SetData[] }[] }>>
   }
+  distributionInfo?: Record<string, Record<string, {
+    sessions_used: number
+    distribution_code: string
+    session_totals: number[]
+    tried_distributions: string[]
+    selection_reason: string
+  }>>
   validation?: {
     errors: string[]
     warnings: string[]
@@ -255,10 +262,10 @@ interface ApiResponse {
 
 const MODEL_OPTIONS: Record<'anthropic' | 'openai', Array<{ value: string; label: string }>> = {
   anthropic: [
-    { value: 'claude-sonnet-4-20250514', label: 'claude-sonnet-4-20250514 (default)' },
+    { value: 'claude-sonnet-4-20250514', label: 'claude-sonnet-4-20250514' },
     { value: 'claude-opus-4-20250514', label: 'claude-opus-4-20250514' },
     { value: 'claude-sonnet-4-6', label: 'claude-sonnet-4-6' },
-    { value: 'claude-opus-4-6', label: 'claude-opus-4-6' },
+    { value: 'claude-opus-4-6', label: 'claude-opus-4-6 (default)' },
     { value: 'claude-3-7-sonnet-latest', label: 'claude-3-7-sonnet-latest' },
     { value: 'claude-3-5-sonnet-latest', label: 'claude-3-5-sonnet-latest' },
   ],
@@ -732,7 +739,85 @@ export default function AIDebugPage() {
 
             {result?.program?.sessions ? (
               <div>
-                {/* View toggle */}
+                {/* Distribution info (v2.7 only) */}
+            {result?.distributionInfo && (() => {
+              // Compute what the decision tree SHOULD choose
+              function computeExpected(total: number): { n: number; code: string; splits: number[] } {
+                const try3 = [25, 33, 42].map((p, i, arr) => {
+                  if (i < arr.length - 1) return Math.round(total * p / 100)
+                  return total - Math.round(total * 25 / 100) - Math.round(total * 33 / 100)
+                })
+                if (try3.every(v => v >= 10 && v <= 50)) return { n: 3, code: 'd25_33_42', splits: try3 }
+                if (try3.some(v => v < 10)) {
+                  const try2 = [40, 60].map((p, i) => i === 0 ? Math.round(total * p / 100) : total - Math.round(total * 40 / 100))
+                  return { n: 2, code: 'd40_60', splits: try2 }
+                }
+                const try4 = [15, 22, 28, 35].map((p, i, arr) => {
+                  if (i < arr.length - 1) return Math.round(total * p / 100)
+                  return total - [15, 22, 28].reduce((s, pp) => s + Math.round(total * pp / 100), 0)
+                })
+                return { n: 4, code: 'd15_22_28_35', splits: try4 }
+              }
+
+              return (
+                <div style={{ marginBottom: '1.25rem', padding: '0.75rem', background: '#131320', borderRadius: 6, border: '1px solid #2a2a4a' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#aaa', marginBottom: '0.75rem' }}>📐 Distribution rozhodnutí AI (v2.7)</div>
+                  {Object.entries(result.distributionInfo!).map(([lift, liftDist]) => (
+                    <div key={lift} style={{ marginBottom: '0.75rem' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#f65d2e', marginBottom: '0.35rem' }}>
+                        {lift === 'bench_press' ? 'Bench Press' : lift.charAt(0).toUpperCase() + lift.slice(1)}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {['week_1', 'week_2', 'week_3', 'week_4'].map(wk => {
+                          const ai = liftDist[wk]
+                          if (!ai) return null
+                          const calcWeek = result?.program?.calculated?.[lift]?.[wk] as { total_reps?: number } | undefined
+                          const total = calcWeek?.total_reps ?? 0
+                          const expected = computeExpected(total)
+                          const match = ai.sessions_used === expected.n && ai.distribution_code === expected.code
+                          return (
+                            <div key={wk} style={{
+                              background: '#1a1a2e',
+                              border: `1px solid ${match ? '#2a4a2a' : '#4a2a2a'}`,
+                              borderRadius: 5,
+                              padding: '0.5rem 0.75rem',
+                              fontSize: '0.75rem',
+                              minWidth: 180,
+                            }}>
+                              <div style={{ fontWeight: 700, color: '#888', marginBottom: '0.25rem' }}>
+                                {wk.replace('_', ' ').toUpperCase()} — {total} reps
+                              </div>
+                              <div style={{ color: '#ccc' }}>
+                                AI: <span style={{ color: '#81d4fa', fontWeight: 600 }}>{ai.sessions_used}×</span> {ai.distribution_code}
+                              </div>
+                              <div style={{ color: '#9aa0a6', marginTop: 2 }}>
+                                sety: [{ai.session_totals.join(', ')}]
+                              </div>
+                              <div style={{ color: '#7f8c9a', marginTop: 2 }}>
+                                zkoušeno: {ai.tried_distributions?.join(' → ') || '—'}
+                              </div>
+                              <div style={{ color: match ? '#888' : '#ffb74d', marginTop: 2 }}>
+                                očekáváno: {expected.n}× {expected.code} [{expected.splits.join(', ')}]
+                                {!match && ' ⚠️'}
+                              </div>
+                              <div style={{ color: '#b0bec5', marginTop: 4, fontStyle: 'italic' }}>
+                                důvod: {ai.selection_reason || '—'}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+
+            <p style={{ color: '#777', fontSize: '0.75rem', marginBottom: '0.6rem' }}>
+              Pozn.: počet sloupců #2/#3/... v Excel view není fixní limit (8 je jen aktuální maximum z dat).
+            </p>
+
+            {/* View toggle */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
                   <button
                     onClick={() => setSessionsView('excel')}

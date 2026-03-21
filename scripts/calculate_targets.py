@@ -18,10 +18,9 @@ from typing import Dict, List
 
 from constants import (
     CHERNYAK_PATTERNS,
-    SKILL_LEVEL_ADJUSTMENTS,
+    CHERNYAK_PATTERNS_BY_LEVEL,
     SESSION_PATTERNS_3_DAYS,
     SESSION_PATTERNS_2_DAYS,
-    DAYS_OF_WEEK,
 )
 from utilities import (
     distribute_volume,
@@ -55,12 +54,9 @@ def save_program(filepath: str, data: Dict):
 
 def apply_skill_level_adjustment(pattern: List[int], skill_level: str) -> List[int]:
     """
-    Apply skill level adjustment to Chernyak pattern
-
-    Advanced/Elite patterns have less variability
+    Legacy helper kept for backward compatibility.
+    Patterns are currently used as explicitly selected in input.
     """
-    if skill_level in SKILL_LEVEL_ADJUSTMENTS:
-        return SKILL_LEVEL_ADJUSTMENTS[skill_level]
     return pattern
 
 
@@ -115,18 +111,17 @@ def calculate_lift_targets(
     print(f"     Pattern (81-90): {volume_pattern_8190}")
     print(f"     Skill level: {skill_level}")
 
-    # Get Chernyak patterns
-    if volume_pattern_main not in CHERNYAK_PATTERNS:
+    # Get Chernyak patterns by skill level (base / advanced / elite)
+    level_patterns = CHERNYAK_PATTERNS_BY_LEVEL.get(skill_level, CHERNYAK_PATTERNS_BY_LEVEL['intermediate'])
+
+    if volume_pattern_main not in level_patterns:
         raise ValueError(f"Unknown volume pattern: {volume_pattern_main}")
-    if volume_pattern_8190 not in CHERNYAK_PATTERNS:
+    if volume_pattern_8190 not in level_patterns:
         raise ValueError(f"Unknown 81-90 pattern: {volume_pattern_8190}")
 
-    weekly_dist_main = CHERNYAK_PATTERNS[volume_pattern_main][:weeks]
-    weekly_dist_8190 = CHERNYAK_PATTERNS[volume_pattern_8190][:weeks]
-
-    # Note: We use patterns as-is. Skill level adjustments only apply
-    # when no specific pattern is chosen (default/auto mode).
-    # Explicitly chosen patterns like "3a", "2-4a" should be used exactly.
+    # Same pattern code (e.g. 3a) maps to different percentage table by level.
+    weekly_dist_main = level_patterns[volume_pattern_main][:weeks]
+    weekly_dist_8190 = level_patterns[volume_pattern_8190][:weeks]
 
     print(f"     Weekly distribution (main): {weekly_dist_main}")
     print(f"     Weekly distribution (81-90): {weekly_dist_8190}")

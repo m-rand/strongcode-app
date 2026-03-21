@@ -5,15 +5,15 @@ import { openai } from '@ai-sdk/openai'
 import { db } from '@/db'
 import { programs, clients } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { liftSessionsSchema, type GenerateInput, type LiftSessionsOutput, type SessionsOutput } from '@/lib/ai/schema'
-import { getPromptVersion, buildLiftPrompt } from '@/lib/ai/prompt'
+import { liftSessionsSchema, liftWeeksSchema, type GenerateInput, type LiftSessionsOutput, type LiftWeeksOutput, type SessionsOutput } from '@/lib/ai/schema'
+import { getPromptVersion, buildLiftPrompt, buildZonesOnlyPrompt } from '@/lib/ai/prompt'
 import { calculateAllTargets } from '@/lib/ai/calculate'
 import { TARGET_ARI } from '@/lib/ai/constants'
 
 type AIProvider = 'anthropic' | 'openai'
 
 const MODELS: Record<AIProvider, string> = {
-  anthropic: 'claude-sonnet-4-20250514',
+  anthropic: 'claude-opus-4-6',
   openai: 'gpt-4o',
 }
 
@@ -105,6 +105,69 @@ function validateLiftAiOutput(
   return errors
 }
 
+/**
+ * Validation for v2.7: only checks zone totals per week.
+ * Session totals are not pre-computed — AI decides session count freely.
+ */
+function validateLiftAiOutputV27(
+  lift: string,
+  liftCalc: Record<string, unknown>,
+  liftResult: LiftWeeksOutput,
+  weeks: number,
+): string[] {
+  const errors: string[] = []
+  const zones: ZoneKey[] = ['65', '75', '85', '90', '95']
+
+  for (let w = 1; w <= weeks; w++) {
+    const weekKey = `week_${w}` as 'week_1' | 'week_2' | 'week_3' | 'week_4'
+    const targetWeek = liftCalc[weekKey] as {
+      total_reps: number
+      zones: Record<ZoneKey, number>
+    } | undefined
+    if (!targetWeek) continue
+
+    const weekOutput = liftResult.weeks[weekKey]
+    if (!weekOutput) {
+      errors.push(`${lift} ${weekKey}: missing from AI output`)
+      continue
+    }
+
+    const actualZones: Record<ZoneKey, number> = { '65': 0, '75': 0, '85': 0, '90': 0, '95': 0 }
+
+    for (const sessionObj of weekOutput.sessions) {
+      for (const set of sessionObj.sets) {
+        const reps = Number(set.reps || 0)
+        if (!Number.isFinite(reps) || reps < 0) {
+          errors.push(`${lift} ${weekKey} session ${sessionObj.session}: invalid reps "${set.reps}"`)
+          continue
+        }
+        const zone = zoneFromPercentage(Number(set.percentage))
+        if (!zone) {
+          errors.push(`${lift} ${weekKey} session ${sessionObj.session}: invalid percentage "${set.percentage}"`)
+          continue
+        }
+        actualZones[zone] += reps
+      }
+    }
+
+    // Only zone totals checked — session count/distribution is AI's decision.
+    for (const zone of zones) {
+      const target = Number(targetWeek.zones[zone] ?? 0)
+      const actual = Number(actualZones[zone] ?? 0)
+      if (target !== actual) {
+        errors.push(`${lift} ${weekKey} zone ${zone}%: expected ${target} reps, got ${actual}`)
+      }
+    }
+
+    const weekActualTotal = zones.reduce((sum, z) => sum + actualZones[z], 0)
+    if (weekActualTotal !== targetWeek.total_reps) {
+      errors.push(`${lift} ${weekKey}: expected total ${targetWeek.total_reps}, got ${weekActualTotal}`)
+    }
+  }
+
+  return errors
+}
+
 export async function POST(request: Request) {
   try {
     const body: GenerateInput & { clientSlug: string; save?: boolean; provider?: AIProvider; promptVersion?: string; model?: string } = await request.json()
@@ -113,6 +176,7 @@ export async function POST(request: Request) {
     const systemPrompt = promptVersion.systemPrompt
     const modelId = body.model?.trim() ? body.model.trim() : MODELS[provider]
     const weeks = body.weeks || 4
+    const isV27 = promptVersion.id === 'v2_7'
 
     // Validate required fields
     if (!body.client || !body.block || !body.lifts) {
@@ -165,19 +229,21 @@ export async function POST(request: Request) {
 
     let totalInputTokens = 0
     let totalOutputTokens = 0
-    const perLiftResults: Record<string, LiftSessionsOutput> = {}
+    const perLiftResults: Record<string, LiftSessionsOutput | LiftWeeksOutput> = {}
     const prompts: Record<string, string> = {}
 
     for (const [lift, cfg] of Object.entries(activeLifts)) {
       const liftCalc = calculated[lift]
       if (!liftCalc) continue
 
-      const baseUserPrompt = buildLiftPrompt(lift, liftCalc, cfg.weights, weeks)
+      const baseUserPrompt = isV27
+        ? buildZonesOnlyPrompt(lift, liftCalc, cfg.weights, weeks)
+        : buildLiftPrompt(lift, liftCalc, cfg.weights, weeks)
       prompts[lift] = baseUserPrompt
 
-      let liftResult: LiftSessionsOutput | null = null
+      let liftResult: LiftSessionsOutput | LiftWeeksOutput | null = null
       let liftErrors: string[] = []
-      let lastAttemptResult: LiftSessionsOutput | null = null
+      let lastAttemptResult: LiftSessionsOutput | LiftWeeksOutput | null = null
 
       for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
         const isRetry = attempt > 1
@@ -191,67 +257,139 @@ export async function POST(request: Request) {
           console.log(`[generate-program]   → ${lift}...`)
         }
 
-        const result = await generateObject({
-          model: provider === 'openai' ? openai(modelId) : anthropic(modelId),
-          system: systemPrompt,
-          prompt: userPrompt,
-          schema: liftSessionsSchema,
-          temperature: 0,
-        })
-
-        totalInputTokens += result.usage?.inputTokens ?? 0
-        totalOutputTokens += result.usage?.outputTokens ?? 0
-        lastAttemptResult = result.object
-
-        liftErrors = validateLiftAiOutput(lift, liftCalc, result.object, weeks)
-        if (liftErrors.length === 0) {
-          liftResult = result.object
-          break
+        if (isV27) {
+          const result = await generateObject({
+            model: provider === 'openai' ? openai(modelId) : anthropic(modelId),
+            system: systemPrompt,
+            prompt: userPrompt,
+            schema: liftWeeksSchema,
+            temperature: 0,
+          })
+          totalInputTokens += result.usage?.inputTokens ?? 0
+          totalOutputTokens += result.usage?.outputTokens ?? 0
+          lastAttemptResult = result.object
+          liftErrors = validateLiftAiOutputV27(lift, liftCalc, result.object, weeks)
+          if (liftErrors.length === 0) { liftResult = result.object; break }
+        } else {
+          const result = await generateObject({
+            model: provider === 'openai' ? openai(modelId) : anthropic(modelId),
+            system: systemPrompt,
+            prompt: userPrompt,
+            schema: liftSessionsSchema,
+            temperature: 0,
+          })
+          totalInputTokens += result.usage?.inputTokens ?? 0
+          totalOutputTokens += result.usage?.outputTokens ?? 0
+          lastAttemptResult = result.object
+          liftErrors = validateLiftAiOutput(lift, liftCalc, result.object as LiftSessionsOutput, weeks)
+          if (liftErrors.length === 0) { liftResult = result.object; break }
         }
 
         console.log(`[generate-program]   → ${lift} attempt ${attempt} failed: ${liftErrors.length} errors`)
       }
 
-      // Use last attempt result even if it has errors (errors will be reported in validation)
       perLiftResults[lift] = liftResult ?? lastAttemptResult!
     }
 
-    // ── Step 2a: Strict AI-output math validation (must match deterministic targets exactly) ─
+    // ── Step 2a: Strict AI-output math validation ─
     const aiOutputErrors: string[] = []
     for (const [lift, liftResult] of Object.entries(perLiftResults)) {
-      aiOutputErrors.push(...validateLiftAiOutput(lift, calculated[lift], liftResult, weeks))
+      if (isV27) {
+        aiOutputErrors.push(...validateLiftAiOutputV27(lift, calculated[lift], liftResult as LiftWeeksOutput, weeks))
+      } else {
+        aiOutputErrors.push(...validateLiftAiOutput(lift, calculated[lift], liftResult as LiftSessionsOutput, weeks))
+      }
     }
 
-    // ── Step 2b: Merge per-lift results into unified sessions (always, so we can return on error too) ─
+    // ── Step 2b: Merge per-lift results into unified sessions ─
     const sessions: SessionsOutput = {}
     const liftOrder = ['squat', 'bench_press', 'deadlift']
     const orderedLifts = liftOrder.filter(l => l in perLiftResults)
 
     for (const lift of orderedLifts) {
       const liftResult = perLiftResults[lift]
-      for (const sessionObj of liftResult.sessions) {
-        const sessionKey = sessionObj.session
-        if (!sessions[sessionKey]) {
-          sessions[sessionKey] = {
-            week_1: { lifts: [] },
-            week_2: { lifts: [] },
-            week_3: { lifts: [] },
-            week_4: { lifts: [] },
+
+      if (isV27) {
+        // v2.7: week-first format — each week has its own sessions array
+        const weeksResult = liftResult as LiftWeeksOutput
+        for (const weekKey of ['week_1', 'week_2', 'week_3', 'week_4'] as const) {
+          const weekData = weeksResult.weeks[weekKey]
+          if (!weekData) continue
+          for (const sessionObj of weekData.sessions) {
+            const sessionKey = sessionObj.session
+            if (!sessions[sessionKey]) {
+              sessions[sessionKey] = {
+                week_1: { lifts: [] },
+                week_2: { lifts: [] },
+                week_3: { lifts: [] },
+                week_4: { lifts: [] },
+              }
+            }
+            if (sessionObj.sets.length > 0) {
+              sessions[sessionKey][weekKey].lifts.push({
+                lift: lift as 'squat' | 'bench_press' | 'deadlift',
+                sets: sessionObj.sets,
+              })
+            }
           }
         }
-        for (const weekKey of ['week_1', 'week_2', 'week_3', 'week_4'] as const) {
-          const weekData = sessionObj[weekKey]
-          if (weekData?.sets) {
-            sessions[sessionKey][weekKey].lifts.push({
-              lift: lift as 'squat' | 'bench_press' | 'deadlift',
-              sets: weekData.sets,
-            })
+      } else {
+        // v2.5/v2.6: session-first format
+        const sessionsResult = liftResult as LiftSessionsOutput
+        for (const sessionObj of sessionsResult.sessions) {
+          const sessionKey = sessionObj.session
+          if (!sessions[sessionKey]) {
+            sessions[sessionKey] = {
+              week_1: { lifts: [] },
+              week_2: { lifts: [] },
+              week_3: { lifts: [] },
+              week_4: { lifts: [] },
+            }
+          }
+          for (const weekKey of ['week_1', 'week_2', 'week_3', 'week_4'] as const) {
+            const weekData = sessionObj[weekKey]
+            if (weekData?.sets) {
+              sessions[sessionKey][weekKey].lifts.push({
+                lift: lift as 'squat' | 'bench_press' | 'deadlift',
+                sets: weekData.sets,
+              })
+            }
           }
         }
       }
     }
 
     console.log('[generate-program] AI generation complete — sessions:', Object.keys(sessions))
+
+    // ── Extract distribution info from v2.7 results ─
+    type DistWeekInfo = {
+      sessions_used: number
+      distribution_code: string
+      session_totals: number[]
+      tried_distributions: string[]
+      selection_reason: string
+    }
+    const distributionInfo: Record<string, Record<string, DistWeekInfo>> = {}
+    if (isV27) {
+      for (const [lift, liftResult] of Object.entries(perLiftResults)) {
+        const weeksResult = liftResult as LiftWeeksOutput
+        distributionInfo[lift] = {}
+        for (const weekKey of ['week_1', 'week_2', 'week_3', 'week_4'] as const) {
+          const weekData = weeksResult.weeks[weekKey]
+          if (!weekData) continue
+          const sessionTotals = weekData.sessions.map(s =>
+            s.sets.reduce((sum, set) => sum + Number(set.reps || 0), 0)
+          )
+          distributionInfo[lift][weekKey] = {
+            sessions_used: weekData.sessions_used,
+            distribution_code: weekData.distribution_code,
+            session_totals: sessionTotals,
+            tried_distributions: weekData.tried_distributions,
+            selection_reason: weekData.selection_reason,
+          }
+        }
+      }
+    }
 
     // ── Return 422 with partial program if validation failed ─
     if (aiOutputErrors.length > 0) {
@@ -260,6 +398,7 @@ export async function POST(request: Request) {
           success: false,
           error: `AI output does not match deterministic targets (after ${MAX_RETRIES} retries)`,
           program: { calculated, sessions },
+          ...(isV27 && { distributionInfo }),
           validation: {
             errors: [...validationErrors, ...aiOutputErrors],
             warnings: validationWarnings,
@@ -334,6 +473,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       program: { calculated, sessions },
+      ...(isV27 && { distributionInfo }),
       validation: {
         errors: validationErrors,
         warnings: validationWarnings,

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { programs, clients } from '@/db/schema'
-import { eq, sql, and } from 'drizzle-orm'
+import { eq, sql, and, desc } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   try {
@@ -21,6 +21,7 @@ export async function GET(request: Request) {
         .select()
         .from(programs)
         .where(and(eq(programs.clientId, client.id), eq(programs.filename, filename)))
+        .orderBy(desc(programs.createdAt), desc(programs.id))
         .limit(1)
 
       if (!program) {

@@ -14,6 +14,7 @@ import * as v23 from './v2_3'
 import * as v24 from './v2_4'
 import * as v25 from './v2_5'
 import * as v26 from './v2_6'
+import * as v27 from './v2-7'
 
 export interface PromptVersion {
   id: string
@@ -54,10 +55,14 @@ export const PROMPT_REGISTRY: Record<string, PromptVersion> = {
     id: 'v2_6',
     systemPrompt: v26.SYSTEM_PROMPT,
   },
+  v2_7: {
+    ...v27.metadata,
+    systemPrompt: v27.SYSTEM_PROMPT,
+  },
 }
 
 /** The version used by default (API route, production) */
-export const DEFAULT_PROMPT_VERSION = v25.metadata.id
+export const DEFAULT_PROMPT_VERSION = 'v2_7'
 
 /** Backward-compatible aliases for old prompt ids */
 const PROMPT_ALIASES: Record<string, string> = {

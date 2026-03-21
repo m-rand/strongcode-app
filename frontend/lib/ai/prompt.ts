@@ -8,7 +8,7 @@
  * is done deterministically in calculate.ts BEFORE calling AI.
  */
 
-import { REP_RANGES } from './constants'
+import { REP_RANGES, SESSION_PATTERNS } from './constants'
 import type { CalculatedResult, WeekCalculated, SessionTarget } from './calculate'
 import { getPromptVersion, DEFAULT_PROMPT_VERSION } from './prompts/registry'
 
@@ -91,6 +91,63 @@ export function buildLiftPrompt(
     sections.push(`  ${'─'.repeat(40)}`)
     sections.push(`  col sums: ${colSums}`)
 
+    sections.push('')
+  }
+
+  return `Generate concrete sets for ${liftName}.
+
+${sections.join('\n')}`
+}
+
+/**
+ * Build user prompt for v2.7: only zone totals per week (no pre-computed session targets).
+ * AI decides session count and distribution dynamically.
+ */
+export function buildZonesOnlyPrompt(
+  lift: string,
+  liftCalc: Record<string, unknown>,
+  weights: Record<string, number>,
+  weeks: number = 4,
+): string {
+  const liftName = lift === 'bench_press' ? 'Bench Press' : lift.charAt(0).toUpperCase() + lift.slice(1)
+  const sections: string[] = [`# ${liftName}`]
+
+  // Weights reference
+  const weightLines: string[] = []
+  for (const zone of ['65', '75', '85', '90', '95'] as const) {
+    if (weights[zone]) {
+      const repRange = REP_RANGES[zone]
+      weightLines.push(`${zone}% zone: ${weights[zone]}kg (${repRange[0]}-${repRange[1]} reps per set)`)
+    }
+  }
+  sections.push(`## Zone Weights`)
+  sections.push(weightLines.join('\n'))
+  sections.push('')
+
+  // Session distributions reference
+  const distLines: string[] = []
+  for (const [count, patterns] of Object.entries(SESSION_PATTERNS)) {
+    for (const [code, percents] of Object.entries(patterns)) {
+      distLines.push(`  ${code}: [${percents.join(', ')}]%`)
+    }
+    distLines.push('')
+  }
+  sections.push(`## Session Distribution Patterns`)
+  sections.push(distLines.join('\n'))
+
+  // Per-week zone totals only — no session targets
+  const ZONE_KEYS = ['65', '75', '85', '90', '95'] as const
+
+  for (let w = 1; w <= weeks; w++) {
+    const week = liftCalc[`week_${w}`] as WeekCalculated | undefined
+    if (!week) continue
+
+    sections.push(`## Week ${w} (total: ${week.total_reps} reps)`)
+
+    const activeZones = ZONE_KEYS.filter(z => (week.zones[z] ?? 0) > 0)
+    const zoneParts = activeZones.map(z => `- ${z}% zone: ${week.zones[z]} reps`)
+    sections.push(`Zone targets:`)
+    sections.push(zoneParts.join('\n'))
     sections.push('')
   }
 

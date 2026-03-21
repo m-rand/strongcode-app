@@ -97,22 +97,6 @@ export const SESSION_PATTERNS: Record<number, Record<string, number[]>> = {
   },
 }
 
-/** Intensity-order labels for known 2-session distributions (M=Medium, H=Heavy) */
-export const SESSION_ORDER_2_DAYS: Record<string, string> = {
-  d40_60: 'MH',
-  d35_65: 'HM',
-}
-
-/** Intensity-order labels for known 3-session distributions (L=Light, M=Medium, H=Heavy) */
-export const SESSION_ORDER_3_DAYS: Record<string, string> = {
-  d25_33_42: 'LMH',
-  d20_35_45: 'LHM',
-  d22_28_50: 'MLH',
-  d20_30_50: 'MHL',
-  d15_35_50: 'HLM',
-  d15_30_55: 'HML',
-}
-
 // ─── Zone Configuration ─────────────────────────────────────
 
 /** Zone key → percentage of 1RM (used for ARI calculation) */
