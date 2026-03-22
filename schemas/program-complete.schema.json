@@ -127,6 +127,30 @@
       "type": "object",
       "required": ["volume", "rounding", "weights", "intensity_distribution", "volume_pattern_main", "volume_pattern_8190", "sessions_per_week", "session_distribution"],
       "properties": {
+        "variants": {
+          "type": "object",
+          "description": "Optional lift variant labels used in UI and session tagging",
+          "properties": {
+            "variant_1": {
+              "type": "string",
+              "description": "Default competition variant label",
+              "examples": ["Comp variant"]
+            },
+            "variant_2": {
+              "type": "string",
+              "description": "Optional variant 2 label"
+            },
+            "variant_3": {
+              "type": "string",
+              "description": "Optional variant 3 label"
+            },
+            "variant_4": {
+              "type": "string",
+              "description": "Optional variant 4 label"
+            }
+          },
+          "additionalProperties": false
+        },
         "volume": {
           "type": "integer",
           "minimum": 50,
@@ -337,6 +361,10 @@
       "type": "object",
       "required": ["weight", "reps"],
       "properties": {
+        "variant": {
+          "type": "string",
+          "description": "Variant code or label for this set (e.g., variant_1, variant_2, Comp variant, High Bar)"
+        },
         "weight": {
           "type": "number",
           "description": "Weight in kg"

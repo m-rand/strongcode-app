@@ -82,6 +82,20 @@ function rpeColor(rpe: number | undefined): string {
   return 'text-red-600'
 }
 
+function getVariantLabel(program: Program | null, lift: string, variant: string | undefined): string {
+  if (!variant) return ''
+  if (variant === 'comp' || variant === 'variant_1') return 'Variant 1 (Comp)'
+
+  const liftVariants = program?.input?.[lift]?.variants || {}
+  const base: Record<string, string> = {
+    variant_2: liftVariants.variant_2 ? `Variant 2 (${liftVariants.variant_2})` : 'Variant 2',
+    variant_3: liftVariants.variant_3 ? `Variant 3 (${liftVariants.variant_3})` : 'Variant 3',
+    variant_4: liftVariants.variant_4 ? `Variant 4 (${liftVariants.variant_4})` : 'Variant 4',
+  }
+
+  return base[variant] || variant
+}
+
 // ─── Component ──────────────────────────────────────────────
 
 export default function ClientProgramDetailPage() {
@@ -433,7 +447,7 @@ export default function ClientProgramDetailPage() {
                                   {setIdx + 1}
                                   {set.variant && (
                                     <span className="ml-1 text-xs text-gray-400">
-                                      ({set.variant})
+                                      ({getVariantLabel(program, liftData.lift, set.variant)})
                                     </span>
                                   )}
                                 </td>

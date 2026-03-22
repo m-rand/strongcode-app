@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { programs, clients } from '@/db/schema'
 import { eq, sql, and, desc } from 'drizzle-orm'
+import { normalizeProgramForView } from '@/lib/program/normalizeProgram'
 
 export async function GET(request: Request) {
   try {
@@ -49,7 +50,7 @@ export async function GET(request: Request) {
         sessions: program.sessionsData,
       }
 
-      return NextResponse.json(programData)
+      return NextResponse.json(normalizeProgramForView(programData))
     }
 
     // Default: return first program (backward compat)
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No programs found' }, { status: 404 })
     }
 
-    return NextResponse.json({
+    return NextResponse.json(normalizeProgramForView({
       schema_version: firstProgram.schemaVersion,
       meta: {
         filename: firstProgram.filename,
@@ -77,7 +78,7 @@ export async function GET(request: Request) {
       input: firstProgram.input,
       calculated: firstProgram.calculated,
       sessions: firstProgram.sessionsData,
-    })
+    }))
   } catch (error) {
     console.error('Error loading program:', error)
     return NextResponse.json(

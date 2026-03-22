@@ -213,6 +213,12 @@ export default function ProgramDetailPage() {
               >
                 {t('programs')}
               </Link>
+              <Link
+                href={`/${locale}/admin/create?editClient=${encodeURIComponent(String(params.client))}&editFilename=${encodeURIComponent(String(params.filename))}`}
+                className="text-sm px-3 py-1 rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                Edit in Create
+              </Link>
               <h1 className="text-2xl font-bold text-gray-900">
                 {program.client.name}
               </h1>

@@ -78,6 +78,44 @@ export default function LiftColumn({
         </div>
       </div>
 
+      {/* Lift Variants */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h4 className="text-lg font-semibold mb-1">Variants (optional)</h4>
+        <p className="text-xs text-gray-500 mb-3">Variant 1 is always Comp (default). You can define up to 3 additional variants.</p>
+        <div className="mb-3">
+          <label className="block text-xs font-medium text-gray-700 mb-1">Variant 1</label>
+          <input
+            type="text"
+            value="Comp variant"
+            disabled
+            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm"
+          />
+        </div>
+        <div className="space-y-3">
+          {[0, 1, 2].map(index => (
+            <div key={index}>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Variant {index + 2}
+              </label>
+              <input
+                type="text"
+                value={liftData.variants?.[index] || ''}
+                onChange={(e) => {
+                  const next = [
+                    liftData.variants?.[0] || '',
+                    liftData.variants?.[1] || '',
+                    liftData.variants?.[2] || '',
+                  ]
+                  next[index] = e.target.value
+                  onUpdate('variants', next)
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Zone Weights */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h4 className="text-lg font-semibold mb-4">{t('zoneWeights')}</h4>
@@ -217,6 +255,7 @@ export default function LiftColumn({
           </div>
         </div>
       </div>
+
     </div>
   )
 }

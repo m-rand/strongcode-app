@@ -2,64 +2,21 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { programs, clients } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-
-// Simple validation function
-function validateProgram(data: any): { valid: boolean; errors: string[] } {
-  const errors: string[] = []
-
-  if (!data.schema_version) errors.push('Missing schema_version')
-  if (!data.meta) errors.push('Missing meta')
-  if (!data.client) errors.push('Missing client')
-  if (!data.program_info) errors.push('Missing program_info')
-  if (!data.input) errors.push('Missing input')
-  if (!data.calculated) errors.push('Missing calculated')
-
-  if (data.meta) {
-    if (!data.meta.filename) errors.push('Missing meta.filename')
-    if (!data.meta.created_at) errors.push('Missing meta.created_at')
-    if (!data.meta.status) errors.push('Missing meta.status')
-  }
-
-  if (data.client) {
-    if (!data.client.name) errors.push('Missing client.name')
-    if (!data.client.one_rm) errors.push('Missing client.one_rm')
-    if (data.client.one_rm) {
-      if (!data.client.one_rm.squat) errors.push('Missing client.one_rm.squat')
-      if (!data.client.one_rm.bench_press) errors.push('Missing client.one_rm.bench_press')
-      if (!data.client.one_rm.deadlift) errors.push('Missing client.one_rm.deadlift')
-    }
-  }
-
-  if (data.program_info) {
-    if (!data.program_info.block) errors.push('Missing program_info.block')
-    if (!data.program_info.start_date) errors.push('Missing program_info.start_date')
-    if (!data.program_info.weeks) errors.push('Missing program_info.weeks')
-  }
-
-  if (data.input) {
-    if (!data.input.squat) errors.push('Missing input.squat')
-    if (!data.input.bench_press) errors.push('Missing input.bench_press')
-    if (!data.input.deadlift) errors.push('Missing input.deadlift')
-  }
-
-  if (data.calculated) {
-    if (!data.calculated.squat) errors.push('Missing calculated.squat')
-    if (!data.calculated.bench_press) errors.push('Missing calculated.bench_press')
-    if (!data.calculated.deadlift) errors.push('Missing calculated.deadlift')
-  }
-
-  return { valid: errors.length === 0, errors }
-}
+import { validateProgramWithVersion } from '@/lib/program/schemaValidation'
 
 export async function POST(request: Request) {
   try {
     const programData = await request.json()
 
     // Validate program data
-    const validation = validateProgram(programData)
+    const validation = await validateProgramWithVersion(programData)
     if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Invalid program format', details: validation.errors },
+        {
+          error: 'Invalid program format',
+          schema_version: validation.schemaVersion,
+          details: validation.errors,
+        },
         { status: 400 }
       )
     }
@@ -123,10 +80,11 @@ export async function POST(request: Request) {
       client: clientSlug,
       has_sessions: !!programData.sessions,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to import program'
     console.error('Import error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to import program' },
+      { error: message },
       { status: 500 }
     )
   }

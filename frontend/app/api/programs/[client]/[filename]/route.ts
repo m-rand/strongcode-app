@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { programs, clients } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { normalizeProgramForView } from '@/lib/program/normalizeProgram'
 
 export async function GET(
   request: Request,
@@ -51,7 +52,7 @@ export async function GET(
       sessions: program.sessionsData,
     }
 
-    return NextResponse.json({ program: programData })
+    return NextResponse.json({ program: normalizeProgramForView(programData) })
   } catch (error) {
     console.error('Error loading program:', error)
     return NextResponse.json(
