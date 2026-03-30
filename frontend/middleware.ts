@@ -7,26 +7,35 @@ import { auth } from '@/lib/auth';
 const intlMiddleware = createIntlMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'always'
+  localePrefix: 'as-needed',
+  localeDetection: false,
 });
 
 export default auth((request) => {
+  const host = request.headers.get('host') || '';
+  if (host === 'strong-code.com') {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.hostname = 'www.strong-code.com';
+    return NextResponse.redirect(redirectUrl, 308);
+  }
+
   const { pathname } = request.nextUrl;
-  const pathnameWithoutLocale = pathname.replace(/^\/(en|cs)/, '') || '/';
+  const localeMatch = pathname.match(/^\/(en|cs)(?=\/|$)/);
+  const locale = localeMatch?.[1] as (typeof locales)[number] | undefined;
+  const pathnameWithoutLocale = pathname.replace(/^\/(en|cs)(?=\/|$)/, '') || '/';
+  const withLocale = (path: string) => (locale && locale !== defaultLocale ? `/${locale}${path}` : path);
 
   // Protected routes: verify JWT session (not just cookie existence)
   if (pathnameWithoutLocale.startsWith('/admin') || pathnameWithoutLocale.startsWith('/client')) {
     if (!request.auth) {
-      const locale = pathname.match(/^\/(en|cs)/)?.[1] || defaultLocale;
-      const loginUrl = new URL(`/${locale}/login`, request.url);
+      const loginUrl = new URL(withLocale('/login'), request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
 
     // Role-based access: clients can't access admin routes
     if (pathnameWithoutLocale.startsWith('/admin') && request.auth.user?.role !== 'admin') {
-      const locale = pathname.match(/^\/(en|cs)/)?.[1] || defaultLocale;
-      return NextResponse.redirect(new URL(`/${locale}/client/dashboard`, request.url));
+      return NextResponse.redirect(new URL(withLocale('/client/dashboard'), request.url));
     }
   }
 

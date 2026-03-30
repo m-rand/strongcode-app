@@ -17,6 +17,8 @@
   --shadow-color: rgba(0, 0, 0, 0.1);
   --bg-primary-rgb: 255, 255, 255;
   --border-color-rgb: 229, 229, 229;
+  --quote-text-color: #ffffff;
+  --accent-contrast-text: #ffffff;
 }
 
 :root.dark {
@@ -30,6 +32,8 @@
   --shadow-color: rgba(255, 255, 255, 0.1);
   --bg-primary-rgb: 26, 26, 26;
   --border-color-rgb: 64, 64, 64;
+  --quote-text-color: #1a1a1a;
+  --accent-contrast-text: #1a1a1a;
 }
 
 @theme inline {
@@ -205,6 +209,106 @@ p, li {
   color: var(--text-primary);
 }
 
+.content-markdown > * + * {
+  margin-top: 1rem;
+}
+
+.content-markdown-list,
+.content-markdown-ordered-list {
+  padding-left: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.content-markdown-list {
+  list-style: disc;
+}
+
+.content-markdown-ordered-list {
+  list-style: decimal;
+}
+
+.content-markdown-list li + li,
+.content-markdown-ordered-list li + li {
+  margin-top: 0.5rem;
+}
+
+.content-markdown a:hover {
+  opacity: 0.8;
+}
+
+.content-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0.75rem;
+}
+
+.content-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: var(--bg-secondary);
+  position: relative;
+}
+
+.content-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 32rem;
+}
+
+.content-table th,
+.content-table td {
+  padding: 0.9rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.content-table th {
+  font-weight: 600;
+  color: var(--accent-contrast-text);
+  background: var(--accent-primary);
+  border-bottom: 1px solid rgba(var(--bg-primary-rgb), 0.16);
+}
+
+.content-table td {
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.content-table td.is-filled,
+.content-table td:not(:first-child):not(:empty) {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+.content-table th:first-child,
+.content-table td:first-child,
+.content-table th.is-row-header,
+.content-table td.is-row-header,
+.content-table td.is-row-header.is-filled,
+.content-table td:first-child.is-filled {
+  color: var(--accent-contrast-text);
+  font-weight: 700;
+  background: var(--accent-primary);
+}
+
+.content-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.content-blockquote {
+  border-left: 3px solid var(--accent-primary);
+  padding-left: 1rem;
+}
+
+.content-divider {
+  border: 0;
+  border-top: 1px solid var(--border-color);
+}
+
 /* Windows Phone style utility classes */
 .wp-light { font-weight: 200; }
 .wp-regular { font-weight: 300; }
@@ -287,6 +391,53 @@ input[type="checkbox"] {
 
 .flickr-link:hover {
   opacity: 0.8;
+}
+
+/* ======= LEGACY TAILWIND GRAY COMPAT (ADMIN/CLIENT) ======= */
+:root.dark .bg-white {
+  background-color: var(--bg-primary) !important;
+}
+
+:root.dark .bg-gray-50,
+:root.dark .bg-gray-100 {
+  background-color: var(--bg-secondary) !important;
+}
+
+:root.dark .text-gray-900,
+:root.dark .text-gray-800,
+:root.dark .text-blue-900 {
+  color: var(--text-primary) !important;
+}
+
+:root.dark .text-gray-700,
+:root.dark .text-gray-600,
+:root.dark .text-gray-500,
+:root.dark .text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+
+:root.dark .placeholder-gray-600,
+:root.dark .placeholder-gray-500,
+:root.dark .placeholder-gray-400,
+:root.dark .placeholder-gray-300 {
+  color: color-mix(in srgb, var(--text-secondary) 75%, transparent) !important;
+}
+
+:root.dark .border-gray-300,
+:root.dark .border-gray-200,
+:root.dark .divide-gray-200 {
+  border-color: var(--border-color) !important;
+}
+
+:root.dark .hover\:bg-gray-50:hover,
+:root.dark .hover\:bg-gray-100:hover {
+  background-color: color-mix(in srgb, var(--bg-secondary) 85%, var(--bg-primary) 15%) !important;
+}
+
+:root.dark .shadow,
+:root.dark .shadow-md,
+:root.dark .shadow-lg {
+  box-shadow: 0 1px 3px var(--shadow-color) !important;
 }
 
 /* ======= MARQUEE ======= */

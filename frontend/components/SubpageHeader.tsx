@@ -3,15 +3,12 @@
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
-import { LanguageSwitcher } from './LanguageSwitcher'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { Logo } from './Logo'
 import { useState } from 'react'
 
 const NAV_ITEMS = [
-  { key: 'intro', href: '/intro' },
   { key: 'features', href: '/features' },
-  { key: 'howItWorks', href: '/how-it-works' },
   { key: 'lookInside', href: '/look-inside' },
   { key: 'about', href: '/about' },
 ] as const
@@ -21,7 +18,7 @@ export function SubpageHeader() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Extract the subpath after locale, e.g. /cs/intro → /intro
+  // Extract the subpath after locale, e.g. /cs/features → /features
   const segments = pathname.split('/')
   const currentPath = '/' + (segments[2] || '')
 
@@ -68,7 +65,6 @@ export function SubpageHeader() {
           {/* Right side */}
           <div className="flex items-center gap-3">
             <ThemeSwitcher />
-            <LanguageSwitcher />
             <Link
               href="/login"
               className="hidden md:inline text-sm font-light transition-opacity hover:opacity-60 ml-2"

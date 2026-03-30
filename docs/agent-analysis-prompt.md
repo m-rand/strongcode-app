@@ -1,15 +1,15 @@
 # Analýza: AI generování tréninkových programů (StrongCode)
 
-Jsi expert na softwarovou architekturu, prompt engineering a silový trénink (powerlifting / sovětskou metodiku). Požaduji od tebe hloubkovou analýzu jedné části projektu a návrhy na vylepšení.
+Jsi expert na softwarovou architekturu, prompt engineering a silový trénink (powerlifting, weightlifting / sovětskou metodiku). Požaduji od tebe hloubkovou analýzu jedné části projektu a návrhy na vylepšení.
 
 ## Kontext projektu
 
-StrongCode je webová aplikace pro generování silových tréninkových programů podle sovětské metodiky (PlanStrong / Chernyak). Tréninkové programy se generují pomocí LLM (Claude Sonnet 4 přes Vercel AI SDK).
+StrongCode je webová aplikace pro generování silových tréninkových programů podle sovětské metodiky (odvozená od PlanStrong, který sám je odvozený od sovětské vzpěračské školy). Tréninkové programy se generují pomocí LLM (Claude Sonnet 4 přes Vercel AI SDK).
 
 ## Co si přečti jako první (referenční dokumenty)
 
 1. **`docs/references/strong-code-60.md`** — stručný přehled metodiky: NL rozsahy, ARI cíle, zónové distribuce, rozložení objemu v týdnu i měsíci
-2. **`docs/references/plan-strong-seminar-manual-en.pdf`** — plný manuál PlanStrong semináře (Chernyak metodika)
+2. **`docs/references/plan-strong-seminar-manual-en.pdf`** — plný manuál PlanStrong semináře (z něj je StrongCode odvozený a vylepšený)
 3. **`CLAUDE.md`** (root projektu) — přehled tech stacku, struktury projektu, klíčových konceptů (NL, ARI, zóny, sessions)
 4. **`AGENTS.md`** (root projektu) — popis AI generovacího pipeline, architektura, roadmapa
 
@@ -45,7 +45,7 @@ Přečti tyto soubory v tomto pořadí:
 - Je schéma vstupu/výstupu dobře navržené?
 
 ### 2. Analýza system promptu (`prompts/v1.ts`)
-- Je prompt v souladu s Chernyak metodikou z referenčních dokumentů?
+- Je prompt v souladu s Plan Strong metodikou z referenčních dokumentů?
 - Jsou pravidla jasná, konzistentní a bez konfliktů?
 - Jsou příklady (Examples 1–7) správné, dostatečné a reprezentativní?
 - Chybí v promptu nějaká důležitá doménová pravidla?

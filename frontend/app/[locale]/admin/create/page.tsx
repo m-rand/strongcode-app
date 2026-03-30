@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, type DragEvent } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import LiftColumn from './LiftColumn'
 import { calculateAllTargets } from '@/lib/ai/calculate'
@@ -168,7 +168,6 @@ const toApiBlock = (block: string): 'prep' | 'comp' => (
 
 export default function CreateProgram() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const t = useTranslations('admin.create')
   const locale = useLocale()
   const [loading, setLoading] = useState(false)
@@ -200,8 +199,19 @@ export default function CreateProgram() {
     variants: ['', '', ''] as [string, string, string],
   })
 
+  type LiftConfig = ReturnType<typeof defaultLiftConfig>
+
   // Form state - now with 3 lifts
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    clientName: string
+    delta: 'beginner' | 'intermediate' | 'advanced' | 'elite'
+    block: 'prep' | 'comp'
+    lifts: {
+      squat: LiftConfig
+      bench_press: LiftConfig
+      deadlift: LiftConfig
+    }
+  }>({
     // Shared client info
     clientName: 'Katerina Balasova',
     delta: 'advanced' as const,
@@ -308,7 +318,11 @@ export default function CreateProgram() {
 
     try {
       const payload = buildGeneratePayload()
-      const calculated = calculateAllTargets(payload.lifts, payload.client.delta, payload.weeks)
+      const calculated = calculateAllTargets(
+        payload.lifts,
+        payload.client.delta,
+        payload.weeks,
+      ) as unknown as ProgramData['calculated']
       const programData = buildProgramData(payload, {
         calculated,
         sessions: {} as SessionsData,
@@ -449,8 +463,9 @@ export default function CreateProgram() {
   }, [formData, isProgramPinned])
 
   useEffect(() => {
-    const editClient = searchParams.get('editClient')
-    const editFilename = searchParams.get('editFilename')
+    const params = new URLSearchParams(window.location.search)
+    const editClient = params.get('editClient')
+    const editFilename = params.get('editFilename')
     if (!editClient || !editFilename) return
 
     const loadKey = `${editClient}:${editFilename}`
@@ -522,7 +537,7 @@ export default function CreateProgram() {
     }
 
     loadProgramForEditing()
-  }, [searchParams])
+  }, [])
 
   const handleCalculate = async (e: React.FormEvent) => {
     e.preventDefault()

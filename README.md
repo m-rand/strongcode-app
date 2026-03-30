@@ -106,4 +106,4 @@ See `../Strong Code/` directory for:
 
 ## License
 
-Private project - Marcel Balas
+Private project - Marcel Rand

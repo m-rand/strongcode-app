@@ -6,7 +6,6 @@ import { SubpageHeader } from '@/components/SubpageHeader'
 
 export default function HomePage() {
   const t = useTranslations('home')
-  const tNav = useTranslations('nav')
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
@@ -21,8 +20,7 @@ export default function HomePage() {
             <div className="space-y-8 lg:space-y-10">
               <h1 className="hero-title">
                 {t('hero.titleLine1')}<br />
-                <span style={{ color: 'var(--accent-primary)' }}>{t('hero.titleLine2')}</span><br />
-                {t('hero.titleLine3')}
+                <span style={{ color: 'var(--accent-primary)' }}>{t('hero.titleLine2')}</span>
               </h1>
 
               <p className="text-sm font-bold uppercase tracking-[0.25em]" style={{ color: 'var(--text-secondary)' }}>
@@ -64,21 +62,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ──────────────────────── MARQUEE STRIP ──────────────────────── */}
-      <div
-        className="py-5 overflow-hidden border-y"
-        style={{ borderColor: 'var(--border-color)', background: 'var(--bg-secondary)' }}
-      >
-        <div className="marquee-track">
-          <span className="marquee-content text-sm font-bold uppercase tracking-[0.3em]" style={{ color: 'var(--text-secondary)' }}>
-            {t('marquee')}&nbsp;&nbsp;·&nbsp;&nbsp;{t('marquee')}&nbsp;&nbsp;·&nbsp;&nbsp;{t('marquee')}&nbsp;&nbsp;·&nbsp;&nbsp;
-          </span>
-          <span className="marquee-content text-sm font-bold uppercase tracking-[0.3em]" style={{ color: 'var(--text-secondary)' }} aria-hidden="true">
-            {t('marquee')}&nbsp;&nbsp;·&nbsp;&nbsp;{t('marquee')}&nbsp;&nbsp;·&nbsp;&nbsp;{t('marquee')}&nbsp;&nbsp;·&nbsp;&nbsp;
-          </span>
-        </div>
-      </div>
-
       {/* ──────────────────────── WHAT IS STRONGCODE ──────────────────────── */}
       <section id="features" className="py-20 md:py-32 px-6">
         <div className="max-w-7xl mx-auto">
@@ -98,27 +81,28 @@ export default function HomePage() {
                 {t('what.highlight')}
               </p>
 
-              <a
-                href="#how-it-works"
-                className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
-                style={{ color: 'var(--accent-primary)' }}
-              >
-                <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{tNav('howItWorks')}</span>
-                <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </a>
-
-              <Link
-                href="/intro"
-                className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
-                style={{ color: 'var(--accent-primary)' }}
-              >
-                <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.intro')}</span>
-                <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </Link>
+              <div className="flex flex-col sm:flex-row items-start gap-6">
+                <Link
+                  href="/features"
+                  className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
+                  style={{ color: 'var(--accent-primary)' }}
+                >
+                  <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.features')}</span>
+                  <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </Link>
+                <Link
+                  href="/look-inside"
+                  className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
+                  style={{ color: 'var(--accent-primary)' }}
+                >
+                  <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.lookInside')}</span>
+                  <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </Link>
+              </div>
             </div>
 
             {/* Right — Image */}
@@ -176,16 +160,6 @@ export default function HomePage() {
                 <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </Link>
-            <Link
-              href="/how-it-works"
-              className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
-              style={{ color: 'var(--accent-primary)' }}
-            >
-              <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.howItWorks')}</span>
-              <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </Link>
           </div>
         </div>
       </section>
@@ -227,6 +201,57 @@ export default function HomePage() {
                 ))}
               </ul>
 
+              <div className="flex flex-col sm:flex-row items-start gap-6">
+                <Link
+                  href="/features"
+                  className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
+                  style={{ color: 'var(--accent-primary)' }}
+                >
+                  <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.features')}</span>
+                  <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </Link>
+                <Link
+                  href="/look-inside"
+                  className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
+                  style={{ color: 'var(--accent-primary)' }}
+                >
+                  <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.lookInside')}</span>
+                  <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ──────────────────────── WHAT TO EXPECT ──────────────────────── */}
+      <section className="py-20 md:py-32 px-6" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="max-w-7xl mx-auto">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="section-title mb-8">
+              {t('expect.titleLine1')}<br />
+              <span style={{ color: 'var(--accent-primary)' }}>{t('expect.titleLine2')}</span>
+            </h2>
+            <div className="space-y-5 max-w-2xl">
+              <p className="text-body">{t('expect.paragraph1')}</p>
+              <p className="text-body">{t('expect.paragraph2')}</p>
+              <p className="text-body">{t('expect.paragraph3')}</p>
+            </div>
+            <div className="mt-10 flex flex-col sm:flex-row items-start gap-6">
+              <Link
+                href="/features"
+                className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
+                style={{ color: 'var(--accent-primary)' }}
+              >
+                <span className="border-b-2" style={{ borderColor: 'var(--accent-primary)' }}>{t('learnMore.features')}</span>
+                <svg className="arrow w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </Link>
               <Link
                 href="/look-inside"
                 className="flickr-link inline-flex items-center gap-3 text-base font-bold uppercase tracking-wider"
@@ -242,49 +267,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ──────────────────────── FEATURES GRID ──────────────────────── */}
-      <section
-        className="py-20 md:py-32 px-6"
-        style={{ background: 'var(--bg-secondary)' }}
-      >
-        <div className="max-w-7xl mx-auto">
-          <h2 className="section-title mb-16 md:mb-20">
-            {t('featureCards.titleLine1')}<br />
-            <span style={{ color: 'var(--accent-primary)' }}>{t('featureCards.titleLine2')}</span>
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-            {(['tailored', 'unique', 'longterm', 'flexible'] as const).map((key) => (
-              <div
-                key={key}
-                className="p-8 md:p-10 rounded-lg border transition-shadow hover:shadow-lg"
-                style={{ borderColor: 'var(--border-color)', background: 'var(--bg-primary)' }}
-              >
-                <h3 className="subsection-title mb-4">
-                  {t(`featureCards.${key}.title`)}
-                </h3>
-                <p className="text-body">
-                  {t(`featureCards.${key}.description`)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ──────────────────────── QUOTE ──────────────────────── */}
-      <section className="py-20 md:py-28 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <blockquote
-            className="text-2xl md:text-4xl font-light italic leading-snug mb-6"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            &ldquo;{t('quote.text')}&rdquo;
-          </blockquote>
-          <cite className="text-base font-semibold not-italic" style={{ color: 'var(--accent-primary)' }}>
-            {t('quote.author')}
-          </cite>
-        </div>
+      <section
+        className="py-20 md:py-28 px-6 text-center"
+        style={{ background: 'var(--accent-primary)' }}
+      >
+        <blockquote
+          className="text-2xl md:text-4xl font-light italic leading-snug mb-6 max-w-6xl mx-auto"
+          style={{ color: 'var(--quote-text-color)' }}
+        >
+          &ldquo;{t('quote.text')}&rdquo;
+        </blockquote>
+        <cite
+          className="text-base font-semibold not-italic"
+          style={{ color: 'var(--quote-text-color)' }}
+        >
+          {t('quote.author')}
+        </cite>
       </section>
 
       {/* ──────────────────────── PRICE ──────────────────────── */}
