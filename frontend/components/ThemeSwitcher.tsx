@@ -40,8 +40,8 @@ function subscribe(onStoreChange: () => void) {
 }
 
 export function ThemeSwitcher() {
-  const currentTheme = useSyncExternalStore(subscribe, getStoredTheme, () => 'system');
-  const mounted = useSyncExternalStore(subscribeHydration, () => true, () => false);
+  const currentTheme = useSyncExternalStore<Theme>(subscribe, getStoredTheme, () => 'system');
+  const mounted = useSyncExternalStore<boolean>(subscribeHydration, () => true, () => false);
 
   function applyTheme(theme: Theme) {
     let isDark = false;
