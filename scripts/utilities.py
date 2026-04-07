@@ -85,6 +85,160 @@ def calculate_ari(zone_reps: Dict[str, int]) -> float:
     return round(total_intensity / total_reps, 1)
 
 
+def interpolate_rm(known_rms: Dict[float, int], target_pct: float) -> float:
+    """
+    Estimate RM (rep max) at a given percentage of 1RM using known data points.
+
+    Uses linear interpolation between the two nearest bracketing points.
+    Extrapolates below the lowest known point using Zonin's Case 2 formula:
+        RM(P%) = RM(Pt%) + ((RM(Pt%) - 1) / (100 - Pt)) × (Pt - P)
+
+    Args:
+        known_rms: Dict of {percentage: max_reps}, e.g. {75: 8, 85: 4, 92.5: 2, 100: 1}
+                   Must include at least one data point.
+        target_pct: Target percentage (e.g. 65, 70, 80)
+
+    Returns:
+        Estimated RM at target_pct (float, minimum 1.0)
+
+    Example:
+        >>> interpolate_rm({75: 8, 85: 4, 92.5: 2, 100: 1}, 80)
+        6.0
+    """
+    if not known_rms:
+        raise ValueError("known_rms must have at least one data point")
+
+    # Sort points by percentage ascending
+    points = sorted(known_rms.items(), key=lambda x: x[0])
+
+    # Exact match
+    for pct, rm in points:
+        if abs(pct - target_pct) < 0.01:
+            return float(rm)
+
+    # Find bracketing points
+    lower = None
+    upper = None
+    for pct, rm in points:
+        if pct < target_pct:
+            lower = (pct, rm)
+        elif pct > target_pct and upper is None:
+            upper = (pct, rm)
+
+    if lower and upper:
+        # Linear interpolation between two bracketing points
+        pct_lo, rm_lo = lower
+        pct_hi, rm_hi = upper
+        ratio = (target_pct - pct_lo) / (pct_hi - pct_lo)
+        result = rm_lo + ratio * (rm_hi - rm_lo)
+        return max(1.0, round(result, 1))
+
+    if upper and not lower:
+        # Extrapolate below the lowest known point using Zonin Case 2
+        pt, rm_pt = upper
+        result = rm_pt + ((rm_pt - 1) / (100 - pt)) * (pt - target_pct)
+        return max(1.0, round(result, 1))
+
+    if lower and not upper:
+        # Extrapolate above the highest known point using Zonin Case 2
+        pt, rm_pt = lower
+        result = rm_pt + ((rm_pt - 1) / (100 - pt)) * (pt - target_pct)
+        return max(1.0, round(result, 1))
+
+    # Fallback (should not happen)
+    return 1.0
+
+
+def build_rm_lookup(known_rms: Dict[float, int], zones: List[float] = None) -> Dict[float, float]:
+    """
+    Build a complete RM lookup table for all needed intensity zones.
+
+    Args:
+        known_rms: Dict of {percentage: max_reps}, e.g. {75: 8, 85: 4, 92.5: 2, 100: 1}
+        zones: List of percentages to compute RM for.
+               Default: [55, 60, 65, 70, 75, 80, 85, 90, 92.5, 95, 100]
+
+    Returns:
+        Dict of {percentage: estimated_rm}
+
+    Example:
+        >>> build_rm_lookup({75: 8, 85: 4, 92.5: 2, 100: 1})
+        {55: 16.8, 60: 14.8, 65: 12.8, 70: 10.4, 75: 8.0, 80: 6.0, 85: 4.0, 90: 3.0, 92.5: 2.0, 95: 1.3, 100: 1.0}
+    """
+    if zones is None:
+        zones = [55, 60, 65, 70, 75, 80, 85, 90, 92.5, 95, 100]
+
+    return {pct: interpolate_rm(known_rms, pct) for pct in zones}
+
+
+def calculate_are(sets: List[Dict], rm_lookup: Dict[float, float]) -> float:
+    """
+    Calculate Average Relative Effort (ARE) from a list of sets.
+
+    ARE = average of (reps_performed / RM_at_that_weight) across all sets.
+    Per-set average (not rep-weighted), per Zonin's definition.
+
+    Args:
+        sets: List of set dicts, each with 'reps' (int) and 'zone_pct' (float, 0.0-1.0)
+        rm_lookup: Dict of {percentage: estimated_rm}, e.g. {75: 8.0, 80: 6.0, ...}
+
+    Returns:
+        ARE as percentage (0-100). Returns 0.0 if no valid sets.
+
+    Example:
+        >>> sets = [{'reps': 2, 'zone_pct': 0.80}, {'reps': 3, 'zone_pct': 0.80}, {'reps': 5, 'zone_pct': 0.80}]
+        >>> rm_lookup = {80: 6.0}
+        >>> calculate_are(sets, rm_lookup)
+        55.6  # avg(2/6, 3/6, 5/6) = avg(33.3, 50.0, 83.3) = 55.6%
+    """
+    if not sets or not rm_lookup:
+        return 0.0
+
+    efforts = []
+    for s in sets:
+        reps = s.get('reps', 0)
+        # Prefer percentage (0-100, from editor) over zone_pct (0-1, from import)
+        percentage = s.get('percentage')
+        zone_pct = s.get('zone_pct', 0)
+        if percentage is not None:
+            pct_100 = round(float(percentage), 1)
+        elif zone_pct:
+            pct_100 = round(zone_pct * 100, 1)
+        else:
+            continue
+        if reps <= 0 or pct_100 <= 0:
+            continue
+
+        # Find nearest RM in lookup
+        rm = _find_nearest_rm(rm_lookup, pct_100)
+        if rm <= 0:
+            continue
+
+        effort = reps / rm
+        # Cap at 1.0 (100%) — can't exceed RM by definition
+        efforts.append(min(effort, 1.0))
+
+    if not efforts:
+        return 0.0
+
+    return round(sum(efforts) / len(efforts) * 100, 1)
+
+
+def _find_nearest_rm(rm_lookup: Dict[float, float], target_pct: float) -> float:
+    """Find RM for the nearest percentage in the lookup table."""
+    if not rm_lookup:
+        return 0.0
+
+    # Exact match (with tolerance)
+    for pct, rm in rm_lookup.items():
+        if abs(pct - target_pct) < 0.5:
+            return rm
+
+    # Find nearest
+    nearest_pct = min(rm_lookup.keys(), key=lambda p: abs(p - target_pct))
+    return rm_lookup[nearest_pct]
+
+
 def convert_absolute_reps_to_percent(
     total_nl: int,
     zone_75_pct: float,

@@ -226,6 +226,16 @@ INTENSITY_DISTRIBUTION_GUIDELINES = {
     },
 }
 
+# Target ARE (Average Relative Effort) ranges
+# Source: Zonin, Programming Demystified seminar manual
+# ARE = average of (reps_performed / RM_at_that_weight) across sets
+TARGET_ARE = {
+    "power": (30, 50),
+    "strength": (40, 60),
+    "strength_hypertrophy": (50, 70),
+    "bodybuilding": (80, 100),
+}
+
 # Default rounding values (kg)
 DEFAULT_ROUNDING = 2.5
 

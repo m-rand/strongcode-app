@@ -61,6 +61,15 @@
             "bench_press": { "type": "number", "minimum": 0 },
             "deadlift": { "type": "number", "minimum": 0 }
           }
+        },
+        "rm_profile": {
+          "type": "object",
+          "description": "Rep max at various intensities per lift, from client survey. Used to compute ARE.",
+          "properties": {
+            "squat": { "type": "object", "additionalProperties": { "type": "integer" } },
+            "bench_press": { "type": "object", "additionalProperties": { "type": "integer" } },
+            "deadlift": { "type": "object", "additionalProperties": { "type": "integer" } }
+          }
         }
       }
     },
@@ -229,6 +238,7 @@
             "total_nl": { "type": "integer" },
             "actual_nl": { "type": "integer" },
             "block_ari": { "type": "number" },
+            "block_are": { "type": "number", "description": "Average Relative Effort for entire block (optional, requires rm_profile)" },
             "zone_distribution": {
               "type": "object",
               "properties": {
@@ -290,6 +300,7 @@
           }
         },
         "ari": { "type": "number", "description": "Average Relative Intensity for this week" },
+        "are": { "type": "number", "description": "Average Relative Effort for this week (optional, requires rm_profile)" },
         "sessions": {
           "type": "object",
           "description": "Target reps per session",

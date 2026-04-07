@@ -74,6 +74,7 @@ export default function ProgramDetailPage() {
   const [error, setError] = useState('')
   const [trainingLog, setTrainingLog] = useState<LogEntry[]>([])
   const [logLoading, setLogLoading] = useState(false)
+  const [enriching, setEnriching] = useState(false)
 
   useEffect(() => {
     fetchProgram()
@@ -98,6 +99,26 @@ export default function ProgramDetailPage() {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const enrichWithAre = async () => {
+    setEnriching(true)
+    try {
+      const response = await fetch(
+        `/api/programs/${params.client}/${params.filename}/enrich`,
+        { method: 'POST' }
+      )
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Enrichment failed')
+      }
+      // Reload program to show ARE
+      await fetchProgram()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setEnriching(false)
     }
   }
 
@@ -243,6 +264,18 @@ export default function ProgramDetailPage() {
                 {program.meta.status}
               </span>
             </div>
+            {/* Compute ARE button — show when any lift is missing block_are */}
+            {program.calculated && Object.keys(program.calculated).some(
+              lift => !lift.startsWith('_') && (program.calculated as any)[lift]?._summary?.block_are == null
+            ) && (
+              <button
+                onClick={enrichWithAre}
+                disabled={enriching}
+                className="px-3 py-1 text-sm rounded-md border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+              >
+                {enriching ? 'Computing...' : 'Compute ARE'}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -307,6 +340,9 @@ export default function ProgramDetailPage() {
                     <div className="space-y-1 text-sm">
                       <p><span className="text-gray-600">{t('totalNL')}:</span> <span className="font-semibold text-gray-900">{summary.total_nl}</span></p>
                       <p><span className="text-gray-600">{t('blockARI')}:</span> <span className="font-semibold text-gray-900">{summary.block_ari?.toFixed(1)}%</span></p>
+                      {summary.block_are != null && (
+                        <p><span className="text-gray-600">{t('blockARE')}:</span> <span className="font-semibold text-amber-800">{summary.block_are.toFixed(0)}%</span></p>
+                      )}
                     </div>
                     <div className="mt-3">
                       <p className="text-xs text-gray-600 mb-1">{t('zoneDistribution')}:</p>
@@ -414,6 +450,22 @@ export default function ProgramDetailPage() {
                               {summary?.block_ari?.toFixed(1) || 0}
                             </td>
                           </tr>
+                          {summary?.block_are != null && (
+                            <tr className="bg-amber-50 font-semibold">
+                              <td className="border border-gray-300 px-4 py-2 text-gray-900">ARE</td>
+                              {[1, 2, 3, 4].map(weekNum => {
+                                const weekData = liftData[`week_${weekNum}`]
+                                return (
+                                  <td key={weekNum} className="border border-gray-300 px-4 py-2 text-center text-gray-900">
+                                    {weekData?.are != null ? `${weekData.are.toFixed(0)}%` : '–'}
+                                  </td>
+                                )
+                              })}
+                              <td className="border border-gray-300 px-4 py-2 text-center text-amber-800 font-semibold">
+                                {summary.block_are.toFixed(0)}%
+                              </td>
+                            </tr>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -453,24 +505,36 @@ export default function ProgramDetailPage() {
                             if (!firstWeek?.sessions) return null
                             const sessionKeys = Object.keys(firstWeek.sessions).sort()
 
-                            return sessionKeys.map((sessionKey, sessionIdx) => (
-                              <tr key={sessionKey}>
-                                <td className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900">
-                                  {sessionKey}
-                                </td>
-                                {[1, 2, 3, 4].map(weekNum => {
-                                  const weekData = liftData[`week_${weekNum}`]
-                                  const sessions = weekData?.sessions || {}
-                                  const sessionData = sessions[sessionKey]
-                                  const reps = sessionData?.total || 0
-                                  return (
-                                    <td key={weekNum} className="border border-gray-300 px-4 py-2 text-center text-gray-900">
-                                      {reps}
+                            const hasSessionAre = sessionKeys.some(sk =>
+                              [1, 2, 3, 4].some(w => liftData[`week_${w}`]?.sessions?.[sk]?.are != null)
+                            )
+
+                            return (
+                              <>
+                                {sessionKeys.map((sessionKey) => (
+                                  <tr key={sessionKey}>
+                                    <td className="border border-gray-300 px-4 py-2 text-center font-semibold text-gray-900">
+                                      {sessionKey}
                                     </td>
-                                  )
-                                })}
-                              </tr>
-                            ))
+                                    {[1, 2, 3, 4].map(weekNum => {
+                                      const weekData = liftData[`week_${weekNum}`]
+                                      const sessions = weekData?.sessions || {}
+                                      const sessionData = sessions[sessionKey]
+                                      const reps = sessionData?.total || 0
+                                      const are = sessionData?.are
+                                      return (
+                                        <td key={weekNum} className="border border-gray-300 px-4 py-2 text-center text-gray-900">
+                                          {reps}
+                                          {are != null && (
+                                            <span className="ml-1 text-xs text-amber-700">({are.toFixed(0)}%)</span>
+                                          )}
+                                        </td>
+                                      )
+                                    })}
+                                  </tr>
+                                ))}
+                              </>
+                            )
                           })()}
                         </tbody>
                       </table>

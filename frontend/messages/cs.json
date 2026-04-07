@@ -88,9 +88,19 @@
         "description": "Tréninky lze přesouvat v rámci týdne, týdny v rámci měsíce. Systém se přizpůsobí vašemu životu."
       }
     },
-    "quote": {
-      "text": "Zvedej co nejtěžší váhy, s co největším objemem, a přitom zůstaň co nejsvěžejší.",
-      "author": "— Steve Freides"
+    "quotes": {
+      "vorobyev-optimal": {
+        "text": "Ve vědě a inženýrství se řešení, které při minimálních nákladech splňuje všechny stanovené požadavky, nazývá optimální.",
+        "author": "— Arkadij Vorobjov"
+      },
+      "freides-as-possible": {
+        "text": "Zvedej co nejtěžší váhy, s co největším objemem, a přitom zůstaň co nejsvěžejší.",
+        "author": "— Steve Freides"
+      },
+      "chernyak-variable-reps": {
+        "text": "Individualizujte počet opakování v sérii při zachování stejného objemu a intenzity.",
+        "author": "— Chernyak"
+      }
     },
     "pricing": {
       "titleLine1": "CENÍK",
@@ -539,6 +549,37 @@
       "status": "Status",
       "view": "Zobrazit"
     },
+    "clientEdit": {
+      "loading": "Načítání...",
+      "title": "Upravit klienta",
+      "back": "← Zpět",
+      "basicInfo": "Základní informace",
+      "name": "Jméno",
+      "email": "Email",
+      "skillLevel": "Skill Level",
+      "notes": "Poznámky",
+      "preferences": "Preference",
+      "sessionsPerWeek": "Tréninky týdně",
+      "sessionDuration": "Délka tréninku (min)",
+      "focusLifts": "Fokus cviky",
+      "rmProfile": "RM profil",
+      "rmProfileDesc": "Max opakování na dané intenzitě — používá se pro výpočet ARE a návrh programu.",
+      "lift": "Cvik",
+      "surveyData": "Data z dotazníku",
+      "externalStress": "Vnější stres (1–5)",
+      "sessionsLately": "Tréninky/týden poslední dobou",
+      "maxSessions": "Max tréninků/týden",
+      "minWeightJump": "Minimální skok váhy (kg)",
+      "currentOneRM": "Aktuální 1RM",
+      "date": "Datum",
+      "tested": "Testováno (závod)",
+      "oneRmNotesPlaceholder": "např. Závod, odhad z tréninku...",
+      "previousRecords": "Předchozí záznamy",
+      "cancel": "Zrušit",
+      "save": "Uložit",
+      "saving": "Ukládám...",
+      "saved": "Klient úspěšně uložen. Přesměrování..."
+    },
     "import": {
       "title": "Import programu",
       "backToDashboard": "← Dashboard",
@@ -666,6 +707,7 @@
       "volumeTargets": "Volume & Intensity Targets",
       "totalNL": "Total NL",
       "blockARI": "Block ARI",
+      "blockARE": "Block ARE",
       "zoneDistribution": "Zone Distribution",
       "calculatedTargets": "Vypočítané targety",
       "noSessions": "Tento program zatím nemá vyplněné sessions (pouze targets)."

@@ -23,22 +23,22 @@
       "titleLine1": "THE CODE TO",
       "titleLine2": "BE STRONG",
       "tagline": "FORGET SET X REPS.",
-      "subtitle": "Your 1RMs, your recovery, your schedule — run through calculations that set total volume, intensity distribution, and how both change session to session, week to week. No templates. No guessing.",
+      "subtitle": "Your progress is largely a math problem. Most programs don't know their own numbers. StrongCode does.",
       "cta": "Start Survey",
       "ctaNote": "Takes 10–15 minutes"
     },
     "what": {
       "titleLine1": "WHAT IS",
       "titleLine2": "STRONGCODE",
-      "description": "Most programs keep volume constant — same sets, same reps, add weight. That works until it doesn't. At some point, progress depends less on load and more on how volume is organized: how many total lifts, at what intensities, distributed how across sessions and weeks.\n\nStrongCode plans volume and intensity as independent variables. Volume isn't flat or linearly increasing — it fluctuates. A high-volume session is followed by a low one. A hard week is followed by an easier one. The fluctuations aren't random — they follow distribution patterns derived from decades of documented training data from Soviet weightlifting.\n\nThe result: you accumulate more total work over a training block than a fixed program allows, while staying further from failure on any given set.",
+      "description": "Every program can be broken down to its building pieces and analyzed. Average intensity, total volume, volume at different intensity zones, how both are distributed across weeks and sessions. All of these and their relations can be expressed mathematically.\nOptimal programs follow specific rules between these parameters — what range the average block intensity should fall in, how volume relates to it, how both should be distributed within a block depending on its goal. Most programs don't follow any of these rules. Not because the rules don't exist, but because most program designers don't know what they are.\nStrongCode is built on those rules.",
       "highlight": ""
     },
     "expect": {
       "titleLine1": "WHAT TO",
       "titleLine2": "EXPECT",
-      "paragraph1": "You won't grind reps. Most sets end 1–3 reps before failure. But you'll handle weights above 85% of your max more often than on a typical program — and in more combinations. Heavy singles, moderate triples, lighter ladders, sometimes all in the same session.",
-      "paragraph2": "The volume fluctuates on purpose. Some weeks are hard, some are easy. The easy weeks aren't a break — they're what makes the hard weeks productive. This eliminates the need for scheduled deloads. The recovery is built into the structure.",
-      "paragraph3": "The program controls what it can control: volume, intensity, distribution, progression. Recovery — sleep, nutrition, stress — is on you."
+      "paragraph1": "Expect steady progress over months, not dramatic peaks followed by burnout. You will rarely train to failure. You will lift heavy weights more often than you're used to — but leave the gym feeling capable of more.",
+      "paragraph2": "Can we promise exceptional results? Certainly not. Outcomes vary greatly from person to person and are influenced by external factors beyond the program's control.",
+      "paragraph3": "The program controls what it can control: volume, intensity, distribution, progression. Recovery — sleep, nutrition, stress — is on you. Keep stress levels low, have quality sleep, and maintain a balanced diet, and you're setting the stage for success."
     },
     "howItWorks": {
       "titleLine1": "HOW IT",
@@ -51,7 +51,7 @@
       "step2": {
         "number": "02",
         "title": "We build your program",
-        "description": "A coach reviews your data, sets the parameters, and the system calculates the program. The coach then builds the sessions — exercise selection, set structures, warm-ups. Numbers plus experience."
+        "description": "A coach reviews your data, sets the parameters, and the system calculates the data. The coach then builds the sessions — exercise selection, set structures. Numbers plus experience."
       },
       "step3": {
         "number": "03",
@@ -88,9 +88,19 @@
         "description": "Sessions are labeled A, B, C — not days of the week. Train when you can. Move a session within the week. The weekly and monthly totals are what matter."
       }
     },
-    "quote": {
-      "text": "In science and engineering the solution that meets all the set requirements at a minimal cost is called optimal.",
-      "author": "— PlanStrong™ workshop"
+    "quotes": {
+      "vorobyev-optimal": {
+        "text": "In science and engineering the solution that meets all the set requirements at a minimal cost is called optimal.",
+        "author": "— Arkadij Vorobyev"
+      },
+      "freides-as-possible": {
+        "text": "Lift as heavy as possible, as much volume as possible, while remaining as fresh as possible.",
+        "author": "— Steve Freides"
+      },
+      "chernyak-variable-reps": {
+        "text": "Individualize reps per set keeping the same volume and intensity.",
+        "author": "— A. V. Chernyak"
+      }
     },
     "pricing": {
       "titleLine1": "PRICING",
@@ -260,7 +270,7 @@
       {
         "title": "INSIDE A SESSION",
         "blocks": [
-          { "type": "text", "content": "A typical session works across multiple intensity zones. But instead of rigid *set X rep* schemes, it could look like this:" },
+          { "type": "markdown", "content": "A typical session works across multiple intensity zones. But instead of rigid **set X rep** schemes, it could look like this:" },
           {
               "type": "table",
               "caption": "Example session",
@@ -576,6 +586,37 @@
       "status": "Status",
       "view": "View"
     },
+    "clientEdit": {
+      "loading": "Loading...",
+      "title": "Edit Client",
+      "back": "← Back",
+      "basicInfo": "Basic Information",
+      "name": "Name",
+      "email": "Email",
+      "skillLevel": "Skill Level",
+      "notes": "Notes",
+      "preferences": "Preferences",
+      "sessionsPerWeek": "Sessions per week",
+      "sessionDuration": "Session duration (min)",
+      "focusLifts": "Focus lifts",
+      "rmProfile": "RM Profile",
+      "rmProfileDesc": "Max reps at given intensity — used for ARE calculation and program design.",
+      "lift": "Lift",
+      "surveyData": "Survey Data",
+      "externalStress": "External stress (1–5)",
+      "sessionsLately": "Sessions/week lately",
+      "maxSessions": "Max sessions/week",
+      "minWeightJump": "Minimum weight jump (kg)",
+      "currentOneRM": "Current 1RM",
+      "date": "Date",
+      "tested": "Tested (competition)",
+      "oneRmNotesPlaceholder": "e.g. Competition meet, training estimate...",
+      "previousRecords": "Previous records",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Client saved successfully. Redirecting..."
+    },
     "import": {
       "title": "Import Program",
       "backToDashboard": "← Dashboard",
@@ -703,6 +744,7 @@
       "volumeTargets": "Volume & Intensity Targets",
       "totalNL": "Total NL",
       "blockARI": "Block ARI",
+      "blockARE": "Block ARE",
       "zoneDistribution": "Zone Distribution",
       "calculatedTargets": "Calculated Targets",
       "noSessions": "This program does not have sessions yet (only targets)."

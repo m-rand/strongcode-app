@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import LiftColumn from './LiftColumn'
 import { calculateAllTargets } from '@/lib/ai/calculate'
+import { buildRmLookup, calculateAre } from '@/lib/program/are'
 
 type LiftKey = 'squat' | 'bench_press' | 'deadlift'
 type WeekKey = 'week_1' | 'week_2' | 'week_3' | 'week_4'
@@ -177,6 +178,7 @@ export default function CreateProgram() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [isEditingExistingProgram, setIsEditingExistingProgram] = useState(false)
   const [isProgramPinned, setIsProgramPinned] = useState(false)
+  const [clientRmProfiles, setClientRmProfiles] = useState<Record<string, Record<number, number>> | null>(null)
   const loadedProgramKeyRef = useRef<string | null>(null)
   const lastDeterministicRecalcKeyRef = useRef<string>('')
 
@@ -462,6 +464,38 @@ export default function CreateProgram() {
     })
   }, [formData, isProgramPinned])
 
+  // Fetch RM profile when client name changes (for ARE display)
+  useEffect(() => {
+    const slug = toClientSlug(formData.clientName)
+    if (!slug || slug.length < 2) {
+      setClientRmProfiles(null)
+      return
+    }
+
+    let cancelled = false
+    const fetchRmProfile = async () => {
+      try {
+        const resp = await fetch(`/api/clients/${encodeURIComponent(slug)}`)
+        if (!resp.ok || cancelled) return
+        const data = await resp.json()
+        const survey = data.client?.survey
+        if (cancelled) return
+        if (survey) {
+          const { buildRmProfileFromSurvey } = await import('@/lib/program/are')
+          const prof = buildRmProfileFromSurvey(survey)
+          if (!cancelled) setClientRmProfiles(prof)
+        } else {
+          if (!cancelled) setClientRmProfiles(null)
+        }
+      } catch {
+        if (!cancelled) setClientRmProfiles(null)
+      }
+    }
+
+    const timer = setTimeout(fetchRmProfile, 500)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [formData.clientName])
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const editClient = params.get('editClient')
@@ -529,6 +563,15 @@ export default function CreateProgram() {
         setIsNewClient(false)
         setIsSaved(true)
         setIsProgramPinned(true)
+
+        // If program already has rm_profile snapshot, use it directly
+        // (the clientName effect will also fire, but snapshot takes priority
+        //  for historical accuracy — set it here so it's available immediately)
+        const existingRmProfile = (program as any).client?.rm_profile
+        if (existingRmProfile) {
+          setClientRmProfiles(existingRmProfile)
+        }
+        // Otherwise the clientName effect will fetch from current survey
       } catch (error) {
         console.error('Error loading existing program for editing:', error)
       } finally {
@@ -1242,6 +1285,7 @@ export default function CreateProgram() {
                         onMoveSet={moveSessionSet}
                         onInsertSet={insertSessionSet}
                         onDeleteSet={deleteSessionSet}
+                        rmProfile={clientRmProfiles?.[liftKey] || null}
                       />
                     </div>
                     </div>
@@ -1301,12 +1345,14 @@ function AISessionLiftTable({
   onMoveSet,
   onInsertSet,
   onDeleteSet,
+  rmProfile,
 }: {
   sessions: SessionsData
   lift: LiftKey
   calculatedLift: Record<string, any>
   variantOptions: VariantOption[]
   isEditMode: boolean
+  rmProfile: Record<number, number> | null
   onUpdateSet: (
     lift: LiftKey,
     weekNum: number,
@@ -1651,6 +1697,34 @@ function AISessionLiftTable({
                 })}
                 <td className="border border-gray-300 px-2 py-1 text-center text-gray-400">—</td>
               </tr>
+
+              {rmProfile && (
+              <tr className="bg-amber-50">
+                <td colSpan={3} className="border border-gray-300 px-2 py-1 text-right text-xs font-semibold text-amber-800">
+                  ARE
+                </td>
+                {sessionKeys.map(sessionKey => {
+                  const sets = getAllSets(sessionKey, weekKey)
+                  const rmLookup = buildRmLookup({ ...rmProfile, 100: 1 })
+                  const areSets = sets.filter(s => s.reps > 0 && s.percentage > 0).map(s => ({
+                    reps: s.reps,
+                    zone_pct: s.percentage / 100,
+                  }))
+                  const are = areSets.length > 0 ? calculateAre(areSets, rmLookup) : null
+
+                  return (
+                    <td
+                      key={`${weekKey}-${sessionKey}-are`}
+                      colSpan={maxSetsPerSession[sessionKey]}
+                      className="border border-gray-300 px-2 py-1 text-center font-semibold text-amber-800 border-l-2 border-l-gray-500"
+                    >
+                      {are !== null ? `${are.toFixed(0)}%` : ''}
+                    </td>
+                  )
+                })}
+                <td className="border border-gray-300 px-2 py-1 text-center text-gray-400">—</td>
+              </tr>
+              )}
 
               <tr className="bg-green-50 border-b-2 border-b-gray-400">
                 <td colSpan={3} className="border border-gray-300 px-2 py-1 text-right text-xs font-semibold text-green-800">

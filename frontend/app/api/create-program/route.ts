@@ -41,6 +41,30 @@ export async function POST(request: Request) {
     const clientSlug = formData.clientName.toLowerCase().replace(/\s+/g, '-')
     const filename = `${new Date().toISOString().split('T')[0]}_${clientSlug}_${formData.block}_all_lifts.json`
 
+    // Fetch client survey to extract RM profile for ARE calculation
+    const [clientRecord] = await db
+      .select({ id: clients.id, survey: clients.survey })
+      .from(clients)
+      .where(eq(clients.slug, clientSlug))
+      .limit(1)
+
+    // Build rm_profile from survey data (reps at various intensities)
+    const survey = (clientRecord?.survey || {}) as Record<string, any>
+    const rmProfile: Record<string, Record<string, number>> = {}
+    for (const lift of ['squat', 'bench_press', 'deadlift']) {
+      const surveyLiftKey = lift === 'bench_press' ? 'bench' : lift
+      const profile: Record<string, number> = {}
+      if (survey.reps_at_75_percent?.[surveyLiftKey])
+        profile['75'] = survey.reps_at_75_percent[surveyLiftKey]
+      if (survey.reps_at_85_percent?.[surveyLiftKey])
+        profile['85'] = survey.reps_at_85_percent[surveyLiftKey]
+      if (survey.reps_at_92_5_percent?.[surveyLiftKey])
+        profile['92.5'] = survey.reps_at_92_5_percent[surveyLiftKey]
+      if (Object.keys(profile).length > 0) {
+        rmProfile[lift] = profile
+      }
+    }
+
     const programData = {
       schema_version: '1.0',
       meta: {
@@ -57,6 +81,7 @@ export async function POST(request: Request) {
           bench_press: formData.lifts.bench_press.oneRM,
           deadlift: formData.lifts.deadlift.oneRM,
         },
+        ...(Object.keys(rmProfile).length > 0 && { rm_profile: rmProfile }),
       },
       program_info: {
         block: formData.block,
@@ -97,10 +122,8 @@ export async function POST(request: Request) {
     // Clean up temp file
     await fs.unlink(tempPath)
 
-    // Find client in DB
-    const [client] = await db.select({ id: clients.id }).from(clients).where(eq(clients.slug, clientSlug)).limit(1)
-
-    if (!client) {
+    // Verify client exists (already fetched above for survey data)
+    if (!clientRecord) {
       return NextResponse.json(
         { error: `Client "${clientSlug}" not found in database` },
         { status: 404 }
@@ -109,7 +132,7 @@ export async function POST(request: Request) {
 
     // Save to database
     await db.insert(programs).values({
-      clientId: client.id,
+      clientId: clientRecord.id,
       filename,
       schemaVersion: '1.0',
       status: 'draft',

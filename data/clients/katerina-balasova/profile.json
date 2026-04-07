@@ -34,6 +34,12 @@
 
   "skill_level": "advanced",
 
+  "survey": {
+    "reps_at_75_percent": { "squat": 8, "bench": 10, "deadlift": 7 },
+    "reps_at_85_percent": { "squat": 4, "bench": 5, "deadlift": 3 },
+    "reps_at_92_5_percent": { "squat": 2, "bench": 2, "deadlift": 1 }
+  },
+
   "preferences": {
     "training_days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
     "focus_lifts": ["squat"],

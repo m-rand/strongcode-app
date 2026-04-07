@@ -4,6 +4,34 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { SubpageHeader } from '@/components/SubpageHeader'
 
+function QuoteBand({
+  text,
+  author,
+}: {
+  text: string
+  author: string
+}) {
+  return (
+    <section
+      className="py-20 md:py-28 px-6 text-center"
+      style={{ background: 'var(--accent-primary)' }}
+    >
+      <blockquote
+        className="text-2xl md:text-4xl font-light italic leading-snug mb-6 max-w-6xl mx-auto"
+        style={{ color: 'var(--quote-text-color)' }}
+      >
+        &ldquo;{text}&rdquo;
+      </blockquote>
+      <cite
+        className="text-base font-semibold not-italic"
+        style={{ color: 'var(--quote-text-color)' }}
+      >
+        {author}
+      </cite>
+    </section>
+  )
+}
+
 export default function HomePage() {
   const t = useTranslations('home')
 
@@ -118,6 +146,11 @@ export default function HomePage() {
         </div>
       </section>
 
+      <QuoteBand
+        text={t('quotes.vorobyev-optimal.text')}
+        author={t('quotes.vorobyev-optimal.author')}
+      />
+
       {/* ──────────────────────── HOW IT WORKS ──────────────────────── */}
       <section
         id="how-it-works"
@@ -228,6 +261,11 @@ export default function HomePage() {
         </div>
       </section>
 
+      <QuoteBand
+        text={t('quotes.freides-as-possible.text')}
+        author={t('quotes.freides-as-possible.author')}
+      />
+
       {/* ──────────────────────── WHAT TO EXPECT ──────────────────────── */}
       <section className="py-20 md:py-32 px-6" style={{ background: 'var(--bg-secondary)' }}>
         <div className="max-w-7xl mx-auto">
@@ -265,25 +303,6 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
-
-      {/* ──────────────────────── QUOTE ──────────────────────── */}
-      <section
-        className="py-20 md:py-28 px-6 text-center"
-        style={{ background: 'var(--accent-primary)' }}
-      >
-        <blockquote
-          className="text-2xl md:text-4xl font-light italic leading-snug mb-6 max-w-6xl mx-auto"
-          style={{ color: 'var(--quote-text-color)' }}
-        >
-          &ldquo;{t('quote.text')}&rdquo;
-        </blockquote>
-        <cite
-          className="text-base font-semibold not-italic"
-          style={{ color: 'var(--quote-text-color)' }}
-        >
-          {t('quote.author')}
-        </cite>
       </section>
 
       {/* ──────────────────────── PRICE ──────────────────────── */}
@@ -329,6 +348,11 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <QuoteBand
+        text={t('quotes.chernyak-variable-reps.text')}
+        author={t('quotes.chernyak-variable-reps.author')}
+      />
 
       {/* ──────────────────────── COACH ──────────────────────── */}
       <section id="about" className="py-20 md:py-32 px-6">

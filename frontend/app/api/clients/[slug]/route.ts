@@ -1,7 +1,80 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { clients, oneRmRecords, programs } from '@/db/schema'
-import { eq, sql } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  try {
+    const { slug } = await params
+    const body = await request.json()
+
+    const [client] = await db.select().from(clients).where(eq(clients.slug, slug)).limit(1)
+
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Client not found' },
+        { status: 404 }
+      )
+    }
+
+    // Build update object from allowed fields
+    const updates: Record<string, unknown> = {}
+
+    if (body.name !== undefined) updates.name = body.name
+    if (body.email !== undefined) updates.email = body.email
+    if (body.skillLevel !== undefined) updates.skillLevel = body.skillLevel
+    if (body.notes !== undefined) updates.notes = body.notes
+    if (body.preferences !== undefined) updates.preferences = body.preferences
+    if (body.survey !== undefined) updates.survey = body.survey
+    if (body.status !== undefined) updates.status = body.status
+
+    updates.lastModified = new Date().toISOString()
+
+    await db.update(clients).set(updates).where(eq(clients.slug, slug))
+
+    // Handle 1RM update: update existing record or insert new one
+    if (body.oneRm) {
+      const { date, squat, bench_press, deadlift, tested, notes: rmNotes } = body.oneRm
+
+      if (body.oneRm.id) {
+        // Update existing record
+        await db.update(oneRmRecords).set({
+          date,
+          squat,
+          benchPress: bench_press,
+          deadlift,
+          tested: tested ?? false,
+          notes: rmNotes,
+        }).where(and(eq(oneRmRecords.id, body.oneRm.id), eq(oneRmRecords.clientId, client.id)))
+      } else {
+        // Insert new record
+        await db.insert(oneRmRecords).values({
+          clientId: client.id,
+          date,
+          squat,
+          benchPress: bench_press,
+          deadlift,
+          tested: tested ?? false,
+          notes: rmNotes,
+        })
+      }
+    }
+
+    // Return updated client
+    const [updated] = await db.select().from(clients).where(eq(clients.slug, slug)).limit(1)
+
+    return NextResponse.json({ client: updated })
+  } catch (error) {
+    console.error('Error updating client:', error)
+    return NextResponse.json(
+      { error: 'Failed to update client' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function GET(
   request: Request,
@@ -53,6 +126,7 @@ export async function GET(
       survey: client.survey,
       notes: client.notes,
       one_rm_history: rmHistory.map(r => ({
+        id: r.id,
         date: r.date,
         squat: r.squat,
         bench_press: r.benchPress,
