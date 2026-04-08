@@ -61,3 +61,71 @@ export async function GET(
     )
   }
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ client: string; filename: string }> }
+) {
+  try {
+    const { client: clientSlug, filename } = await params
+    const decodedFilename = decodeURIComponent(filename)
+    const body = await request.json()
+    const nextStatus = body?.status
+
+    if (nextStatus !== 'draft' && nextStatus !== 'active' && nextStatus !== 'completed') {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    }
+
+    const [client] = await db
+      .select({ id: clients.id })
+      .from(clients)
+      .where(eq(clients.slug, clientSlug))
+      .limit(1)
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+    }
+
+    const [program] = await db
+      .select({ id: programs.id, status: programs.status })
+      .from(programs)
+      .where(and(
+        eq(programs.clientId, client.id),
+        eq(programs.filename, decodedFilename)
+      ))
+      .limit(1)
+
+    if (!program) {
+      return NextResponse.json({ error: 'Program not found' }, { status: 404 })
+    }
+
+    // Keep one active program per client: activating one marks previous active programs as completed.
+    if (nextStatus === 'active') {
+      await db
+        .update(programs)
+        .set({ status: 'completed' })
+        .where(and(
+          eq(programs.clientId, client.id),
+          eq(programs.status, 'active')
+        ))
+    }
+
+    await db
+      .update(programs)
+      .set({ status: nextStatus })
+      .where(eq(programs.id, program.id))
+
+    return NextResponse.json({
+      success: true,
+      filename: decodedFilename,
+      previousStatus: program.status,
+      status: nextStatus,
+    })
+  } catch (error) {
+    console.error('Error updating program status:', error)
+    return NextResponse.json(
+      { error: 'Failed to update program status' },
+      { status: 500 }
+    )
+  }
+}

@@ -20,6 +20,30 @@ const MODELS: Record<AIProvider, string> = {
 export const maxDuration = 300 // Allow up to 5 minutes (retry attempts per lift)
 
 type ZoneKey = '65' | '75' | '85' | '90' | '95'
+const ZONES: ZoneKey[] = ['65', '75', '85', '90', '95']
+const ZONE_INTENSITY: Record<ZoneKey, number> = {
+  '65': 65,
+  '75': 75,
+  '85': 85,
+  '90': 92.5,
+  '95': 95,
+}
+
+function canonicalSessionLetter(raw: unknown, fallbackIndex: number): string {
+  const fallback = String.fromCharCode(65 + (fallbackIndex % 26))
+  if (typeof raw !== 'string') return fallback
+
+  const normalized = raw.trim().toUpperCase()
+  if (/^[A-Z]$/.test(normalized)) return normalized
+
+  const standalone = normalized.match(/\b([A-Z])\b/)
+  if (standalone?.[1]) return standalone[1]
+
+  const lastLetter = normalized.match(/([A-Z])[^A-Z]*$/)
+  if (lastLetter?.[1]) return lastLetter[1]
+
+  return fallback
+}
 
 function zoneFromPercentage(percentage: number): ZoneKey | null {
   const p = Number(percentage)
@@ -29,6 +53,49 @@ function zoneFromPercentage(percentage: number): ZoneKey | null {
   if (Math.abs(p - 92.5) < 0.2) return '90'
   if (Math.abs(p - 95) < 0.2) return '95'
   return null
+}
+
+function hasUsableWeekTargets(liftCalc: Record<string, unknown>, weeks: number): boolean {
+  for (let weekNum = 1; weekNum <= weeks; weekNum++) {
+    const weekKey = `week_${weekNum}`
+    const week = liftCalc[weekKey] as {
+      total_reps?: number
+      zones?: Record<ZoneKey, number>
+    } | undefined
+    if (!week) return false
+    if (!Number.isFinite(Number(week.total_reps))) return false
+    if (!week.zones || typeof week.zones !== 'object') return false
+    for (const zone of ZONES) {
+      if (!Number.isFinite(Number(week.zones[zone] ?? 0))) return false
+    }
+  }
+  return true
+}
+
+function deriveBlockMetricsFromWeeks(
+  liftCalc: Record<string, unknown>,
+  weeks: number,
+): { actualNl: number; blockAri: number } | null {
+  if (!hasUsableWeekTargets(liftCalc, weeks)) return null
+
+  let totalReps = 0
+  let weightedIntensity = 0
+
+  for (let weekNum = 1; weekNum <= weeks; weekNum++) {
+    const weekKey = `week_${weekNum}`
+    const week = liftCalc[weekKey] as { zones: Record<ZoneKey, number> }
+    for (const zone of ZONES) {
+      const reps = Number(week.zones[zone] ?? 0)
+      totalReps += reps
+      weightedIntensity += reps * ZONE_INTENSITY[zone]
+    }
+  }
+
+  const blockAri = totalReps > 0
+    ? Math.round((weightedIntensity / totalReps) * 10) / 10
+    : 0
+
+  return { actualNl: totalReps, blockAri }
 }
 
 function validateLiftAiOutput(
@@ -170,7 +237,14 @@ function validateLiftAiOutputV27(
 
 export async function POST(request: Request) {
   try {
-    const body: GenerateInput & { clientSlug: string; save?: boolean; provider?: AIProvider; promptVersion?: string; model?: string } = await request.json()
+    const body: GenerateInput & {
+      clientSlug: string
+      save?: boolean
+      provider?: AIProvider
+      promptVersion?: string
+      model?: string
+      calculated?: Record<string, unknown>
+    } = await request.json()
     const provider: AIProvider = body.provider === 'openai' ? 'openai' : 'anthropic'
     const promptVersion = getPromptVersion(body.promptVersion)
     const systemPrompt = promptVersion.systemPrompt
@@ -196,10 +270,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No lifts configured' }, { status: 400 })
     }
 
-    // ── Step 1: Deterministic calculation ──────────────────
-    console.log('[generate-program] Step 1: Calculating targets (deterministic)...')
-    const calculated = calculateAllTargets(activeLifts, body.client.delta, weeks)
-    console.log('[generate-program] Calculated targets for:', Object.keys(calculated))
+    // ── Step 1: Target source (edited calculated override or deterministic fallback) ──
+    console.log('[generate-program] Step 1: Preparing targets (edited override or deterministic fallback)...')
+    const calculated = calculateAllTargets(activeLifts, body.client.delta, weeks) as Record<string, Record<string, unknown>>
+
+    const providedCalculated = (body.calculated && typeof body.calculated === 'object')
+      ? body.calculated
+      : null
+    const overriddenLifts: string[] = []
+
+    if (providedCalculated) {
+      for (const lift of Object.keys(activeLifts)) {
+        const providedLift = providedCalculated[lift]
+        if (!providedLift || typeof providedLift !== 'object') continue
+
+        const providedLiftCalc = providedLift as Record<string, unknown>
+        if (!hasUsableWeekTargets(providedLiftCalc, weeks)) continue
+
+        calculated[lift] = providedLiftCalc
+        overriddenLifts.push(lift)
+      }
+    }
+
+    console.log('[generate-program] Target source:', overriddenLifts.length > 0 ? `edited override for ${overriddenLifts.join(', ')}` : 'deterministic only')
+    console.log('[generate-program] Prepared targets for:', Object.keys(calculated))
 
     // Validate calculated results
     const validationErrors: string[] = []
@@ -207,19 +301,23 @@ export async function POST(request: Request) {
 
     for (const [lift, cfg] of Object.entries(activeLifts)) {
       const liftCalc = calculated[lift]
-      if (!liftCalc?._summary) continue
+      if (!liftCalc) continue
 
-      const summary = liftCalc._summary
-      const diff = Math.abs(summary.actual_nl - cfg.volume)
+      const summary = liftCalc._summary as { actual_nl?: number; block_ari?: number } | undefined
+      const derived = deriveBlockMetricsFromWeeks(liftCalc, weeks)
+      const actualNl = derived?.actualNl ?? Number(summary?.actual_nl ?? 0)
+      const blockAri = derived?.blockAri ?? Number(summary?.block_ari ?? 0)
+
+      const diff = Math.abs(actualNl - cfg.volume)
       if (diff > 2) {
-        validationErrors.push(`${lift}: NL mismatch — target ${cfg.volume}, actual ${summary.actual_nl} (diff: ${diff})`)
+        validationErrors.push(`${lift}: NL mismatch — target ${cfg.volume}, actual ${actualNl} (diff: ${diff})`)
       } else if (diff > 0) {
-        validationWarnings.push(`${lift}: NL slightly off — target ${cfg.volume}, actual ${summary.actual_nl} (diff: ${diff})`)
+        validationWarnings.push(`${lift}: NL slightly off — target ${cfg.volume}, actual ${actualNl} (diff: ${diff})`)
       }
 
       const ariTarget = TARGET_ARI[body.block]
-      if (summary.block_ari < ariTarget.min || summary.block_ari > ariTarget.max) {
-        validationWarnings.push(`${lift}: ARI ${summary.block_ari}% outside target ${ariTarget.min}-${ariTarget.max}%`)
+      if (Number.isFinite(blockAri) && (blockAri < ariTarget.min || blockAri > ariTarget.max)) {
+        validationWarnings.push(`${lift}: ARI ${blockAri}% outside target ${ariTarget.min}-${ariTarget.max}%`)
       }
     }
 
@@ -315,8 +413,8 @@ export async function POST(request: Request) {
         for (const weekKey of ['week_1', 'week_2', 'week_3', 'week_4'] as const) {
           const weekData = weeksResult.weeks[weekKey]
           if (!weekData) continue
-          for (const sessionObj of weekData.sessions) {
-            const sessionKey = sessionObj.session
+          for (const [sessionIdx, sessionObj] of weekData.sessions.entries()) {
+            const sessionKey = canonicalSessionLetter(sessionObj.session, sessionIdx)
             if (!sessions[sessionKey]) {
               sessions[sessionKey] = {
                 week_1: { lifts: [] },
@@ -336,8 +434,8 @@ export async function POST(request: Request) {
       } else {
         // v2.5/v2.6: session-first format
         const sessionsResult = liftResult as LiftSessionsOutput
-        for (const sessionObj of sessionsResult.sessions) {
-          const sessionKey = sessionObj.session
+        for (const [sessionIdx, sessionObj] of sessionsResult.sessions.entries()) {
+          const sessionKey = canonicalSessionLetter(sessionObj.session, sessionIdx)
           if (!sessions[sessionKey]) {
             sessions[sessionKey] = {
               week_1: { lifts: [] },

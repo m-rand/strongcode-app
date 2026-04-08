@@ -55,6 +55,8 @@ interface LiftInputPayload {
     '85_percent': number
     '90_total_reps': number
     '95_total_reps': number
+    '90_weekly_reps'?: number[]
+    '95_weekly_reps'?: number[]
   }
   volume_pattern_main: string
   volume_pattern_8190: string
@@ -166,13 +168,17 @@ const getLiftLabel = (lift: string) => (
   lift === 'deadlift' ? 'Deadlift' : lift
 )
 
-const toClientSlug = (name: string) => (
-  name
+const toClientSlug = (name: string) => {
+  const slug = name
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, '-')
-)
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+  return slug || 'client'
+}
 
 const toApiBlock = (block: string): 'prep' | 'comp' => (
   block === 'comp' ? 'comp' : 'prep'
@@ -403,12 +409,16 @@ export default function CreateProgram() {
 
     try {
       const payload = buildGeneratePayload()
+      const requestPayload = {
+        ...payload,
+        ...(calculatedResults ? { calculated: calculatedResults.calculated } : {}),
+      }
 
       // Call AI generation API (preview only, no DB save)
       const response = await fetch('/api/generate-program', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestPayload),
       })
 
       const result: GenerateProgramResponse = await response.json()
@@ -709,7 +719,11 @@ export default function CreateProgram() {
 
       const data = await response.json()
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to save program')
+        const details = Array.isArray(data?.details)
+          ? data.details.filter((item: unknown): item is string => typeof item === 'string')
+          : []
+        const detailText = details.length > 0 ? `\n${details.slice(0, 3).join('\n')}` : ''
+        throw new Error(`${data?.error || 'Failed to save program'}${detailText}`)
       }
 
       setIsSaved(true)

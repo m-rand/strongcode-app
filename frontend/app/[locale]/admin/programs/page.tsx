@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 
 interface Program {
@@ -18,12 +17,11 @@ interface Program {
 }
 
 export default function ProgramsListPage() {
-  const { data: session } = useSession()
   const t = useTranslations('admin.programs')
-  const tCommon = useTranslations('common')
   const locale = useLocale()
   const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
+  const [activatingProgram, setActivatingProgram] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -37,10 +35,43 @@ export default function ProgramsListPage() {
 
       const data = await response.json()
       setPrograms(data.programs || [])
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load programs')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const activateProgram = async (program: Program) => {
+    const key = `${program.client}/${program.filename}`
+    setActivatingProgram(key)
+    setError('')
+
+    try {
+      const response = await fetch(
+        `/api/programs/${encodeURIComponent(program.client)}/${encodeURIComponent(program.filename)}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'active' }),
+        }
+      )
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to activate program')
+      }
+
+      setPrograms(prev => prev.map(p => {
+        if (p.client !== program.client) return p
+        if (p.filename === program.filename) return { ...p, status: 'active' }
+        if (p.status === 'active') return { ...p, status: 'completed' }
+        return p
+      }))
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to activate program')
+    } finally {
+      setActivatingProgram(null)
     }
   }
 
@@ -199,12 +230,23 @@ export default function ProgramsListPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link
-                        href={`/${locale}/admin/programs/${program.client}/${encodeURIComponent(program.filename)}`}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        {t('view')}
-                      </Link>
+                      <div className="flex items-center justify-end gap-3">
+                        {program.status !== 'active' && (
+                          <button
+                            onClick={() => activateProgram(program)}
+                            disabled={activatingProgram === `${program.client}/${program.filename}`}
+                            className="px-2 py-1 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
+                          >
+                            {activatingProgram === `${program.client}/${program.filename}` ? 'Activating...' : 'Activate'}
+                          </button>
+                        )}
+                        <Link
+                          href={`/${locale}/admin/programs/${program.client}/${encodeURIComponent(program.filename)}`}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          {t('view')}
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
