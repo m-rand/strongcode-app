@@ -14,9 +14,9 @@ const ajv = new Ajv({ allErrors: true, strict: false })
 addFormats(ajv)
 
 const SCHEMA_PATHS: Record<string, string> = {
-  '1.0': '../schemas/v1.0/program.schema.json',
-  '1.1': '../schemas/program-complete.schema.json',
-  '1.2': '../schemas/program-complete.schema.json',
+  '1.0': './schemas/v1.0/program.schema.json',
+  '1.1': './schemas/program-complete.schema.json',
+  '1.2': './schemas/program-complete.schema.json',
 }
 
 const validatorPromises = new Map<string, Promise<ValidateFunction>>()
