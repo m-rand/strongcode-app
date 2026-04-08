@@ -1,38 +1,26 @@
-'use client'
+import Image from 'next/image'
 
 /**
- * Simple StrongCode "SC" monogram logo.
- * Renders an inline SVG that inherits currentColor.
+ * Brand logo rendered from provided PNG assets.
+ * Light and dark variants are switched by `:root.dark`.
  */
-export function Logo({ className = 'w-8 h-8' }: { className?: string }) {
+export function Logo({ className = 'h-7 w-auto' }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 40 40"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Accent bar */}
-      <rect
-        x="0"
-        y="0"
-        width="40"
-        height="40"
-        rx="6"
-        fill="var(--accent-primary)"
+    <span className={`inline-flex items-center ${className}`} aria-hidden="true">
+      <Image
+        src="/brand/08_inverse_white_bg_black_brackets_orange_inner.png"
+        alt=""
+        width={512}
+        height={512}
+        className="sc-logo-light block h-full w-auto"
       />
-      {/* S */}
-      <text
-        x="8"
-        y="30"
-        fontFamily="var(--font-family, system-ui)"
-        fontWeight="700"
-        fontSize="26"
-        fill="white"
-        letterSpacing="-1"
-      >
-        SC
-      </text>
-    </svg>
+      <Image
+        src="/brand/03_orange_inner_dark_bg.png"
+        alt=""
+        width={512}
+        height={512}
+        className="sc-logo-dark h-full w-auto"
+      />
+    </span>
   )
 }

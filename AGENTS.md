@@ -1,246 +1,171 @@
 # AGENTS.md — StrongCode AI Program Generation
 
-## Overview
+## Purpose
+This document describes the **current** AI program generation implementation in StrongCode.
+It focuses on how `/api/generate-program` works today, where domain rules live, and how generated output is validated and stored.
 
-StrongCode generates evidence-based powerlifting training programs using LLM prompts grounded in Soviet weightlifting methodology (PlanStrong / Chernyak). This document describes the AI generation pipeline, prompt architecture, and integration options.
+Last updated: **2026-04-08**
 
-## AI Provider Options
+## Current AI Stack
+- **Runtime**: Next.js App Router (`frontend/app/api/generate-program/route.ts`)
+- **Unified AI SDK**: `ai`
+- **Providers**:
+  - Anthropic via `@ai-sdk/anthropic`
+  - OpenAI via `@ai-sdk/openai`
+- **Structured output**: Zod schemas in `frontend/lib/ai/schema.ts`
+- **Deterministic math**: `frontend/lib/ai/calculate.ts`
+- **Prompt versioning**: `frontend/lib/ai/prompts/registry.ts`
 
-| Provider | SDK | Strengths | Integration |
-|----------|-----|-----------|-------------|
-| **Claude (Anthropic)** | `@anthropic-ai/sdk` | Best structured JSON, strong rule-following, large context | Direct API or via Vercel AI |
-| **GPT-4o (OpenAI)** | `openai` | JSON mode, function calling | Direct API or via Vercel AI |
-| **Vercel AI SDK** | `ai` | Unified API for both providers, streaming, Next.js integration | `npm i ai @ai-sdk/anthropic @ai-sdk/openai` |
+## Implemented End-to-End Pipeline
 
-### Recommended: Vercel AI SDK
-
-The Vercel AI SDK provides a unified interface that works with both Claude and OpenAI. It integrates cleanly with Next.js App Router and supports streaming, structured output, and tool calling.
-
-```bash
-cd frontend && npm install ai @ai-sdk/anthropic @ai-sdk/openai
+```text
+Admin input (create page or AI debug)
+  -> deterministic target calculation (zones/session totals/ARI)
+  -> per-lift LLM generation of concrete sets
+  -> strict arithmetic validation vs deterministic targets
+  -> merge per-lift output into unified sessions object
+  -> optional DB save as draft program
 ```
 
-```typescript
-// Example: Generate program with Claude via Vercel AI SDK
-import { generateObject } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
-import { programSchema } from '@/schemas/program'
+### 1) Input Sources
+- `frontend/app/[locale]/admin/create/page.tsx` (main workflow)
+- `frontend/app/[locale]/admin/ai-debug/page.tsx` (prompt/model debugging)
 
-const result = await generateObject({
-  model: anthropic('claude-sonnet-4-20250514'),
-  system: SYSTEM_PROMPT,          // Domain rules + methodology
-  prompt: userInputPrompt,        // Client data + targets
-  schema: programSchema,          // Zod schema for type-safe output
-})
-```
+### 2) Deterministic Stage (No AI)
+`calculateAllTargets()` computes, per lift:
+- Weekly zone totals (`65/75/85/90/95`)
+- Weekly ARI
+- Session total reps targets (except dynamic logic in prompt v2.7 output decisions)
+- Block summary (`total_nl`, `actual_nl`, `block_ari`, zone totals)
 
-## Generation Pipeline
+Code: `frontend/lib/ai/calculate.ts`
 
-```
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────────┐
-│ User Input  │───▶│ Build Prompt │───▶│ LLM Generate│───▶│ Validate &   │
-│ (UI form)   │    │ (system+user)│    │ (JSON output)│   │ Review (admin)│
-└─────────────┘    └──────────────┘    └─────────────┘    └──────────────┘
-```
+### 3) AI Stage
+Route: `POST /api/generate-program`
+- Generates per lift (squat/bench/deadlift) using `generateObject()`
+- Supports provider selection (`anthropic` or `openai`)
+- Supports explicit model override (`body.model`)
+- Uses prompt version registry (`body.promptVersion`)
+- Retries per lift when validation fails (`MAX_RETRIES = 2`)
 
-### 1. User Input (Admin UI)
-The coach provides:
-- Client profile: name, 1RM values (squat, bench_press, deadlift), skill level
-- Block type: `prep` or `comp`
-- Volume targets per lift (NL)
-- Sessions per week per lift (can vary by week)
-- Session distribution code (e.g. `d25_33_42`)
-- Volume distribution pattern (e.g. `3b`)
-- Number of weeks (typically 4)
-- Optional: variant preferences, specific constraints
+### 4) Strict Validation
+After generation, the route re-checks arithmetic consistency:
+- Zone totals must match deterministic targets exactly
+- Session totals must match exactly (v2.5/v2.6 session-first mode)
+- Weekly totals must match exactly
+- Invalid percentages/reps are rejected
 
-### 2. System Prompt Construction
-The system prompt is built from:
-- **Domain rules** — Chernyak methodology, stable structural constants
-- **Pattern tables** — `scripts/constants.py` contains all reference data:
-  - 16 Chernyak volume distribution patterns (base/advanced/elite variants)
-  - Session distribution tables (2/3/4/5 sessions)
-  - Rep ranges per intensity zone
-  - ARI targets
-  - NL ranges per lift/block
-- **Output schema** — the exact JSON structure from `schemas/program-complete.schema.json`
-- **Constraints** — rep ranges, zone percentages, rounding rules
+If AI still violates constraints after retries:
+- Route returns **HTTP 422**
+- Includes partial generated program and detailed validation errors
 
-### 3. LLM Output
-The LLM generates a complete program JSON with:
-- `input` — echo of configuration parameters
-- `calculated` — per-week zone breakdown, ARI, per-session NL distribution
-- `sessions` — concrete workout prescriptions (sets × reps × weight × variant)
-- `session_assignments` — mapping of lift sessions to training days
+### 5) Optional Save to DB
+If `save: true` and `clientSlug` is provided:
+- Finds client by slug
+- Creates filename `YYYY-MM-DD_{clientSlug}_{block}_all_lifts.json`
+- Persists to `programs` table with `status = draft`
 
-### 4. Validation & Review
-- Validate against JSON schema
-- Check ARI is within target range
-- Check NL totals match targets
-- Check rep ranges are within zone limits
-- Coach can manually adjust any values before saving
+## API Contract (Current)
 
-## Key Domain Constants
+### Endpoint
+`POST /api/generate-program`
 
-All constants are defined in `scripts/constants.py` and must be included in the system prompt.
+### Required body fields
+- `client`
+- `block` (`prep` | `comp`)
+- `lifts` (at least one configured lift)
 
-### Volume Distribution Patterns (Chernyak)
-16 variants, each with 4-week percentages adjusted by skill level:
+### Optional control fields
+- `clientSlug: string`
+- `save: boolean`
+- `provider: "anthropic" | "openai"`
+- `model: string`
+- `promptVersion: string`
+- `weeks: number` (current UI flow uses 4)
 
-| Pattern | Base (weeks 1-4) | Advanced | Elite |
-|---------|-------------------|----------|-------|
-| 1       | 35 28 22 15 | 33 28 22 17 | 32 27 22 19 |
-| 2a      | 15 35 28 22 | 17 33 28 22 | 19 32 27 22 |
-| 2b      | 28 35 22 15 | 28 33 22 17 | 27 32 22 19 |
-| 2c      | 22 35 28 15 | 22 33 28 17 | 22 32 27 19 |
-| 3a      | 15 22 35 28 | 17 22 33 28 | 19 22 32 27 |
-| 3b      | 22 28 35 15 | 22 28 33 17 | 22 27 32 19 |
-| 3c      | 15 28 35 22 | 17 28 33 22 | 19 27 32 22 |
-| 1-3a    | 35 15 28 22 | 33 17 28 22 | 32 19 27 22 |
-| 1-3b    | 35 22 28 15 | 33 22 28 17 | 32 22 27 19 |
-| 3-1a    | 28 15 35 22 | 28 17 33 22 | 27 19 32 22 |
-| 3-1b    | 28 22 35 15 | 28 22 33 17 | 27 22 32 19 |
-| 4       | 15 22 28 35 | 17 22 28 33 | 19 22 27 32 |
-| 2-4a    | 15 35 22 28 | 17 33 22 28 | 19 32 22 27 |
-| 2-4b    | 22 35 15 28 | 22 33 17 28 | 22 32 19 27 |
-| 4-2a    | 22 28 15 35 | 22 28 17 33 | 22 27 19 32 |
-| 4-2b    | 15 28 22 35 | 17 28 22 33 | 19 27 22 32 |
+### Response (success)
+- `success: true`
+- `program: { calculated, sessions }`
+- `validation: { errors, warnings }`
+- `prompts: { promptVersion, system, user }`
+- `usage: { provider, model, inputTokens, outputTokens, totalTokens, liftsGenerated }`
+- `distributionInfo` (present for v2.7 week-first mode)
+- `filename` (only when saved)
 
-Week-to-week variability decreases with skill level (base → advanced → elite).
+### Response (validation failure)
+- HTTP `422`
+- `success: false`
+- `program` with partial output
+- merged `validation.errors` (deterministic + AI math)
+- prompt and usage payload for debugging
 
-### Session Distributions
-How volume splits across sessions within a week:
+## Prompt System (Implemented)
 
-**2 sessions:** d40_60, d35_65, d30_70, d25_75, d20_80
-**3 sessions:** d25_33_42 (LMH), d20_35_45 (LHM), d22_28_50 (MLH), d20_30_50 (MHL), d15_35_50 (HLM), d15_30_55 (HML)
-**4 sessions:** d15_22_28_35, d10_20_30_40
-**5 sessions:** d10_15_20_25_30
+Prompt files:
+- `frontend/lib/ai/prompts/v1.ts`
+- `frontend/lib/ai/prompts/v2.ts`
+- `frontend/lib/ai/prompts/v2_2.ts`
+- `frontend/lib/ai/prompts/v2_3.ts`
+- `frontend/lib/ai/prompts/v2_4.ts`
+- `frontend/lib/ai/prompts/v2_5.ts`
+- `frontend/lib/ai/prompts/v2_6.ts`
+- `frontend/lib/ai/prompts/v2-7.ts`
 
-Session order labels (for 3 sessions): LMH, LHM, MLH, MHL, HLM, HML
-(L=Light, M=Medium, H=Heavy)
+Registry: `frontend/lib/ai/prompts/registry.ts`
+- Default prompt version: `v2_7`
 
-### Two-Week Session Distributions
-For 2-session distributions: MH, HM
-For 3-session distributions: Three-week rotation patterns available
+### v2.7 behavior
+- AI receives weekly zone totals and zone weights
+- AI chooses session count/distribution per week
+- Week-first output format (`weeks.week_1...week_4`)
+- Route still enforces exact weekly/zone totals
 
-### Rep Ranges per Zone
-| Zone | Rep Range |
-|------|-----------|
-| 55% (50-60%) | 5-8 |
-| 65% (61-70%) | 4-7 |
-| 75% (71-80%) | 3-6 |
-| 85% (81-90%) | 2-4 |
-| 90% (91-94%) | 1 |
-| 95% (95-100%) | 1 |
+## Domain Constants (Source of Truth)
+Primary constants for AI pipeline live in:
+- `frontend/lib/ai/constants.ts`
 
-### Session Model
-- Sessions are **abstract units**: `A`, `B`, `C`, `D`... — never specific days
-- Client chooses which days to train
-- `sessions_per_week` can vary per lift and per week
-- `session_distribution` can vary per lift and per week
-- Use `input.{lift}.weekly_plan` for per-week configuration
+Python reference constants remain in:
+- `scripts/constants.py`
 
-### Zone Boundaries (for calculations)
-Used by `enrich_calculated.py` and validation to map percentage → zone:
-| Percentage | Zone |
-|-----------|------|
-| ≤ 0.60 | 55% |
-| ≤ 0.70 | 65% |
-| ≤ 0.80 | 75% |
-| ≤ 0.90 | 85% |
-| ≤ 0.94 | 90% |
-| > 0.94 | 95% |
+Key encoded rules:
+- 16 Chernyak distribution patterns (base/advanced/elite variants)
+- Session distribution tables for 2/3/4/5 sessions
+- Rep ranges per zone
+- ARI targets (`prep` 71-74, `comp` 74-77)
+- NL reference ranges by lift/block
 
-### Schema v1.2 — `weekly_plan`
-The `liftInput` definition now supports per-week session configuration via `weekly_plan`:
+## `weekly_plan` Support
+`LiftInput` supports per-week overrides:
+- `weekly_plan.week_1.sessions`
+- `weekly_plan.week_1.distribution`
+- ... week 2/3/4
 
-```json
-"weekly_plan": {
-  "week_1": { "sessions": 3, "distribution": "d25_33_42" },
-  "week_2": { "sessions": 3, "distribution": "d20_35_45" },
-  "week_3": { "sessions": 2, "distribution": "d40_60" },
-  "week_4": { "sessions": 2, "distribution": "d35_65" }
-}
-```
+Implementation is in deterministic calculator (`calculate.ts`), where week-specific values override default `sessions_per_week` and `session_distribution`.
 
-When `weekly_plan` is present, its values override the top-level `sessions_per_week` and `session_distribution` for that lift. The top-level fields remain as fallback defaults.
+Note: current admin create UI builds fixed top-level defaults; explicit per-week UI editing is not yet exposed there.
 
-## File Structure
+## Current File Map
+- `frontend/app/api/generate-program/route.ts` — main AI generation endpoint
+- `frontend/lib/ai/schema.ts` — Zod schemas for AI IO
+- `frontend/lib/ai/calculate.ts` — deterministic calculations
+- `frontend/lib/ai/prompt.ts` — prompt assembly helpers
+- `frontend/lib/ai/prompts/*` — versioned system prompts
+- `frontend/lib/ai/constants.ts` — TS constants used by AI pipeline
+- `frontend/app/[locale]/admin/create/page.tsx` — main coach UI for generation/editing
+- `frontend/app/[locale]/admin/ai-debug/page.tsx` — model/prompt debugging interface
 
-```
-scripts/constants.py          # All pattern tables and domain constants
-scripts/enrich_calculated.py  # Compute per-session NL from actual session sets
-schemas/program-complete.schema.json  # Output JSON schema (v1.2 with weekly_plan)
-schemas/v1.0/program.schema.json      # Versioned schema
-frontend/app/api/create-program/      # API route for program creation (existing, manual)
-frontend/app/api/generate-program/    # API route for AI generation (planned)
-frontend/app/[locale]/admin/create/   # Admin UI for program creation
-```
+Related but separate:
+- `frontend/app/api/create-program/route.ts` — legacy deterministic path via Python script execution
+- `frontend/app/api/programs/[client]/[filename]/enrich/route.ts` — ARE enrichment
+- `frontend/lib/program/are.ts` — ARE math and enrichment helpers
 
-## Implementation Roadmap
+## Operational Rules
+- Session keys must be abstract letters (`A`, `B`, `C`, ...), never weekday names.
+- AI is responsible for concrete set construction.
+- Deterministic code is responsible for totals, constraints, and validation truth.
+- Generated output should always be coach-reviewable before activation.
 
-### Phase 1: Foundation
-1. **Create Zod schema** (`frontend/schemas/program.ts`)
-   - Mirror `program-complete.schema.json` as Zod types
-   - Needed for Vercel AI SDK `generateObject()` — enforces typed output
-   - Include `liftInput`, `weekPlan`, `calculated`, `session` definitions
-
-2. **Install Vercel AI SDK**
-   ```bash
-   cd frontend && npm install ai @ai-sdk/anthropic @ai-sdk/openai zod
-   ```
-
-3. **Add API keys to `.env.local`**
-   ```
-   ANTHROPIC_API_KEY=<key>
-   OPENAI_API_KEY=<key>  # optional, for fallback
-   ```
-
-### Phase 2: Prompt Engineering
-4. **Build system prompt template** (`frontend/lib/prompts/system.ts`)
-   - Load constants from `scripts/constants.py` into TypeScript constants
-   - Include: Chernyak patterns (by skill level), session distributions, rep ranges, zone rules
-   - Include: output schema description, constraints, rounding rules
-   - Include: 1-2 example programs for few-shot learning
-
-5. **Build user prompt builder** (`frontend/lib/prompts/user.ts`)
-   - Takes: client profile (1RM, skill level), block type, per-lift config
-   - Outputs: structured user prompt with all parameters
-
-### Phase 3: API Route
-6. **Create `/api/generate-program` route** (`frontend/app/api/generate-program/route.ts`)
-   - POST handler: parse input → build system+user prompts → `generateObject()` → validate → return
-   - Use Claude as primary model, OpenAI as fallback option
-   - Add streaming support for progress indication
-   - Validate output: ARI range, NL totals, rep ranges within zone limits
-
-### Phase 4: Admin UI
-7. **Update admin create page** to support AI generation
-   - Form: client selector, block type, per-lift config (NL, pattern, sessions, distribution)
-   - Support `weekly_plan` — per-week overrides for sessions/distribution
-   - "Generate" button → calls API → displays result
-   - Review/edit mode — coach can manually adjust generated program
-   - "Save" button → persists to Turso DB
-
-### Phase 5: Validation & Quality
-8. **Validation pipeline** (`frontend/lib/validation/program.ts`)
-   - Check ARI is within target range (±0.5)
-   - Check NL totals match input targets
-   - Check rep ranges are within zone limits (from constants)
-   - Check session count matches `sessions_per_week` / `weekly_plan`
-   - Return structured errors/warnings for UI display
-
-9. **Testing & iteration**
-   - Generate programs with various inputs, compare to manually created ones
-   - Tune system prompt based on output quality
-   - Add edge cases: deload weeks, peaking, single-lift programs
-
-## Future: API Route for AI Generation
-
-```
-POST /api/generate-program
-Body: { clientId, block, lifts: { squat: { volume, pattern, sessions_per_week, weekly_plan?, ... }, ... } }
-Response: { program: { ... complete JSON ... }, validation: { errors: [], warnings: [] } }
-```
-
-The admin UI will call this endpoint, display the generated program for review, and allow the coach to edit before saving to the database.
+## Known Gaps / Backlog
+- No automated test suite for AI route and prompt regressions yet.
+- Root `README.md` is still legacy/outdated and does not reflect current Turso + App Router architecture.
+- Per-week `weekly_plan` editing is supported by backend math but not fully surfaced as dedicated UI controls.

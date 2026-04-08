@@ -2,315 +2,258 @@
 
 ## Project Overview
 
-StrongCode is a web application for generating evidence-based powerlifting training programs using Soviet weightlifting methodology (PlanStrong / Chernyak). It serves a coach (admin) and their clients.
+StrongCode is a web app for coach-managed powerlifting programming based on PlanStrong/Chernyak principles.
+It combines deterministic planning logic (volume/intensity math) with LLM-based session construction.
 
-**Tagline:** *Strength, calculated.*
+Tagline: **Strength, calculated.**
+
+Last updated: **2026-04-08**
+
+## Current Snapshot
+
+- Active branch: `feature/turso-database`
+- Latest commit at update time: `b9eba88`
+- App state: Turso + Drizzle fully integrated, AI generation live, ARE + training log implemented
 
 ## Tech Stack
 
-- **Frontend**: Next.js 16.1.1, React 19, TypeScript, Tailwind CSS v4
-- **Database**: Turso (LibSQL) — hosted at `libsql://strongcode-m-rand.aws-eu-west-1.turso.io`
-- **ORM**: Drizzle ORM with `@libsql/client`
-- **Auth**: NextAuth v5 (beta 5.0.0-beta.30), Credentials provider, JWT strategy
-- **i18n**: next-intl v4 (Czech + English), timezone Europe/Prague
-- **Email**: Resend (from: info@strong-code.com)
-- **Calculations**: Python scripts (calculate_targets.py, utilities.py, constants.py)
-- **Deploy target**: Vercel (frontend)
+- Frontend: Next.js 16.1.1, React 19, TypeScript, Tailwind CSS v4
+- Auth: NextAuth v5 (credentials, JWT sessions)
+- i18n: next-intl v4 (`en`, `cs`), timezone Europe/Prague
+- Database: Turso (LibSQL) via Drizzle ORM
+- Email: Resend
+- AI: Vercel AI SDK (`ai`) + Anthropic/OpenAI providers
+- Validation: AJV (`frontend/lib/program/schemaValidation.ts`) and Zod (`frontend/lib/ai/schema.ts`)
+- Python scripts: still present for legacy deterministic route (`create-program`) and reference utilities
 
-## Project Structure
+## Repository Structure (Current)
 
-```
+```text
 strong-code/
-├── frontend/                # Next.js app
-│   ├── app/
-│   │   ├── [locale]/        # i18n routes (en, cs)
-│   │   │   ├── page.tsx     # Landing / marketing page
-│   │   │   ├── intro/       # Subpage: introduction
-│   │   │   ├── features/    # Subpage: features
-│   │   │   ├── how-it-works/# Subpage: how it works
-│   │   │   ├── look-inside/ # Subpage: look inside
-│   │   │   ├── about/       # Subpage: about the coach
-│   │   │   ├── admin/       # Coach dashboard, clients, programs, surveys, create, import
-│   │   │   ├── client/      # Client dashboard, survey
-│   │   │   ├── login/
-│   │   │   ├── register/
-│   │   │   └── survey/      # Public survey (unauthenticated)
-│   │   └── api/             # 16 API routes (all use Drizzle ORM)
-│   ├── components/
-│   │   ├── SubpageHeader.tsx # Shared header (logo, nav, theme/lang switchers, mobile menu)
-│   │   ├── Logo.tsx          # SC monogram logo component
-│   │   ├── ThemeSwitcher.tsx
-│   │   └── LanguageSwitcher.tsx
-│   ├── db/
-│   │   ├── schema.ts        # Drizzle schema (6 tables)
-│   │   ├── index.ts         # Database connection singleton
-│   │   ├── seed.ts          # Data migration/seeding script
-│   │   └── migrations/      # SQL migrations (managed by drizzle-kit)
-│   ├── lib/auth.ts          # NextAuth config
-│   ├── middleware.ts         # Auth (JWT verification) + i18n + role-based access
-│   ├── messages/            # cs.json, en.json (~750 lines each)
-│   ├── drizzle.config.ts    # Drizzle Kit config
-│   └── .env.local           # Secrets (see Development section)
-├── data/                    # Legacy JSON data files (kept for reference, no longer used by API)
-├── scripts/                 # Python calculation scripts
-│   ├── calculate_targets.py # Main: Excel formulas → JSON targets
-│   ├── constants.py         # Chernyak patterns, intensity zones, session distributions
-│   ├── enrich_calculated.py # Compute per-session NL from actual session sets
-│   ├── utilities.py         # Volume distribution, ARI calculation helpers
-│   └── validate.py          # JSON schema validation
-├── schemas/                 # JSON Schema definitions
-│   ├── program-complete.schema.json
-│   ├── client-profile.schema.json
-│   └── v1.0/                # Versioned schemas
-└── backend/                 # FastAPI (planned, currently empty)
+├── AGENTS.md
+├── CLAUDE.md
+├── SKILL_codex.md
+├── docs/
+├── scripts/                         # Python utilities/constants/validation
+├── schemas/                         # JSON schemas
+├── backend/                         # Placeholder (not active runtime)
+└── frontend/                        # Next.js application
+    ├── app/
+    │   ├── [locale]/               # en/cs pages
+    │   │   ├── page.tsx            # Landing page
+    │   │   ├── intro/
+    │   │   ├── features/
+    │   │   ├── how-it-works/
+    │   │   ├── look-inside/
+    │   │   ├── about/
+    │   │   ├── admin/
+    │   │   │   ├── dashboard/
+    │   │   │   ├── clients/
+    │   │   │   ├── create/
+    │   │   │   ├── programs/
+    │   │   │   ├── surveys/
+    │   │   │   └── ai-debug/
+    │   │   ├── client/
+    │   │   │   ├── dashboard/
+    │   │   │   ├── programs/[filename]/
+    │   │   │   └── survey/
+    │   │   ├── login/
+    │   │   ├── register/
+    │   │   └── survey/
+    │   └── api/                    # 20 API routes
+    ├── components/
+    ├── db/
+    ├── lib/
+    │   ├── ai/
+    │   └── program/
+    ├── messages/
+    └── middleware.ts
 ```
 
 ## Key Domain Concepts
 
-- **1RM**: One-Rep Max (squat, bench_press, deadlift) in kg
-- **NL**: Number of Lifts — total reps in a training block
-- **ARI**: Average Relative Intensity — weighted average of intensity zones
-- **Chernyak patterns**: 16 volume distribution patterns across 4-week blocks
-- **Skill levels**: beginner, intermediate, advanced, elite (affects volume variability)
-- **Blocks**: prep (preparation) or comp (competition)
-- **Intensity zones**: 65%, 75%, 85%, 90%, 95% of 1RM
-- **Zone boundaries**: ≤0.60→"55", ≤0.70→"65", ≤0.80→"75", ≤0.90→"85", ≤0.94→"90", >0.94→"95"
-- **Session distribution**: d25_33_42, d40_60, etc. — how volume splits across sessions/week
-- **Sessions**: Abstract units `A`, `B`, `C`, `D`... — **never** day names (monday, etc.)
+- 1RM: one-rep max for squat, bench press, deadlift
+- NL: number of lifts (volume)
+- ARI: average relative intensity
+- ARE: average relative effort (computed from RM profile + performed reps)
+- Blocks: `prep` / `comp`
+- Sessions: abstract letters `A`, `B`, `C`, ... (never weekday keys)
+- Intensity zones: 65, 75, 85, 90 (92.5), 95
+- Chernyak patterns: weekly volume distributions by skill level
 
-## Database (Turso + Drizzle ORM)
+## Database Model (Turso + Drizzle)
 
-6 tables defined in `frontend/db/schema.ts`:
+Current schema in `frontend/db/schema.ts` contains **7 tables**:
 
-| Table | Purpose |
-|-------|---------|
-| `users` | Auth accounts — id, email, password (bcrypt), role (admin/client), client_slug |
-| `clients` | Client profiles — name, slug, email, skill_level, survey (JSON), preferences (JSON), status |
-| `one_rm_records` | Normalized 1RM history — client_id, date, squat, bench_press, deadlift |
-| `programs` | Training programs — meta, input (JSON), calculated (JSON), sessions (JSON) |
-| `invite_tokens` | Registration invites — token, client_slug, email, used, expires_at (48h TTL) |
-| `audit_log` | Action log — user_id, action, entity_type, entity_id, details (JSON) |
+1. `users` — auth users (admin/client)
+2. `clients` — client profile, survey, preferences
+3. `one_rm_records` — normalized 1RM history
+4. `programs` — stored programs (`input`, `calculated`, `sessions_data` JSON)
+5. `invite_tokens` — invite workflow
+6. `audit_log` — action log
+7. `training_log` — actual performed sets (RPE/completion/notes/actual values)
 
-- Programs store `input`, `calculated`, and `sessions` as JSON columns
-- 1RM history normalized from nested arrays into `one_rm_records`
-- All 16 API routes read/write via Drizzle — no filesystem dependency
+## API Surface (20 Routes)
 
-### Database Commands
+Auth:
+- `/api/auth/[...nextauth]`
+- `/api/auth/change-password`
+- `/api/auth/validate-user`
 
-```bash
-# Generate migration from schema changes
-cd frontend && npx drizzle-kit generate
+Clients and surveys:
+- `/api/clients`
+- `/api/clients/[slug]`
+- `/api/clients/[slug]/approve`
+- `/api/clients/[slug]/survey`
+- `/api/survey`
+- `/api/surveys/pending`
+- `/api/users`
 
-# Push schema directly to Turso (dev shortcut)
-cd frontend && npx drizzle-kit push
+Programs:
+- `/api/create-program` (legacy deterministic generation via Python script execution)
+- `/api/generate-program` (current AI + deterministic hybrid generation)
+- `/api/import-program`
+- `/api/program`
+- `/api/programs`
+- `/api/programs/[client]/[filename]`
+- `/api/programs/[client]/[filename]/enrich` (ARE enrichment)
 
-# Open Drizzle Studio (visual DB browser)
-cd frontend && npx drizzle-kit studio
+Invites:
+- `/api/invites`
+- `/api/invites/complete`
 
-# Re-seed database
-cd frontend && npx tsx db/seed.ts
-```
+Training log:
+- `/api/training-log`
 
-## Design System & Branding
+## AI Generation Architecture (Current)
 
-- **Brand name**: StrongCode
-- **Tagline**: "Strength, calculated." (English in both locales — brand claim)
-- **Logo**: SC monogram — orange rounded rect with white "SC" text (`components/Logo.tsx`)
-- **Font**: Figtree (Google Fonts) — weights 300, 400, 600, 700, 900
-- **Accent**: `#f65d2e` (light) / `#ff784c` (dark) — stored as CSS custom property `--accent-primary`
-- **Body text**: Ultra-light (weight 200), generous leading
-- **Headings**: Bold uppercase (weight 700), wide tracking
-- **Fluid typography**: `clamp()` for responsive sizes
+Main route: `frontend/app/api/generate-program/route.ts`
 
-### Typography Utility Classes (globals.css)
-- `.hero-title` — h1, ~4.5rem→7rem, weight 700, uppercase, tight leading
-- `.page-title` — ~2.5rem→4rem, weight 700, uppercase
-- `.section-title` — ~2rem→3rem, weight 700, uppercase
-- `.subsection-title` — 1.25rem, weight 600
-- `.text-body` — 1.05rem, weight 200, generous leading
-- `.text-subtitle` — 1.15rem, weight 300, secondary color
-- `.text-meta` — 0.85rem, weight 300, dimmed
+Flow:
+1. Parse input (`client`, `block`, `lifts`, control flags)
+2. Run deterministic calculation (`calculateAllTargets`)
+3. Generate sets per lift with LLM (`generateObject`)
+4. Validate strict totals (zones/session totals/week totals)
+5. Merge per-lift outputs into session structure
+6. Optionally save to DB (`save: true` + `clientSlug`)
 
-### Layout Pattern (from bestrong-angie reference)
-- **Title area**: `max-w-7xl mx-auto` — wide, left-aligned
-- **Content area**: `max-w-4xl mx-auto` — narrower, centered for readability
-- Dot (`.`) after accent-colored title text
-- Subtitle underneath title in `text-subtitle` style
+Implemented features:
+- Provider switch: Anthropic/OpenAI
+- Model override per request
+- Prompt versioning (`v1` ... `v2_7`)
+- Default prompt version: `v2_7`
+- Retry loop on arithmetic failures
+- 422 response with partial output + diagnostics when constraints fail
+- Token usage and prompt payload returned for debug
 
-## Landing Page & Subpages
+Prompt + schema files:
+- `frontend/lib/ai/prompts/*`
+- `frontend/lib/ai/prompts/registry.ts`
+- `frontend/lib/ai/prompt.ts`
+- `frontend/lib/ai/schema.ts`
+- `frontend/lib/ai/calculate.ts`
+- `frontend/lib/ai/constants.ts`
 
-### Landing Page (`[locale]/page.tsx`)
-Sections in order: SubpageHeader → Hero (title + tagline + CTA) → Marquee strip → What is SC → How It Works (3-step grid) → Who Is It For → Feature Cards grid → Quote → Pricing → Coach → CTA section → Footer (copyright + tagline)
+Admin tools:
+- Main create/edit screen: `frontend/app/[locale]/admin/create/page.tsx`
+- Prompt/model sandbox: `frontend/app/[locale]/admin/ai-debug/page.tsx`
 
-### 5 Subpages
-All use `SubpageHeader` and the bestrong-angie layout pattern:
-- `/intro` — detailed introduction
-- `/features` — feature breakdown
-- `/how-it-works` — methodology explanation
-- `/look-inside` — app walkthrough
-- `/about` — coach profile
+## ARE and Training Log (Implemented)
 
-### SubpageHeader (`components/SubpageHeader.tsx`)
-Shared across ALL pages. Features:
-- Logo (SC monogram) + "StrongCode" brand text
-- 5 nav links: intro, features, how-it-works, look-inside, about
-- Active page highlighting with accent underline
-- ThemeSwitcher + LanguageSwitcher + Login link
-- Mobile hamburger menu with slide-down panel
+ARE:
+- Utilities: `frontend/lib/program/are.ts`
+- Enrichment endpoint: `POST /api/programs/[client]/[filename]/enrich`
+- Admin program detail page displays block/week/session ARE when available
 
-## User Roles & Flows
+Training log:
+- Table: `training_log`
+- Endpoint: `/api/training-log` (GET + POST upsert)
+- Client UI: `frontend/app/[locale]/client/programs/[filename]/page.tsx`
+  - per-set completion
+  - per-set RPE selection
+  - per-set notes
+- Admin program detail includes adherence and average RPE stats from logs
 
-### Admin (coach)
-- Create clients manually or approve from public survey
-- Create/import training programs
-- Send invite emails (Resend) for client registration
-- View all clients, programs, pending surveys
+## Auth and Access Control
 
-### Client
-- Fill out public survey → creates pending profile → admin approves
-- Or receive invite email → register with password
-- View own dashboard (1RM, active program, survey)
-- Update survey data
-- (Planned) Record RPE per set in program sessions
+- Credentials login -> `/api/auth/validate-user`
+- JWT carries `role` and `client_slug`
+- Middleware enforces role-based access:
+  - unauthenticated users redirected to login for `/admin` and `/client`
+  - clients cannot access `/admin`
+- Host redirect: `strong-code.com` -> `www.strong-code.com`
 
-## Auth Flow
-1. Credentials provider → `/api/auth/validate-user` → bcrypt compare
-2. JWT stores `role` + `client_slug`
-3. Middleware verifies JWT (not just cookie existence) + role-based access
-4. Clients can't access `/admin/*` routes
+## UI / Branding Notes
+
+- Logo component: `frontend/components/Logo.tsx`
+  - current mark is bracket + stylized S in SVG
+  - colors use CSS variables for light/dark theme compatibility
+- Header: `frontend/components/SubpageHeader.tsx`
+  - currently shows nav links for `features`, `look-inside`, `about`
+  - includes theme switcher and login link
+- Locales supported: `en`, `cs`
+- Locale prefix mode: `as-needed` (default locale `en`)
 
 ## Development
 
+### Run frontend
 ```bash
-cd frontend && npm install && npm run dev  # http://localhost:3000
+cd frontend
+npm install
+npm run dev
 ```
 
-### Environment Variables (`.env.local`)
-```
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=<jwt-secret>
-RESEND_API_KEY=<resend-key>
-RESEND_FROM_EMAIL=info@strong-code.com
-TURSO_DATABASE_URL=libsql://strongcode-m-rand.aws-eu-west-1.turso.io
-TURSO_AUTH_TOKEN=<turso-token>
+### Build frontend
+```bash
+cd frontend
+npm run build
+npm run start
 ```
 
-### Key Dependencies
-```
-next@16.1.1, react@19, typescript@^5
-next-auth@5.0.0-beta.30, @auth/drizzle-adapter
-next-intl@^4.7.0
-drizzle-orm, @libsql/client, drizzle-kit (dev)
-tailwindcss@^4, @tailwindcss/postcss
-resend
-bcryptjs
+### Database commands
+```bash
+cd frontend
+npx drizzle-kit generate
+npx drizzle-kit push
+npx drizzle-kit studio
+npx tsx db/seed.ts
 ```
 
-## Conventions
+### Important note about legacy route
+`/api/create-program` executes Python scripts and expects this interpreter path:
+- `scripts/venv/bin/python`
 
-- File naming for programs: `YYYY-MM-DD_{client-slug}_{block}_all_lifts.json`
-- Client slugs: lowercase, NFD-normalized (diacritics removed), hyphenated
-- API routes use Next.js App Router (`app/api/`) + Drizzle ORM queries
-- All user-facing strings go through next-intl (`messages/cs.json`, `messages/en.json`)
-- Prefer Tailwind utility classes; use CSS custom properties for theme colors
-- Shared components in `frontend/components/`
-- Database schema in `frontend/db/schema.ts`, connection in `frontend/db/index.ts`
+If this venv is missing, that route will fail. AI route `/api/generate-program` does not depend on Python.
 
-## Git & Branching
+## Environment Variables
 
-- **Remote**: `https://github.com/m-rand/strongcode-app.git`
-- **main**: Stable — last commit `626ba52` (pre-Turso state)
-- **feature/turso-database**: Active development branch — DB migration, landing page redesign, subpages, branding
+Frontend `.env.local` uses:
+- `NEXTAUTH_URL`
+- `NEXTAUTH_SECRET`
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `ANTHROPIC_API_KEY` (for AI generation)
+- `OPENAI_API_KEY` (optional fallback provider)
 
-## Current Status (Feb 18, 2026)
+## Deployment
 
-### ✅ Completed
-- Landing page redesign (hero, marquee, sections, CTA, footer)
-- 5 content subpages (intro, features, how-it-works, look-inside, about)
-- Shared SubpageHeader with Logo across all pages
-- Branding: "StrongCode" name, SC monogram logo, "Strength, calculated." tagline
-- Turso database setup (AWS Ireland) + Drizzle ORM schema (6 tables)
-- All 16 API routes migrated from JSON files to Drizzle ORM
-- Data seeded to Turso from legacy JSON files
-- Middleware security rewrite (proper JWT verification + role-based access)
-- Admin dashboard, client management, program creation/import
-- Public survey → pending approval flow
-- Invite system with Resend email
-- Client dashboard with 1RM display, program list, survey
-- Client registration via invite token
-- i18n (CZ/EN) with theme switching (light/dark)
-- **Data quality**: All 17 programs in DB use letter keys (`A`, `B`, `C`) — no day names
-- **Schema v1.2**: Added `weekly_plan` to `liftInput` (per-week `sessions` + `distribution`)
-- **Constants expanded**: `constants.py` has base/advanced/elite patterns, 2/3/4/5 session distributions
-- **Excel conversion**: 3 Excel programs converted to JSON + enriched with per-session NL
-- **Scripts**: `enrich_calculated.py` (per-session NL), `fix-sessions.ts` (DB day-name fix)
+- Deployment target: Vercel
+- Runtime app root: `frontend/`
+- `.vercel/project.json` exists in both repo root and `frontend/` and points to project `strong-code`
+- For CLI deploys, use frontend as working directory (or set project Root Directory to `frontend` in Vercel settings)
 
-### ⬜ Planned — Client Training Log (next milestone)
-Oddělená tabulka `training_log` pro záznam skutečného provedení tréninku klientem.
-Program (předpis) zůstane netknutý — klient zapisuje co skutečně udělal.
+## Conventions and Data Rules
 
-1. **`training_log` tabulka** — nová tabulka v `db/schema.ts`
-   - `programId`, `week` (1-4), `session` ("A"/"B"/"C"), `lift`, `setIndex`
-   - `prescribedWeight`, `prescribedReps` — kopie předpisu pro porovnání
-   - `actualWeight`, `actualReps` — co klient skutečně zvedl
-   - `rpe` (real, 1-10, půl body: 7.5, 8.5...) — subjektivní hodnocení námahy
-   - `completed` (boolean), `notes` (text), `loggedAt` (timestamp)
-2. **API routes** — CRUD pro training log (`/api/training-log/`)
-   - POST: zapsat set (klient)
-   - GET: načíst log pro program/week/session (klient + admin)
-   - PATCH: upravit záznam (klient)
-3. **Program detail page** — `/client/programs/[id]`
-   - Zobrazení předepsaných setů (weight × reps) po týdnech a sessions
-   - Výběr týden + session (A/B/C) → seznam setů
-4. **RPE logging UI** — klient u každého setu:
-   - Checkmark ✓ (completed), RPE slider/input (1-10, step 0.5), notes
-   - Možnost zadat actual weight/reps pokud se liší od předpisu
-   - Save → zápis do `training_log`
-5. **Coach view** — admin vidí klientův log
-   - Adherence (% splněných setů), průměrné RPE, porovnání předpis vs. realita
+- Programs are stored in DB (not filesystem) with filename convention:
+  - `YYYY-MM-DD_{client-slug}_{block}_all_lifts.json`
+- Session keys in stored programs should be letter-based (`A/B/C/...`)
+- `normalizeProgramForView()` handles older weekday-shaped session payloads for display compatibility
+- Schema validation utility supports versions `1.0`, `1.1`, `1.2`
 
-### ⬜ Planned — AI Program Generation (later)
-1. **Zod schema** — Create TypeScript Zod schema from `program-complete.schema.json` for `generateObject`
-2. **Install Vercel AI SDK** — `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`
-3. **System prompt template** — Build prompt from constants, domain rules, schema, examples
-4. **`/api/generate-program` route** — Accept input, build prompt, call LLM, validate output
-5. **Admin create UI** — Form for program config → generate → review/edit → save
-6. **Validation pipeline** — ARI check, NL totals, rep range limits, constraint verification
-7. **Testing & iteration** — Generate programs, compare to manual ones, tune prompt
+## Current Gaps
 
-### ⬜ Planned — Other
-- Python backend (FastAPI) for calculation scripts
-- Tests — none exist yet
-- Vercel deployment configuration
-- Image assets for landing page (currently placeholder backgrounds)
-- SEO metadata for subpages
-- Merge `feature/turso-database` → `main`
-
-## AI Program Generation
-
-Programs can be generated via structured LLM prompts. The system prompt describes the Chernyak methodology, volume distribution patterns, session distributions, rep ranges, and all domain rules. The LLM outputs a complete program JSON conforming to the schema.
-
-### Available AI Providers
-- **Claude (Anthropic)** — best for structured JSON output, strong at following complex domain rules
-- **OpenAI (GPT-4o)** — alternative, good structured output with JSON mode
-- **Vercel AI SDK** — unified API layer for both providers, integrates cleanly with Next.js
-
-### Architecture
-The prompt-based generation works as a pipeline:
-1. **System prompt** — domain rules, patterns, constraints (loaded from `scripts/constants.py` definitions)
-2. **User input** — client profile (1RM, skill level), block type, volume targets, sessions per week
-3. **LLM generates** — complete program JSON with `input`, `calculated`, and `sessions` sections
-4. **Validation** — output validated against `schemas/program-complete.schema.json`
-5. **Coach review** — admin reviews/adjusts before saving to DB
-
-### Key Files for Prompt Construction
-- `scripts/constants.py` — all Chernyak patterns, session distributions, volume distribution variants, rep ranges
-- `schemas/program-complete.schema.json` — JSON schema the output must conform to
-- `schemas/v1.0/program.schema.json` — versioned schema reference
-
-### Session Model
-- Sessions are abstract units labeled `A`, `B`, `C`, `D`... — **never day names**
-- The client decides which days to train on
-- `sessions_per_week` and `session_distribution` can vary per lift and per week
-- Session distribution codes: `d25_33_42`, `d40_60`, etc. — defined in constants
-- Volume Distribution Variants: 16 patterns with skill-level adjustments (base/advanced/elite)
+- No automated tests (unit/integration/e2e) for API logic and prompt regressions
+- Root `README.md` is legacy and does not match current Turso/App Router architecture
+- `weekly_plan` backend support exists in deterministic calc, but dedicated weekly-plan UI controls are still limited

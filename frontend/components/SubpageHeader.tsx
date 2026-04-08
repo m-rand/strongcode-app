@@ -38,7 +38,7 @@ export function SubpageHeader() {
             className="flex items-center gap-2.5 text-xl font-semibold tracking-tight"
             style={{ color: 'var(--text-primary)' }}
           >
-            <Logo className="w-7 h-7" />
+            <Logo className="h-7 w-auto" />
             StrongCode
           </Link>
 

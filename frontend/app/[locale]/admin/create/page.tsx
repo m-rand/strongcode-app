@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, type DragEvent } from 'react'
+import { useState, useEffect, useRef, useCallback, type DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import LiftColumn from './LiftColumn'
@@ -109,6 +109,17 @@ interface GenerateProgramResponse {
   }
 }
 
+interface ExistingClientSummary {
+  slug: string
+  name: string
+  skill_level?: 'beginner' | 'intermediate' | 'advanced' | 'elite' | string
+  latest_one_rm?: {
+    squat?: number | null
+    bench_press?: number | null
+    deadlift?: number | null
+  } | null
+}
+
 const DEFAULT_SESSIONS_PER_WEEK = 3
 const DEFAULT_SESSION_DISTRIBUTION = 'd25_33_42'
 const DEFAULT_COMP_VARIANT = 'variant_1'
@@ -179,6 +190,9 @@ export default function CreateProgram() {
   const [isEditingExistingProgram, setIsEditingExistingProgram] = useState(false)
   const [isProgramPinned, setIsProgramPinned] = useState(false)
   const [clientRmProfiles, setClientRmProfiles] = useState<Record<string, Record<number, number>> | null>(null)
+  const [existingClients, setExistingClients] = useState<ExistingClientSummary[]>([])
+  const [existingClientsLoading, setExistingClientsLoading] = useState(false)
+  const [selectedExistingClientSlug, setSelectedExistingClientSlug] = useState('')
   const loadedProgramKeyRef = useRef<string | null>(null)
   const lastDeterministicRecalcKeyRef = useRef<string>('')
 
@@ -315,6 +329,51 @@ export default function CreateProgram() {
     }
   }
 
+  const isSkillLevel = (
+    value: unknown,
+  ): value is 'beginner' | 'intermediate' | 'advanced' | 'elite' => (
+    value === 'beginner' ||
+    value === 'intermediate' ||
+    value === 'advanced' ||
+    value === 'elite'
+  )
+
+  const applyClientToForm = useCallback((client: ExistingClientSummary) => {
+    setFormData(prev => {
+      const roundWeight = (oneRM: number, percentage: number, rounding: number): number => {
+        const raw = oneRM * (percentage / 100)
+        return Math.round(raw / rounding) * rounding
+      }
+
+      const updateLiftWithOneRm = (liftData: LiftConfig, oneRM: number | null | undefined): LiftConfig => {
+        const numeric = Number(oneRM)
+        if (!Number.isFinite(numeric) || numeric <= 0) return liftData
+
+        return {
+          ...liftData,
+          oneRM: numeric,
+          weight_65: roundWeight(numeric, 65, liftData.rounding),
+          weight_75: roundWeight(numeric, 75, liftData.rounding),
+          weight_85: roundWeight(numeric, 85, liftData.rounding),
+          weight_90: roundWeight(numeric, 92.5, liftData.rounding),
+          weight_95: roundWeight(numeric, 95, liftData.rounding),
+        }
+      }
+
+      return {
+        ...prev,
+        clientName: client.name,
+        delta: isSkillLevel(client.skill_level) ? client.skill_level : prev.delta,
+        lifts: {
+          squat: updateLiftWithOneRm(prev.lifts.squat, client.latest_one_rm?.squat),
+          bench_press: updateLiftWithOneRm(prev.lifts.bench_press, client.latest_one_rm?.bench_press),
+          deadlift: updateLiftWithOneRm(prev.lifts.deadlift, client.latest_one_rm?.deadlift),
+        },
+      }
+    })
+    setIsSaved(false)
+  }, [])
+
   const recalculateDeterministic = () => {
     if (isEditingExistingProgram || isProgramPinned) return
 
@@ -437,6 +496,55 @@ export default function CreateProgram() {
     lastDeterministicRecalcKeyRef.current = recalculationKey
     recalculateDeterministic()
   }, [formData, isEditingExistingProgram, isProgramPinned])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadExistingClients = async () => {
+      setExistingClientsLoading(true)
+      try {
+        const response = await fetch('/api/clients')
+        if (!response.ok) throw new Error('Failed to load clients')
+
+        const data = await response.json()
+        const clients = Array.isArray(data?.clients) ? data.clients as ExistingClientSummary[] : []
+        if (cancelled) return
+
+        setExistingClients(clients)
+      } catch (error) {
+        console.error('Error loading existing clients:', error)
+        if (!cancelled) setExistingClients([])
+      } finally {
+        if (!cancelled) setExistingClientsLoading(false)
+      }
+    }
+
+    loadExistingClients()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (existingClients.length === 0) {
+      setSelectedExistingClientSlug('')
+      return
+    }
+
+    const selectedClient = existingClients.find(c => c.slug === selectedExistingClientSlug)
+    const clientByName = existingClients.find(c => c.name === formData.clientName)
+    const fallbackClient = selectedClient || clientByName || existingClients[0]
+    if (!fallbackClient) return
+
+    if (selectedExistingClientSlug !== fallbackClient.slug) {
+      setSelectedExistingClientSlug(fallbackClient.slug)
+    }
+
+    if (!isNewClient && !isEditingExistingProgram && formData.clientName !== fallbackClient.name) {
+      applyClientToForm(fallbackClient)
+    }
+  }, [existingClients, selectedExistingClientSlug, formData.clientName, isNewClient, isEditingExistingProgram, applyClientToForm])
 
   useEffect(() => {
     if (!isProgramPinned || !calculatedResults) return
@@ -951,7 +1059,16 @@ export default function CreateProgram() {
                 </label>
                 <select
                   value={isNewClient ? 'new' : 'existing'}
-                  onChange={(e) => setIsNewClient(e.target.value === 'new')}
+                  onChange={(e) => {
+                    const nextIsNew = e.target.value === 'new'
+                    setIsNewClient(nextIsNew)
+
+                    if (!nextIsNew && existingClients.length > 0) {
+                      const selectedClient = existingClients.find(c => c.slug === selectedExistingClientSlug) || existingClients[0]
+                      setSelectedExistingClientSlug(selectedClient.slug)
+                      applyClientToForm(selectedClient)
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
                 >
                   <option value="new">{t('newClient')}</option>
@@ -964,10 +1081,30 @@ export default function CreateProgram() {
                     {t('selectClient')}
                   </label>
                   <select
+                    value={selectedExistingClientSlug}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
-                    onChange={(e) => updateSharedField('clientName', e.target.value)}
+                    onChange={(e) => {
+                      const slug = e.target.value
+                      setSelectedExistingClientSlug(slug)
+
+                      const selectedClient = existingClients.find(c => c.slug === slug)
+                      if (selectedClient) {
+                        applyClientToForm(selectedClient)
+                      }
+                    }}
+                    disabled={existingClientsLoading || existingClients.length === 0}
                   >
-                    <option value="Katerina Balasova">Katerina Balasova</option>
+                    {existingClients.length === 0 ? (
+                      <option value="">
+                        {existingClientsLoading ? 'Loading clients...' : 'No existing clients found'}
+                      </option>
+                    ) : (
+                      existingClients.map(client => (
+                        <option key={client.slug} value={client.slug}>
+                          {client.name}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
               )}

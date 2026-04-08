@@ -36,6 +36,18 @@
   --accent-contrast-text: #1a1a1a;
 }
 
+.sc-logo-dark {
+  display: none;
+}
+
+:root.dark .sc-logo-dark {
+  display: block;
+}
+
+:root.dark .sc-logo-light {
+  display: none;
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
