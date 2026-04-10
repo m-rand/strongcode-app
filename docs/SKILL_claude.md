@@ -395,6 +395,13 @@ Ladders are sets with ascending reps (e.g., 2, 3, 5). Advantages:
 - Lower RPE on most sets allows higher total volume with better technique
 - Better fatigue management than constant-rep sets
 
+**How to set up a ladder (Plan Strong guidelines):**
+1. Test your RM at the given weight.
+2. Calculate 1/3 of the RM and round to the nearest whole number.
+3. Calculate 1/2 of the RM and round to the nearest whole number.
+4. Calculate 2/3 of the RM and round to the nearest whole number.
+The three numbers, from smallest to largest, are the rungs of the ladder.
+
 **Standard Ladder** (1/3, 1/2, 2/3 of RM):
 
 | RM | Ladder |
@@ -429,7 +436,25 @@ Ladders are sets with ascending reps (e.g., 2, 3, 5). Advantages:
 | 14 | 4, 5, 9 |
 | 15 | 4, 6, 10 |
 
-Standard ladder ARE ~50%, skipping first rung ~60%. Fibonacci ladder ARE <=50%.
+**Ladders and ARE** — skipping the first rung raises effort closer to RM:
+
+| RM | Standard Ladder | Skipped 1st | Fibonacci Ladder | Skipped 1st |
+|----|----------------|-------------|-----------------|-------------|
+| 4 | 1, 2, 3 | 2, 3 | 1, 2, 3 | 2, 3 |
+| 5 | 2, 3, 3 | 3, 3 | 1, 2, 3 | 2, 3 |
+| 6 | 2, 3, 4 | 3, 4 | 1, 3, 4 | 3, 4 |
+| 7 | 2, 4, 5 | 4, 5 | 2, 3, 5 | 3, 5 |
+| 8 | 3, 4, 5 | 4, 5 | 2, 3, 5 | 3, 5 |
+| 9 | 3, 5, 6 | 5, 6 | 2, 4, 6 | 4, 6 |
+| 10 | 3, 5, 7 | 5, 7 | 3, 4, 7 | 4, 7 |
+| 11 | 4, 6, 7 | 6, 7 | 3, 4, 7 | 4, 7 |
+| 12 | 4, 6, 8 | 6, 8 | 3, 5, 8 | 5, 8 |
+| 13 | 4, 7, 9 | 7, 9 | 4, 5, 9 | 5, 9 |
+| 14 | 5, 7, 9 | 7, 9 | 4, 5, 9 | 5, 9 |
+| 15 | 5, 8, 10 | 8, 10 | 4, 6, 10 | 6, 10 |
+| **ARE** | **~50%** | **~60%** | **<=50%** | **~50%** |
+
+Use full ladders for lower ARE targets (power, max strength). Skip the first rung for higher ARE targets (strength-hypertrophy).
 
 ### 8.2 Training with a Buffer vs. Failure
 
