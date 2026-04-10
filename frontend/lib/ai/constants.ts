@@ -101,6 +101,7 @@ export const SESSION_PATTERNS: Record<number, Record<string, number[]>> = {
 
 /** Zone key → percentage of 1RM (used for ARI calculation) */
 export const ZONE_PERCENTAGES: Record<string, number> = {
+  '55': 55,
   '65': 65,
   '75': 75,
   '85': 85,
@@ -119,7 +120,7 @@ export const REP_RANGES: Record<string, [number, number]> = {
 }
 
 /** All zone keys in ascending intensity order */
-export const ZONE_ORDER = ['65', '75', '85', '90', '95'] as const
+export const ZONE_ORDER = ['55', '65', '75', '85', '90', '95'] as const
 
 // ─── Reference Data ─────────────────────────────────────────
 

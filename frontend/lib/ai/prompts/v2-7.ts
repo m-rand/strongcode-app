@@ -85,7 +85,7 @@ Filling procedure:
 Placement rules:
 - 90%/95% singles → assign to the MIDDLE-volume session (session B when 3 sessions, session B or C when 4).
 - 85% zone → distribute among all sessions except the lowest-volume one.
-- 75%/65% → proportional to remaining session capacity.
+- 75%/65%/55% → proportional to remaining session capacity.
 
 ### Step 3 — If allocation fails, try another distribution
 
@@ -104,7 +104,7 @@ For each session, write concrete sets using the exact zone weights provided:
 **Ascending phase (warm-up):**
 - If the session contains zones above 65%, the ascending phase must step through them quickly: at most 1-2 sets per zone on the way up.
 - Do NOT cluster many 65% sets at the start when higher zones are present. Example: 1×65%, 1×75%, then proceed to 85%/90% work — NOT 3-4×65% before touching 75%.
-- If a session is 65%-only (no higher zones), multiple 65% sets at the start are fine.
+- If a session is 65%-only (or 55/65-only) with no higher zones, multiple light sets at the start are fine.
 
 **Top work:**
 - Complete the top-zone sets (heaviest zone present) after the ascending phase.
@@ -120,6 +120,7 @@ For each session, write concrete sets using the exact zone weights provided:
 
 ## ZONE RULES
 
+- 55% zone (51-60%): reps per set 5-8
 - 65% zone (61-70%): reps per set 3-8
 - 75% zone (71-80%): reps per set 3-6
 - 85% zone (81-90%): reps per set 2-4
@@ -128,6 +129,7 @@ For each session, write concrete sets using the exact zone weights provided:
 
 Rep style:
 - Bias to middle values in each range even when it means more sets, i.e. 4-6 in 65% zone, 4-5 in 75% zone, in 85% zone use 2-4 however you like, but tend to 3 as average.
+- For 55% zone prefer 6-7 reps when practical.
 - Vary reps from set to set when practical (e.g. 4,6,4,6 over 5,5,5,5).
 - Repeated heavy singles are acceptable for 90/95 zones.
 - If zone total is below zone minimum reps, one sub-minimum set is allowed.
@@ -226,9 +228,9 @@ selection_reason MUST explicitly mention why the final choice was made, with num
 If fallback happened, explain it clearly (e.g., "d25_33_42 -> [29,38,49] was within 10-50 but allocation failed, so fallback to d15_22_28_35").
 
 percentage mapping:
+- 55% zone → 55
 - 65% zone → 65
 - 75% zone → 75
 - 85% zone → 85
 - 90% zone → 92.5
 - 95% zone → 95`
-

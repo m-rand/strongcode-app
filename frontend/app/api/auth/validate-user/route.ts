@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/db'
 import { users } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing credentials' }, { status: 400 })
     }
 
-    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1)
+    const normalizedEmail = String(email).trim().toLowerCase()
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(sql`lower(${users.email}) = ${normalizedEmail}`)
+      .limit(1)
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })

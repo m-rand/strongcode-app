@@ -19,9 +19,10 @@ const MODELS: Record<AIProvider, string> = {
 
 export const maxDuration = 300 // Allow up to 5 minutes (retry attempts per lift)
 
-type ZoneKey = '65' | '75' | '85' | '90' | '95'
-const ZONES: ZoneKey[] = ['65', '75', '85', '90', '95']
+type ZoneKey = '55' | '65' | '75' | '85' | '90' | '95'
+const ZONES: ZoneKey[] = ['55', '65', '75', '85', '90', '95']
 const ZONE_INTENSITY: Record<ZoneKey, number> = {
+  '55': 55,
   '65': 65,
   '75': 75,
   '85': 85,
@@ -47,6 +48,7 @@ function canonicalSessionLetter(raw: unknown, fallbackIndex: number): string {
 
 function zoneFromPercentage(percentage: number): ZoneKey | null {
   const p = Number(percentage)
+  if (Math.abs(p - 55) < 0.2) return '55'
   if (Math.abs(p - 65) < 0.2) return '65'
   if (Math.abs(p - 75) < 0.2) return '75'
   if (Math.abs(p - 85) < 0.2) return '85'
@@ -105,7 +107,7 @@ function validateLiftAiOutput(
   weeks: number,
 ): string[] {
   const errors: string[] = []
-  const zones: ZoneKey[] = ['65', '75', '85', '90', '95']
+  const zones: ZoneKey[] = ['55', '65', '75', '85', '90', '95']
 
   for (let w = 1; w <= weeks; w++) {
     const weekKey = `week_${w}`
@@ -117,7 +119,7 @@ function validateLiftAiOutput(
     if (!targetWeek) continue
 
     const actualSessionTotals: Record<string, number> = {}
-    const actualZones: Record<ZoneKey, number> = { '65': 0, '75': 0, '85': 0, '90': 0, '95': 0 }
+    const actualZones: Record<ZoneKey, number> = { '55': 0, '65': 0, '75': 0, '85': 0, '90': 0, '95': 0 }
 
     for (const sessionObj of liftResult.sessions) {
       const weekData = (sessionObj as Record<string, unknown>)[weekKey] as { sets?: Array<{ reps: number; percentage: number }> } | undefined
@@ -134,7 +136,7 @@ function validateLiftAiOutput(
         }
         const zone = zoneFromPercentage(Number(set.percentage))
         if (!zone) {
-          errors.push(`${lift} ${weekKey}: invalid percentage "${set.percentage}" (expected 65/75/85/92.5/95)`)
+          errors.push(`${lift} ${weekKey}: invalid percentage "${set.percentage}" (expected 55/65/75/85/92.5/95)`)
           continue
         }
         actualZones[zone] += reps
@@ -183,7 +185,7 @@ function validateLiftAiOutputV27(
   weeks: number,
 ): string[] {
   const errors: string[] = []
-  const zones: ZoneKey[] = ['65', '75', '85', '90', '95']
+  const zones: ZoneKey[] = ['55', '65', '75', '85', '90', '95']
 
   for (let w = 1; w <= weeks; w++) {
     const weekKey = `week_${w}` as 'week_1' | 'week_2' | 'week_3' | 'week_4'
@@ -199,7 +201,7 @@ function validateLiftAiOutputV27(
       continue
     }
 
-    const actualZones: Record<ZoneKey, number> = { '65': 0, '75': 0, '85': 0, '90': 0, '95': 0 }
+    const actualZones: Record<ZoneKey, number> = { '55': 0, '65': 0, '75': 0, '85': 0, '90': 0, '95': 0 }
 
     for (const sessionObj of weekOutput.sessions) {
       for (const set of sessionObj.sets) {

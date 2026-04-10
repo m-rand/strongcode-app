@@ -20,6 +20,14 @@ export default function LiftColumn({
   calculatePercentageFromReps
 }: LiftColumnProps) {
   const t = useTranslations('admin.create.liftColumn')
+  const toIntOrZero = (raw: string): number => {
+    const parsed = parseInt(raw, 10)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  const safeNumber = (value: unknown): number => {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : 0
+  }
   const liftLabel = liftName === 'squat' ? 'Squat' :
                     liftName === 'bench_press' ? 'Bench Press' : 'Deadlift'
 
@@ -69,8 +77,8 @@ export default function LiftColumn({
             </label>
             <input
               type="number"
-              value={liftData.volume}
-              onChange={(e) => onUpdate('volume', parseInt(e.target.value))}
+              value={safeNumber(liftData.volume)}
+              onChange={(e) => onUpdate('volume', toIntOrZero(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
               required
             />
@@ -121,24 +129,25 @@ export default function LiftColumn({
         <h4 className="text-lg font-semibold mb-4">{t('zoneWeights')}</h4>
         <div className="space-y-3">
           {[
+            { zone: '55', label: '55% Zone Weight' },
             { zone: '65', labelKey: 'zone65' as const },
             { zone: '75', labelKey: 'zone75' as const },
             { zone: '85', labelKey: 'zone85' as const },
             { zone: '90', labelKey: 'zone90' as const },
             { zone: '95', labelKey: 'zone95' as const }
-          ].map(({ zone, labelKey }) => (
-            <div key={zone}>
+          ].map((zoneConfig) => (
+            <div key={zoneConfig.zone}>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                {t(labelKey)}
+                {'label' in zoneConfig ? zoneConfig.label : t(zoneConfig.labelKey)}
                 <span className="ml-2 text-xs text-gray-500">
-                  ({calculateActualPercentage(liftData[`weight_${zone}`], liftData.oneRM)}%)
+                  ({calculateActualPercentage(liftData[`weight_${zoneConfig.zone}`], liftData.oneRM)}%)
                 </span>
               </label>
               <input
                 type="number"
                 step="any"
-                value={liftData[`weight_${zone}`]}
-                onChange={(e) => onNumberInput(`weight_${zone}`, e.target.value)}
+                value={liftData[`weight_${zoneConfig.zone}`]}
+                onChange={(e) => onNumberInput(`weight_${zoneConfig.zone}`, e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm"
               />
             </div>
@@ -152,13 +161,39 @@ export default function LiftColumn({
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
+              Include 55% zone
+            </label>
+            <input
+              type="checkbox"
+              checked={!!liftData.include_55_zone}
+              onChange={(e) => onUpdate('include_55_zone', e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+          </div>
+
+          {liftData.include_55_zone && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                55% zone (% of NL)
+              </label>
+              <input
+                type="number"
+                value={safeNumber(liftData.zone_55_percent)}
+                onChange={(e) => onUpdate('zone_55_percent', toIntOrZero(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               {t('zone65Auto')}
             </label>
             <input
               type="number"
-              value={Math.round((100 - liftData.zone_75_percent - liftData.zone_85_percent -
-                calculatePercentageFromReps(liftData.zone_90_total_reps, liftData.volume) -
-                calculatePercentageFromReps(liftData.zone_95_total_reps, liftData.volume)) * 10) / 10}
+              value={Math.round((100 - (liftData.include_55_zone ? safeNumber(liftData.zone_55_percent) : 0) - safeNumber(liftData.zone_75_percent) - safeNumber(liftData.zone_85_percent) -
+                calculatePercentageFromReps(safeNumber(liftData.zone_90_total_reps), safeNumber(liftData.volume)) -
+                calculatePercentageFromReps(safeNumber(liftData.zone_95_total_reps), safeNumber(liftData.volume))) * 10) / 10}
               disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm"
             />
@@ -170,8 +205,8 @@ export default function LiftColumn({
             </label>
             <input
               type="number"
-              value={liftData.zone_75_percent}
-              onChange={(e) => onUpdate('zone_75_percent', parseInt(e.target.value))}
+              value={safeNumber(liftData.zone_75_percent)}
+              onChange={(e) => onUpdate('zone_75_percent', toIntOrZero(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm"
             />
           </div>
@@ -182,8 +217,8 @@ export default function LiftColumn({
             </label>
             <input
               type="number"
-              value={liftData.zone_85_percent}
-              onChange={(e) => onUpdate('zone_85_percent', parseInt(e.target.value))}
+              value={safeNumber(liftData.zone_85_percent)}
+              onChange={(e) => onUpdate('zone_85_percent', toIntOrZero(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm"
             />
           </div>
@@ -192,13 +227,13 @@ export default function LiftColumn({
             <label className="block text-xs font-medium text-gray-700 mb-1">
               {t('zone90Reps')}
               <span className="ml-1 text-xs text-gray-500">
-                = {calculatePercentageFromReps(liftData.zone_90_total_reps, liftData.volume)}%
+                = {calculatePercentageFromReps(safeNumber(liftData.zone_90_total_reps), safeNumber(liftData.volume))}%
               </span>
             </label>
             <input
               type="number"
-              value={liftData.zone_90_total_reps}
-              onChange={(e) => onUpdate('zone_90_total_reps', parseInt(e.target.value))}
+              value={safeNumber(liftData.zone_90_total_reps)}
+              onChange={(e) => onUpdate('zone_90_total_reps', toIntOrZero(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm"
             />
           </div>
@@ -207,13 +242,13 @@ export default function LiftColumn({
             <label className="block text-xs font-medium text-gray-700 mb-1">
               {t('zone95Reps')}
               <span className="ml-1 text-xs text-gray-500">
-                = {calculatePercentageFromReps(liftData.zone_95_total_reps, liftData.volume)}%
+                = {calculatePercentageFromReps(safeNumber(liftData.zone_95_total_reps), safeNumber(liftData.volume))}%
               </span>
             </label>
             <input
               type="number"
-              value={liftData.zone_95_total_reps}
-              onChange={(e) => onUpdate('zone_95_total_reps', parseInt(e.target.value))}
+              value={safeNumber(liftData.zone_95_total_reps)}
+              onChange={(e) => onUpdate('zone_95_total_reps', toIntOrZero(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm"
             />
           </div>

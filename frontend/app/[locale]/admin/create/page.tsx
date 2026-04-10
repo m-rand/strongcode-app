@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import LiftColumn from './LiftColumn'
 import { calculateAllTargets } from '@/lib/ai/calculate'
 import { buildRmLookup, calculateAre } from '@/lib/program/are'
+import { buildClientInputFromTemplateInput, materializeSessionsForClient } from '@/lib/program/templates'
 
 type LiftKey = 'squat' | 'bench_press' | 'deadlift'
 type WeekKey = 'week_1' | 'week_2' | 'week_3' | 'week_4'
@@ -44,6 +45,7 @@ interface LiftInputPayload {
     variant_4?: string
   }
   weights: {
+    '55': number
     '65': number
     '75': number
     '85': number
@@ -51,6 +53,7 @@ interface LiftInputPayload {
     '95': number
   }
   intensity_distribution: {
+    '55_percent'?: number
     '75_percent': number
     '85_percent': number
     '90_total_reps': number
@@ -87,7 +90,7 @@ interface ProgramData {
     end_date: string
     weeks: number
   }
-  input: Record<LiftKey, LiftInputPayload>
+  input: Partial<Record<LiftKey, LiftInputPayload>>
   calculated: {
     [lift: string]: {
       _summary: {
@@ -120,6 +123,46 @@ interface ExistingClientSummary {
     bench_press?: number | null
     deadlift?: number | null
   } | null
+}
+
+interface TemplateSummary {
+  slug: string
+  name: string
+  description?: string | null
+  scope: 'full' | 'single_lift'
+  lift: LiftKey | null
+  block: 'prep' | 'comp'
+  weeks: number
+  sourceProgramFilename?: string | null
+  createdAt?: string
+  createdBy?: string | null
+}
+
+interface TemplateDetailResponse {
+  template?: {
+    slug: string
+    name: string
+    description?: string | null
+    scope: 'full' | 'single_lift'
+    lift: LiftKey | null
+    block: 'prep' | 'comp'
+    weeks: number
+    schemaVersion?: string
+    input?: Record<string, unknown>
+    calculated?: Record<string, unknown>
+    sessionsTemplate?: unknown
+    createdAt?: string
+    createdBy?: string | null
+  }
+}
+
+interface TemplateListResponse {
+  templates?: TemplateSummary[]
+}
+
+interface EditingTemplateMeta {
+  scope: 'full' | 'single_lift'
+  lift: LiftKey | null
 }
 
 const DEFAULT_SESSIONS_PER_WEEK = 3
@@ -168,6 +211,8 @@ const getLiftLabel = (lift: string) => (
   lift === 'deadlift' ? 'Deadlift' : lift
 )
 
+const LIFT_KEYS: LiftKey[] = ['squat', 'bench_press', 'deadlift']
+
 const toClientSlug = (name: string) => {
   const slug = name
     .toLowerCase()
@@ -193,25 +238,40 @@ export default function CreateProgram() {
   const [isSaved, setIsSaved] = useState(false)
   const [isNewClient, setIsNewClient] = useState(true)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [isFlexibleBridgeMode, setIsFlexibleBridgeMode] = useState(false)
   const [isEditingExistingProgram, setIsEditingExistingProgram] = useState(false)
+  const [editingTemplateSlug, setEditingTemplateSlug] = useState<string | null>(null)
+  const [editingTemplateMeta, setEditingTemplateMeta] = useState<EditingTemplateMeta | null>(null)
+  const [editingTemplateDescription, setEditingTemplateDescription] = useState<string>('')
   const [isProgramPinned, setIsProgramPinned] = useState(false)
   const [clientRmProfiles, setClientRmProfiles] = useState<Record<string, Record<number, number>> | null>(null)
   const [existingClients, setExistingClients] = useState<ExistingClientSummary[]>([])
   const [existingClientsLoading, setExistingClientsLoading] = useState(false)
   const [selectedExistingClientSlug, setSelectedExistingClientSlug] = useState('')
+  const [liftTemplates, setLiftTemplates] = useState<TemplateSummary[]>([])
+  const [liftTemplatesLoading, setLiftTemplatesLoading] = useState(false)
+  const [selectedLiftTemplateByLift, setSelectedLiftTemplateByLift] = useState<Record<LiftKey, string>>({
+    squat: '',
+    bench_press: '',
+    deadlift: '',
+  })
   const loadedProgramKeyRef = useRef<string | null>(null)
   const lastDeterministicRecalcKeyRef = useRef<string>('')
+  const isApplyingTemplatesRef = useRef(false)
 
   // Default lift configuration
   const defaultLiftConfig = (oneRM: number, volume: number) => ({
     oneRM,
     rounding: 2.5,
     volume,
+    weight_55: Math.round((oneRM * 0.55) / 2.5) * 2.5,
     weight_65: Math.round((oneRM * 0.65) / 2.5) * 2.5,
     weight_75: Math.round((oneRM * 0.75) / 2.5) * 2.5,
     weight_85: Math.round((oneRM * 0.85) / 2.5) * 2.5,
     weight_90: Math.round((oneRM * 0.925) / 2.5) * 2.5,
     weight_95: Math.round((oneRM * 0.95) / 2.5) * 2.5,
+    include_55_zone: false,
+    zone_55_percent: 0,
     zone_75_percent: 45,
     zone_85_percent: 13,
     zone_90_total_reps: 4,
@@ -222,6 +282,43 @@ export default function CreateProgram() {
   })
 
   type LiftConfig = ReturnType<typeof defaultLiftConfig>
+
+  const getTemplateLiftConfig = useCallback((
+    templateInput: Record<string, unknown>,
+    lift: LiftKey,
+    fallbackOneRm: number,
+    fallbackVolume: number,
+  ): LiftConfig => {
+    const inputLift = (templateInput[lift] || {}) as Record<string, unknown>
+    const weights = (inputLift.weights || {}) as Record<string, number>
+    const intensity = (inputLift.intensity_distribution || {}) as Record<string, number>
+    const variants = (inputLift.variants || {}) as Record<string, string>
+
+    return {
+      oneRM: Number(inputLift.one_rm ?? fallbackOneRm),
+      rounding: Number(inputLift.rounding ?? 2.5),
+      volume: Number(inputLift.volume ?? fallbackVolume),
+      weight_55: Number(weights['55'] ?? Math.round((fallbackOneRm * 0.55) / 2.5) * 2.5),
+      weight_65: Number(weights['65'] ?? Math.round((fallbackOneRm * 0.65) / 2.5) * 2.5),
+      weight_75: Number(weights['75'] ?? Math.round((fallbackOneRm * 0.75) / 2.5) * 2.5),
+      weight_85: Number(weights['85'] ?? Math.round((fallbackOneRm * 0.85) / 2.5) * 2.5),
+      weight_90: Number(weights['90'] ?? Math.round((fallbackOneRm * 0.925) / 2.5) * 2.5),
+      weight_95: Number(weights['95'] ?? Math.round((fallbackOneRm * 0.95) / 2.5) * 2.5),
+      include_55_zone: Number(intensity['55_percent'] ?? 0) > 0,
+      zone_55_percent: Number(intensity['55_percent'] ?? 0),
+      zone_75_percent: Number(intensity['75_percent'] ?? 45),
+      zone_85_percent: Number(intensity['85_percent'] ?? 13),
+      zone_90_total_reps: Number(intensity['90_total_reps'] ?? 4),
+      zone_95_total_reps: Number(intensity['95_total_reps'] ?? 0),
+      volume_pattern_main: String(inputLift.volume_pattern_main ?? '3a'),
+      volume_pattern_8190: String(inputLift.volume_pattern_8190 ?? '3a'),
+      variants: [
+        String(variants.variant_2 ?? ''),
+        String(variants.variant_3 ?? ''),
+        String(variants.variant_4 ?? ''),
+      ] as [string, string, string],
+    }
+  }, [])
 
   // Form state - now with 3 lifts
   const [formData, setFormData] = useState<{
@@ -258,6 +355,7 @@ export default function CreateProgram() {
       ...(liftData.variants[2].trim() ? { variant_4: liftData.variants[2].trim() } : {}),
     },
     weights: {
+      '55': liftData.weight_55,
       '65': liftData.weight_65,
       '75': liftData.weight_75,
       '85': liftData.weight_85,
@@ -265,6 +363,7 @@ export default function CreateProgram() {
       '95': liftData.weight_95,
     },
     intensity_distribution: {
+      '55_percent': liftData.include_55_zone ? liftData.zone_55_percent : 0,
       '75_percent': liftData.zone_75_percent,
       '85_percent': liftData.zone_85_percent,
       '90_total_reps': liftData.zone_90_total_reps,
@@ -279,6 +378,18 @@ export default function CreateProgram() {
   const buildGeneratePayload = () => {
     const clientSlug = toClientSlug(formData.clientName)
     const block = toApiBlock(formData.block)
+    const activeLiftKeys: LiftKey[] = (
+      editingTemplateSlug &&
+      editingTemplateMeta?.scope === 'single_lift' &&
+      editingTemplateMeta.lift
+    )
+      ? [editingTemplateMeta.lift]
+      : ['squat', 'bench_press', 'deadlift']
+
+    const lifts = activeLiftKeys.reduce((acc, lift) => {
+      acc[lift] = buildLiftPayload(formData.lifts[lift])
+      return acc
+    }, {} as Partial<Record<LiftKey, LiftInputPayload>>)
 
     return {
       clientSlug,
@@ -297,11 +408,7 @@ export default function CreateProgram() {
       },
       block,
       weeks: 4,
-      lifts: {
-        squat: buildLiftPayload(formData.lifts.squat),
-        bench_press: buildLiftPayload(formData.lifts.bench_press),
-        deadlift: buildLiftPayload(formData.lifts.deadlift),
-      },
+      lifts,
     }
   }
 
@@ -358,6 +465,7 @@ export default function CreateProgram() {
         return {
           ...liftData,
           oneRM: numeric,
+          weight_55: roundWeight(numeric, 55, liftData.rounding),
           weight_65: roundWeight(numeric, 65, liftData.rounding),
           weight_75: roundWeight(numeric, 75, liftData.rounding),
           weight_85: roundWeight(numeric, 85, liftData.rounding),
@@ -381,7 +489,7 @@ export default function CreateProgram() {
   }, [])
 
   const recalculateDeterministic = () => {
-    if (isEditingExistingProgram || isProgramPinned) return
+    if ((isEditingExistingProgram || isProgramPinned) && !editingTemplateSlug) return
 
     try {
       const payload = buildGeneratePayload()
@@ -392,7 +500,9 @@ export default function CreateProgram() {
       ) as unknown as ProgramData['calculated']
       const programData = buildProgramData(payload, {
         calculated,
-        sessions: {} as SessionsData,
+        sessions: editingTemplateSlug
+          ? (calculatedResults?.sessions || {} as SessionsData)
+          : ({} as SessionsData),
       })
 
       setCalculatedResults(programData)
@@ -444,6 +554,12 @@ export default function CreateProgram() {
 
   // Deterministic recalculation on input changes that affect calculations
   useEffect(() => {
+    // In template edit mode, keep persisted calculated targets as the source of truth.
+    // Recalculation is explicit via the "Recalculate targets" button.
+    if (editingTemplateSlug) {
+      return
+    }
+
     const recalculationKey = JSON.stringify({
       delta: formData.delta,
       block: formData.block,
@@ -452,11 +568,14 @@ export default function CreateProgram() {
           oneRM: formData.lifts.squat.oneRM,
           rounding: formData.lifts.squat.rounding,
           volume: formData.lifts.squat.volume,
+          weight_55: formData.lifts.squat.weight_55,
           weight_65: formData.lifts.squat.weight_65,
           weight_75: formData.lifts.squat.weight_75,
           weight_85: formData.lifts.squat.weight_85,
           weight_90: formData.lifts.squat.weight_90,
           weight_95: formData.lifts.squat.weight_95,
+          include_55_zone: formData.lifts.squat.include_55_zone,
+          zone_55_percent: formData.lifts.squat.zone_55_percent,
           zone_75_percent: formData.lifts.squat.zone_75_percent,
           zone_85_percent: formData.lifts.squat.zone_85_percent,
           zone_90_total_reps: formData.lifts.squat.zone_90_total_reps,
@@ -468,11 +587,14 @@ export default function CreateProgram() {
           oneRM: formData.lifts.bench_press.oneRM,
           rounding: formData.lifts.bench_press.rounding,
           volume: formData.lifts.bench_press.volume,
+          weight_55: formData.lifts.bench_press.weight_55,
           weight_65: formData.lifts.bench_press.weight_65,
           weight_75: formData.lifts.bench_press.weight_75,
           weight_85: formData.lifts.bench_press.weight_85,
           weight_90: formData.lifts.bench_press.weight_90,
           weight_95: formData.lifts.bench_press.weight_95,
+          include_55_zone: formData.lifts.bench_press.include_55_zone,
+          zone_55_percent: formData.lifts.bench_press.zone_55_percent,
           zone_75_percent: formData.lifts.bench_press.zone_75_percent,
           zone_85_percent: formData.lifts.bench_press.zone_85_percent,
           zone_90_total_reps: formData.lifts.bench_press.zone_90_total_reps,
@@ -484,11 +606,14 @@ export default function CreateProgram() {
           oneRM: formData.lifts.deadlift.oneRM,
           rounding: formData.lifts.deadlift.rounding,
           volume: formData.lifts.deadlift.volume,
+          weight_55: formData.lifts.deadlift.weight_55,
           weight_65: formData.lifts.deadlift.weight_65,
           weight_75: formData.lifts.deadlift.weight_75,
           weight_85: formData.lifts.deadlift.weight_85,
           weight_90: formData.lifts.deadlift.weight_90,
           weight_95: formData.lifts.deadlift.weight_95,
+          include_55_zone: formData.lifts.deadlift.include_55_zone,
+          zone_55_percent: formData.lifts.deadlift.zone_55_percent,
           zone_75_percent: formData.lifts.deadlift.zone_75_percent,
           zone_85_percent: formData.lifts.deadlift.zone_85_percent,
           zone_90_total_reps: formData.lifts.deadlift.zone_90_total_reps,
@@ -537,6 +662,35 @@ export default function CreateProgram() {
   }, [])
 
   useEffect(() => {
+    if (editingTemplateSlug) return
+
+    let cancelled = false
+    const loadLiftTemplates = async () => {
+      setLiftTemplatesLoading(true)
+      try {
+        const response = await fetch('/api/program-templates?scope=single_lift')
+        if (!response.ok) throw new Error('Failed to load lift templates')
+
+        const data = await response.json() as TemplateListResponse
+        if (cancelled) return
+
+        const templates = Array.isArray(data.templates) ? data.templates : []
+        setLiftTemplates(templates)
+      } catch (error) {
+        console.error('Error loading lift templates:', error)
+        if (!cancelled) setLiftTemplates([])
+      } finally {
+        if (!cancelled) setLiftTemplatesLoading(false)
+      }
+    }
+
+    loadLiftTemplates()
+    return () => {
+      cancelled = true
+    }
+  }, [editingTemplateSlug])
+
+  useEffect(() => {
     if (existingClients.length === 0) {
       setSelectedExistingClientSlug('')
       return
@@ -556,6 +710,233 @@ export default function CreateProgram() {
     }
   }, [existingClients, selectedExistingClientSlug, formData.clientName, isNewClient, isEditingExistingProgram, applyClientToForm])
 
+  const applySelectedLiftTemplates = async () => {
+    if (editingTemplateSlug) return
+
+    const selections = LIFT_KEYS
+      .map((lift) => [lift, (selectedLiftTemplateByLift[lift] || '').trim()] as [LiftKey, string])
+      .filter(([, slug]) => slug.length > 0)
+
+    if (selections.length === 0) {
+      alert('Select at least one lift template first.')
+      return
+    }
+
+    isApplyingTemplatesRef.current = true
+    setLoading(true)
+    try {
+      const detailResults = await Promise.all(
+        selections.map(async ([lift, slug]) => {
+          const response = await fetch(`/api/program-templates/${encodeURIComponent(slug)}`)
+          const data = await response.json() as TemplateDetailResponse
+          if (!response.ok || !data.template) {
+            const message = (data as { error?: string })?.error
+            throw new Error(message || `Failed to load template "${slug}"`)
+          }
+
+          const template = data.template
+          if (template.scope !== 'single_lift') {
+            throw new Error(`Template "${template.name}" is not single-lift.`)
+          }
+          if (template.lift !== lift) {
+            throw new Error(`Template "${template.name}" does not match ${getLiftLabel(lift)}.`)
+          }
+          if (template.weeks !== 4) {
+            throw new Error(`Template "${template.name}" has ${template.weeks} weeks. Create Program editor currently supports 4 weeks.`)
+          }
+
+          return { lift, template }
+        }),
+      )
+
+      const blockSet = new Set(detailResults.map(({ template }) => template.block))
+      if (blockSet.size > 1) {
+        throw new Error('Selected templates must use the same block (prep/comp).')
+      }
+
+      const targetBlock = detailResults[0]?.template.block ?? formData.block
+      const clientOneRm: Record<LiftKey, number> = {
+        squat: formData.lifts.squat.oneRM,
+        bench_press: formData.lifts.bench_press.oneRM,
+        deadlift: formData.lifts.deadlift.oneRM,
+      }
+
+      const nextLifts = { ...formData.lifts }
+      const nextInput: Partial<Record<LiftKey, LiftInputPayload>> = {
+        ...(calculatedResults?.input || {}),
+      }
+      const nextCalculated: ProgramData['calculated'] = {
+        ...(calculatedResults?.calculated || {}),
+      }
+
+      const baseSessions: SessionsData = calculatedResults?.sessions
+        ? JSON.parse(JSON.stringify(calculatedResults.sessions))
+        : {} as SessionsData
+      const weekKeys: WeekKey[] = ['week_1', 'week_2', 'week_3', 'week_4']
+      const sessionsByLift: Partial<Record<LiftKey, SessionsData>> = {}
+
+      for (const { lift, template } of detailResults) {
+        const templateInput = (template.input && typeof template.input === 'object')
+          ? template.input as Record<string, unknown>
+          : {}
+        const clientInput = buildClientInputFromTemplateInput(templateInput, clientOneRm)
+        const liftInputRecord = (clientInput[lift] && typeof clientInput[lift] === 'object')
+          ? clientInput[lift] as Record<string, unknown>
+          : null
+        if (!liftInputRecord) {
+          throw new Error(`Template "${template.name}" is missing ${getLiftLabel(lift)} input.`)
+        }
+
+        const fallbackVolume = lift === 'squat' ? 350 : (lift === 'bench_press' ? 300 : 250)
+        nextLifts[lift] = getTemplateLiftConfig(clientInput, lift, clientOneRm[lift], fallbackVolume)
+        nextInput[lift] = buildLiftPayload(nextLifts[lift])
+
+        const calculatedRecord = (template.calculated && typeof template.calculated === 'object')
+          ? template.calculated as Record<string, unknown>
+          : {}
+        const calculatedLiftRaw = calculatedRecord[lift]
+        if (calculatedLiftRaw && typeof calculatedLiftRaw === 'object') {
+          const calculatedLift = JSON.parse(JSON.stringify(calculatedLiftRaw)) as Record<string, unknown>
+          const weights = (liftInputRecord.weights && typeof liftInputRecord.weights === 'object')
+            ? liftInputRecord.weights as Record<string, number>
+            : null
+          if (weights && calculatedLift._summary && typeof calculatedLift._summary === 'object') {
+            calculatedLift._summary = {
+              ...(calculatedLift._summary as Record<string, unknown>),
+              weights,
+            }
+          }
+          nextCalculated[lift] = calculatedLift as ProgramData['calculated'][string]
+        } else if (nextInput[lift]) {
+          const fallbackCalculated = calculateAllTargets(
+            { [lift]: nextInput[lift] },
+            formData.delta,
+            4,
+          ) as unknown as ProgramData['calculated']
+          if (fallbackCalculated[lift]) nextCalculated[lift] = fallbackCalculated[lift]
+        }
+
+        sessionsByLift[lift] = materializeSessionsForClient(
+          template.sessionsTemplate || {},
+          clientInput,
+        ) as unknown as SessionsData
+      }
+
+      for (const lift of LIFT_KEYS) {
+        if (!nextInput[lift]) {
+          nextInput[lift] = buildLiftPayload(nextLifts[lift])
+        }
+      }
+
+      const missingCalculatedLifts = LIFT_KEYS.filter((lift) => !nextCalculated[lift])
+      if (missingCalculatedLifts.length > 0) {
+        const fallbackCalculated = calculateAllTargets(
+          nextInput as Record<string, LiftInputPayload>,
+          formData.delta,
+          4,
+        ) as unknown as ProgramData['calculated']
+        for (const lift of missingCalculatedLifts) {
+          if (fallbackCalculated[lift]) nextCalculated[lift] = fallbackCalculated[lift]
+        }
+      }
+
+      const selectedLiftSet = new Set(detailResults.map(({ lift }) => lift))
+      const allSessionKeys = new Set<string>(Object.keys(baseSessions).filter(key => /^[A-Z]$/.test(key)))
+      for (const sessionData of Object.values(sessionsByLift)) {
+        Object.keys(sessionData || {}).forEach((sessionKey) => {
+          if (/^[A-Z]$/.test(sessionKey)) allSessionKeys.add(sessionKey)
+        })
+      }
+
+      for (const sessionKey of allSessionKeys) {
+        if (!baseSessions[sessionKey]) {
+          baseSessions[sessionKey] = {
+            week_1: { lifts: [] },
+            week_2: { lifts: [] },
+            week_3: { lifts: [] },
+            week_4: { lifts: [] },
+          }
+        }
+
+        for (const weekKey of weekKeys) {
+          if (!baseSessions[sessionKey][weekKey]) {
+            baseSessions[sessionKey][weekKey] = { lifts: [] }
+          }
+        }
+      }
+
+      for (const lift of selectedLiftSet) {
+        const sourceSessions = sessionsByLift[lift] || ({} as SessionsData)
+
+        for (const sessionKey of allSessionKeys) {
+          for (const weekKey of weekKeys) {
+            const week = baseSessions[sessionKey][weekKey]
+            const sourceLift = sourceSessions[sessionKey]?.[weekKey]?.lifts?.find(item => item.lift === lift)
+            const nextSets = Array.isArray(sourceLift?.sets)
+              ? sourceLift.sets.map((set) => ({
+                weight: Number(set.weight),
+                reps: Number(set.reps),
+                percentage: Number(set.percentage),
+                ...(set.variant ? { variant: String(set.variant) } : {}),
+              }))
+              : []
+
+            const existingIndex = week.lifts.findIndex(item => item.lift === lift)
+            if (existingIndex >= 0) {
+              week.lifts[existingIndex] = { ...week.lifts[existingIndex], sets: nextSets }
+            } else {
+              week.lifts.push({ lift, sets: nextSets })
+            }
+          }
+        }
+      }
+
+      const today = new Date().toISOString().split('T')[0]
+      const endDate = new Date(Date.now() + 4 * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+      setIsProgramPinned(true)
+      setFormData(prev => ({
+        ...prev,
+        block: targetBlock,
+        lifts: nextLifts,
+      }))
+      setCalculatedResults(prev => ({
+        schema_version: prev?.schema_version || '1.2',
+        meta: {
+          filename: `${today}_${toClientSlug(formData.clientName)}_${targetBlock}_all_lifts.json`,
+          created_at: prev?.meta.created_at || new Date().toISOString(),
+          created_by: prev?.meta.created_by || 'AI Generator',
+          status: prev?.meta.status || 'draft',
+        },
+        client: {
+          name: formData.clientName,
+          delta: formData.delta,
+          one_rm: {
+            squat: nextLifts.squat.oneRM,
+            bench_press: nextLifts.bench_press.oneRM,
+            deadlift: nextLifts.deadlift.oneRM,
+          },
+        },
+        program_info: {
+          block: targetBlock,
+          start_date: prev?.program_info.start_date || today,
+          end_date: prev?.program_info.end_date || endDate,
+          weeks: prev?.program_info.weeks || 4,
+        },
+        input: nextInput,
+        calculated: nextCalculated,
+        sessions: baseSessions,
+      }))
+      setIsSaved(false)
+    } catch (error) {
+      console.error('Error applying selected lift templates:', error)
+      alert(error instanceof Error ? error.message : 'Failed to apply selected lift templates')
+    } finally {
+      setLoading(false)
+      isApplyingTemplatesRef.current = false
+    }
+  }
+
   useEffect(() => {
     if (!isProgramPinned || !calculatedResults) return
 
@@ -569,7 +950,9 @@ export default function CreateProgram() {
         ...prev,
         meta: {
           ...prev.meta,
-          filename: `${today}_${payload.clientSlug}_${payload.block}_all_lifts.json`,
+          filename: editingTemplateSlug
+            ? `template_${editingTemplateSlug}.json`
+            : `${today}_${payload.clientSlug}_${payload.block}_all_lifts.json`,
         },
         client: payload.client,
         program_info: {
@@ -580,10 +963,15 @@ export default function CreateProgram() {
         input: payload.lifts,
       }
     })
-  }, [formData, isProgramPinned])
+  }, [formData, isProgramPinned, editingTemplateSlug])
 
   // Fetch RM profile when client name changes (for ARE display)
   useEffect(() => {
+    if (editingTemplateSlug) {
+      setClientRmProfiles(null)
+      return
+    }
+
     const slug = toClientSlug(formData.clientName)
     if (!slug || slug.length < 2) {
       setClientRmProfiles(null)
@@ -612,10 +1000,106 @@ export default function CreateProgram() {
 
     const timer = setTimeout(fetchRmProfile, 500)
     return () => { cancelled = true; clearTimeout(timer) }
-  }, [formData.clientName])
+  }, [formData.clientName, editingTemplateSlug])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    const editTemplate = params.get('editTemplate')
+    if (editTemplate) {
+      const loadKey = `template:${editTemplate}`
+      if (loadedProgramKeyRef.current === loadKey) return
+      loadedProgramKeyRef.current = loadKey
+
+      const loadTemplateForEditing = async () => {
+        try {
+          setLoading(true)
+          const response = await fetch(`/api/program-templates/${encodeURIComponent(editTemplate)}`)
+          if (!response.ok) throw new Error('Failed to load template for editing')
+
+          const data = await response.json() as TemplateDetailResponse
+          const template = data.template
+          if (!template) throw new Error('Template payload missing')
+
+          setEditingTemplateSlug(template.slug)
+          setEditingTemplateMeta({
+            scope: template.scope,
+            lift: template.lift,
+          })
+          setEditingTemplateDescription((template.description || '').trim())
+          setIsEditingExistingProgram(true)
+
+          const templateInput = (template.input && typeof template.input === 'object')
+            ? template.input as Record<string, unknown>
+            : {}
+          const squatCfg = getTemplateLiftConfig(templateInput, 'squat', 100, 350)
+          const benchCfg = getTemplateLiftConfig(templateInput, 'bench_press', 100, 300)
+          const deadCfg = getTemplateLiftConfig(templateInput, 'deadlift', 100, 250)
+
+          setFormData({
+            clientName: template.name || 'Template',
+            delta: 'intermediate',
+            block: template.block,
+            lifts: {
+              squat: squatCfg,
+              bench_press: benchCfg,
+              deadlift: deadCfg,
+            },
+          })
+
+          const today = new Date().toISOString().split('T')[0]
+          const endDate = new Date(Date.now() + template.weeks * 7 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0]
+
+          const sessions = materializeSessionsForClient(
+            template.sessionsTemplate || {},
+            templateInput,
+          ) as unknown as SessionsData
+
+          const programForEditor = {
+            schema_version: template.schemaVersion || '1.2',
+            meta: {
+              filename: `template_${template.slug}.json`,
+              created_at: template.createdAt || new Date().toISOString(),
+              created_by: template.createdBy || 'Template',
+              status: 'draft',
+            },
+            client: {
+              name: template.name || 'Template',
+              delta: 'intermediate',
+              one_rm: {
+                squat: squatCfg.oneRM,
+                bench_press: benchCfg.oneRM,
+                deadlift: deadCfg.oneRM,
+              },
+            },
+            program_info: {
+              block: template.block,
+              start_date: today,
+              end_date: endDate,
+              weeks: template.weeks,
+            },
+            input: (template.input || {}) as ProgramData['input'],
+            calculated: (template.calculated || {}) as ProgramData['calculated'],
+            sessions,
+          } as ProgramData
+
+          setCalculatedResults(programForEditor)
+          setIsEditMode(false)
+          setIsNewClient(true)
+          setIsSaved(true)
+          setIsProgramPinned(true)
+        } catch (error) {
+          console.error('Error loading template for editing:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      loadTemplateForEditing()
+      return
+    }
+
     const editClient = params.get('editClient')
     const editFilename = params.get('editFilename')
     if (!editClient || !editFilename) return
@@ -635,6 +1119,9 @@ export default function CreateProgram() {
         if (!program) throw new Error('Program payload missing')
 
         setIsEditingExistingProgram(true)
+        setEditingTemplateSlug(null)
+        setEditingTemplateMeta(null)
+        setEditingTemplateDescription('')
 
         const getLiftConfigFromProgram = (lift: LiftKey, fallbackOneRm: number, fallbackVolume: number) => {
           const inputLift = (program.input?.[lift] || {}) as any
@@ -646,11 +1133,14 @@ export default function CreateProgram() {
             oneRM: Number(inputLift.one_rm ?? program.client.one_rm[lift] ?? fallbackOneRm),
             rounding: Number(inputLift.rounding ?? 2.5),
             volume: Number(inputLift.volume ?? fallbackVolume),
+            weight_55: Number(weights['55'] ?? Math.round((fallbackOneRm * 0.55) / 2.5) * 2.5),
             weight_65: Number(weights['65'] ?? Math.round((fallbackOneRm * 0.65) / 2.5) * 2.5),
             weight_75: Number(weights['75'] ?? Math.round((fallbackOneRm * 0.75) / 2.5) * 2.5),
             weight_85: Number(weights['85'] ?? Math.round((fallbackOneRm * 0.85) / 2.5) * 2.5),
             weight_90: Number(weights['90'] ?? Math.round((fallbackOneRm * 0.925) / 2.5) * 2.5),
             weight_95: Number(weights['95'] ?? Math.round((fallbackOneRm * 0.95) / 2.5) * 2.5),
+            include_55_zone: Number(intensity['55_percent'] ?? 0) > 0,
+            zone_55_percent: Number(intensity['55_percent'] ?? 0),
             zone_75_percent: Number(intensity['75_percent'] ?? 45),
             zone_85_percent: Number(intensity['85_percent'] ?? 13),
             zone_90_total_reps: Number(intensity['90_total_reps'] ?? 4),
@@ -698,10 +1188,11 @@ export default function CreateProgram() {
     }
 
     loadProgramForEditing()
-  }, [])
+  }, [getTemplateLiftConfig])
 
   const handleCalculate = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isApplyingTemplatesRef.current) return
     await triggerCalculation()
   }
 
@@ -710,6 +1201,25 @@ export default function CreateProgram() {
 
     try {
       setLoading(true)
+
+      if (editingTemplateSlug) {
+        const response = await fetch(`/api/program-templates/${encodeURIComponent(editingTemplateSlug)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            program: calculatedResults,
+          }),
+        })
+
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to save template')
+        }
+
+        setIsSaved(true)
+        alert('Template saved')
+        return
+      }
 
       const response = await fetch('/api/import-program', {
         method: 'POST',
@@ -755,6 +1265,59 @@ export default function CreateProgram() {
     URL.revokeObjectURL(url)
   }
 
+  useEffect(() => {
+    if (hasBridgePercentagesInSessions(calculatedResults?.sessions || null)) {
+      setIsFlexibleBridgeMode(true)
+    }
+  }, [calculatedResults])
+
+  const initializeManualSessions = () => {
+    if (!calculatedResults) return
+
+    const liftKeys = Object.keys(calculatedResults.calculated).filter((lift): lift is LiftKey => (
+      lift === 'squat' || lift === 'bench_press' || lift === 'deadlift'
+    ))
+
+    const sessionLetters = new Set<string>()
+    for (const lift of liftKeys) {
+      const liftData = calculatedResults.calculated[lift] as Record<string, unknown>
+      for (let week = 1; week <= 4; week++) {
+        const weekData = liftData[`week_${week}`] as Record<string, unknown> | undefined
+        const weekSessions = (weekData?.sessions && typeof weekData.sessions === 'object')
+          ? weekData.sessions as Record<string, unknown>
+          : {}
+        Object.keys(weekSessions).forEach((sessionLetter) => sessionLetters.add(sessionLetter))
+      }
+    }
+
+    const sortedSessions = [...sessionLetters].sort()
+    if (sortedSessions.length === 0) {
+      sortedSessions.push('A', 'B', 'C')
+    }
+
+    const sessions: SessionsData = {}
+    for (const sessionLetter of sortedSessions) {
+      sessions[sessionLetter] = {
+        week_1: { lifts: liftKeys.map((lift) => ({ lift, sets: [] })) },
+        week_2: { lifts: liftKeys.map((lift) => ({ lift, sets: [] })) },
+        week_3: { lifts: liftKeys.map((lift) => ({ lift, sets: [] })) },
+        week_4: { lifts: liftKeys.map((lift) => ({ lift, sets: [] })) },
+      }
+    }
+
+    setCalculatedResults((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        sessions,
+      }
+    })
+
+    setIsProgramPinned(true)
+    setIsEditMode(true)
+    setIsSaved(false)
+  }
+
   // Calculate weight from 1RM and percentage
   const calculateWeight = (oneRM: number, percentage: number, rounding: number): number => {
     const raw = oneRM * (percentage / 100)
@@ -771,6 +1334,12 @@ export default function CreateProgram() {
   const calculatePercentageFromReps = (reps: number, totalVolume: number): number => {
     if (totalVolume === 0) return 0
     return Math.round((reps / totalVolume) * 100 * 10) / 10 // Round to 1 decimal
+  }
+
+  const getZone55Percent = (liftConfig: LiftConfig): number => {
+    if (!liftConfig.include_55_zone) return 0
+    const n = Number(liftConfig.zone_55_percent)
+    return Number.isFinite(n) ? n : 0
   }
 
   // Calculate ARI from zone reps
@@ -860,13 +1429,17 @@ export default function CreateProgram() {
   const updateLiftField = (lift: 'squat' | 'bench_press' | 'deadlift', field: string, value: any) => {
     setFormData(prev => {
       const newLifts = { ...prev.lifts }
-      const liftData = { ...newLifts[lift], [field]: value }
+      const safeValue = typeof value === 'number'
+        ? (Number.isFinite(value) ? value : 0)
+        : value
+      const liftData = { ...newLifts[lift], [field]: safeValue }
 
       // Auto-calculate zone weights when 1RM or rounding changes
       if (field === 'oneRM' || field === 'rounding') {
-        const oneRM = field === 'oneRM' ? value : liftData.oneRM
-        const rounding = field === 'rounding' ? value : liftData.rounding
+        const oneRM = field === 'oneRM' ? safeValue : liftData.oneRM
+        const rounding = field === 'rounding' ? safeValue : liftData.rounding
 
+        liftData.weight_55 = calculateWeight(oneRM, 55, rounding)
         liftData.weight_65 = calculateWeight(oneRM, 65, rounding)
         liftData.weight_75 = calculateWeight(oneRM, 75, rounding)
         liftData.weight_85 = calculateWeight(oneRM, 85, rounding)
@@ -908,10 +1481,28 @@ export default function CreateProgram() {
 
       const weekKey = `week_${weekNum}` as WeekKey
       const nextSessions: SessionsData = JSON.parse(JSON.stringify(prev.sessions))
-      const weekData = nextSessions[sessionLetter]?.[weekKey]
-      if (!weekData) return prev
+      const ensureSessionLiftEntry = (sessionsData: SessionsData, sessionKey: string, wk: WeekKey, liftKey: LiftKey) => {
+        if (!sessionsData[sessionKey]) {
+          sessionsData[sessionKey] = {
+            week_1: { lifts: [] },
+            week_2: { lifts: [] },
+            week_3: { lifts: [] },
+            week_4: { lifts: [] },
+          }
+        }
+        const sessionData = sessionsData[sessionKey]
+        if (!sessionData[wk]) {
+          sessionData[wk] = { lifts: [] }
+        }
+        let liftEntryLocal = sessionData[wk].lifts.find(item => item.lift === liftKey)
+        if (!liftEntryLocal) {
+          liftEntryLocal = { lift: liftKey, sets: [] }
+          sessionData[wk].lifts.push(liftEntryLocal)
+        }
+        return liftEntryLocal
+      }
 
-      const liftEntry = weekData.lifts.find(item => item.lift === lift)
+      const liftEntry = ensureSessionLiftEntry(nextSessions, sessionLetter, weekKey, lift)
       if (!liftEntry || !liftEntry.sets[setIndex]) return prev
 
       const value = field === 'variant'
@@ -946,13 +1537,29 @@ export default function CreateProgram() {
 
       const weekKey = `week_${weekNum}` as WeekKey
       const nextSessions: SessionsData = JSON.parse(JSON.stringify(prev.sessions))
-      const fromWeekData = nextSessions[fromSessionLetter]?.[weekKey]
-      const toWeekData = nextSessions[toSessionLetter]?.[weekKey]
-      if (!fromWeekData || !toWeekData) return prev
+      const ensureSessionLiftEntry = (sessionsData: SessionsData, sessionKey: string, wk: WeekKey, liftKey: LiftKey) => {
+        if (!sessionsData[sessionKey]) {
+          sessionsData[sessionKey] = {
+            week_1: { lifts: [] },
+            week_2: { lifts: [] },
+            week_3: { lifts: [] },
+            week_4: { lifts: [] },
+          }
+        }
+        const sessionData = sessionsData[sessionKey]
+        if (!sessionData[wk]) {
+          sessionData[wk] = { lifts: [] }
+        }
+        let liftEntryLocal = sessionData[wk].lifts.find(item => item.lift === liftKey)
+        if (!liftEntryLocal) {
+          liftEntryLocal = { lift: liftKey, sets: [] }
+          sessionData[wk].lifts.push(liftEntryLocal)
+        }
+        return liftEntryLocal
+      }
 
-      const fromLiftEntry = fromWeekData.lifts.find(item => item.lift === lift)
-      const toLiftEntry = toWeekData.lifts.find(item => item.lift === lift)
-      if (!fromLiftEntry || !toLiftEntry) return prev
+      const fromLiftEntry = ensureSessionLiftEntry(nextSessions, fromSessionLetter, weekKey, lift)
+      const toLiftEntry = ensureSessionLiftEntry(nextSessions, toSessionLetter, weekKey, lift)
 
       const fromSets = fromLiftEntry.sets
       const toSets = toLiftEntry.sets
@@ -992,11 +1599,28 @@ export default function CreateProgram() {
 
       const weekKey = `week_${weekNum}` as WeekKey
       const nextSessions: SessionsData = JSON.parse(JSON.stringify(prev.sessions))
-      const weekData = nextSessions[sessionLetter]?.[weekKey]
-      if (!weekData) return prev
+      const ensureSessionLiftEntry = (sessionsData: SessionsData, sessionKey: string, wk: WeekKey, liftKey: LiftKey) => {
+        if (!sessionsData[sessionKey]) {
+          sessionsData[sessionKey] = {
+            week_1: { lifts: [] },
+            week_2: { lifts: [] },
+            week_3: { lifts: [] },
+            week_4: { lifts: [] },
+          }
+        }
+        const sessionData = sessionsData[sessionKey]
+        if (!sessionData[wk]) {
+          sessionData[wk] = { lifts: [] }
+        }
+        let liftEntryLocal = sessionData[wk].lifts.find(item => item.lift === liftKey)
+        if (!liftEntryLocal) {
+          liftEntryLocal = { lift: liftKey, sets: [] }
+          sessionData[wk].lifts.push(liftEntryLocal)
+        }
+        return liftEntryLocal
+      }
 
-      const liftEntry = weekData.lifts.find(item => item.lift === lift)
-      if (!liftEntry) return prev
+      const liftEntry = ensureSessionLiftEntry(nextSessions, sessionLetter, weekKey, lift)
 
       const insertAt = Math.min(afterIndex + 1, liftEntry.sets.length)
       liftEntry.sets.splice(insertAt, 0, {
@@ -1056,152 +1680,232 @@ export default function CreateProgram() {
           </p>
         </header>
 
-        <form onSubmit={handleCalculate} className="space-y-6">
+        <form
+          onSubmit={handleCalculate}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return
+            const target = e.target as HTMLElement | null
+            const tag = target?.tagName?.toLowerCase()
+            if (tag === 'textarea') return
+            e.preventDefault()
+          }}
+          className="space-y-6"
+        >
           {isEditingExistingProgram && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-900 text-sm">
-              Editing existing saved program. AI generation stays manual on Calculate.
+              {editingTemplateSlug
+                ? 'Editing template. Save writes back to the template.'
+                : 'Editing existing saved program. AI generation stays manual on Calculate.'}
             </div>
           )}
 
-          {/* Client Selector */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">{t('clientSelection')}</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('recordType')}
-                </label>
-                <select
-                  value={isNewClient ? 'new' : 'existing'}
-                  onChange={(e) => {
-                    const nextIsNew = e.target.value === 'new'
-                    setIsNewClient(nextIsNew)
-
-                    if (!nextIsNew && existingClients.length > 0) {
-                      const selectedClient = existingClients.find(c => c.slug === selectedExistingClientSlug) || existingClients[0]
-                      setSelectedExistingClientSlug(selectedClient.slug)
-                      applyClientToForm(selectedClient)
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
-                >
-                  <option value="new">{t('newClient')}</option>
-                  <option value="existing">{t('existingClient')}</option>
-                </select>
-              </div>
-              {!isNewClient && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('selectClient')}
-                  </label>
-                  <select
-                    value={selectedExistingClientSlug}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
-                    onChange={(e) => {
-                      const slug = e.target.value
-                      setSelectedExistingClientSlug(slug)
-
-                      const selectedClient = existingClients.find(c => c.slug === slug)
-                      if (selectedClient) {
-                        applyClientToForm(selectedClient)
-                      }
-                    }}
-                    disabled={existingClientsLoading || existingClients.length === 0}
-                  >
-                    {existingClients.length === 0 ? (
-                      <option value="">
-                        {existingClientsLoading ? 'Loading clients...' : 'No existing clients found'}
-                      </option>
-                    ) : (
-                      existingClients.map(client => (
-                        <option key={client.slug} value={client.slug}>
-                          {client.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
+          {editingTemplateSlug && (
+            <div className="bg-white border border-gray-200 rounded-lg p-5">
+              <h2 className="text-2xl font-semibold text-gray-900">
+                {formData.clientName || 'Template'}
+              </h2>
+              {editingTemplateDescription && (
+                <p className="mt-2 text-sm text-gray-600">
+                  {editingTemplateDescription}
+                </p>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Client Info */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">{t('clientInfo')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('clientName')}
-                </label>
-                <input
-                  type="text"
-                  value={formData.clientName}
-                  onChange={(e) => updateSharedField('clientName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
-                  required
-                  disabled={!isNewClient}
-                />
+          {!editingTemplateSlug && (
+            <>
+              {/* Client Selector */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-4">{t('clientSelection')}</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('recordType')}
+                    </label>
+                    <select
+                      value={isNewClient ? 'new' : 'existing'}
+                      onChange={(e) => {
+                        const nextIsNew = e.target.value === 'new'
+                        setIsNewClient(nextIsNew)
+
+                        if (!nextIsNew && existingClients.length > 0) {
+                          const selectedClient = existingClients.find(c => c.slug === selectedExistingClientSlug) || existingClients[0]
+                          setSelectedExistingClientSlug(selectedClient.slug)
+                          applyClientToForm(selectedClient)
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
+                    >
+                      <option value="new">{t('newClient')}</option>
+                      <option value="existing">{t('existingClient')}</option>
+                    </select>
+                  </div>
+                  {!isNewClient && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('selectClient')}
+                      </label>
+                      <select
+                        value={selectedExistingClientSlug}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
+                        onChange={(e) => {
+                          const slug = e.target.value
+                          setSelectedExistingClientSlug(slug)
+
+                          const selectedClient = existingClients.find(c => c.slug === slug)
+                          if (selectedClient) {
+                            applyClientToForm(selectedClient)
+                          }
+                        }}
+                        disabled={existingClientsLoading || existingClients.length === 0}
+                      >
+                        {existingClients.length === 0 ? (
+                          <option value="">
+                            {existingClientsLoading ? 'Loading clients...' : 'No existing clients found'}
+                          </option>
+                        ) : (
+                          existingClients.map(client => (
+                            <option key={client.slug} value={client.slug}>
+                              {client.name}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('level')}
-                </label>
-                <select
-                  value={formData.delta}
-                  onChange={(e) => updateSharedField('delta', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
-                >
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                  <option value="elite">Elite</option>
-                </select>
+              {/* Client Info */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-4">{t('clientInfo')}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('clientName')}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.clientName}
+                      onChange={(e) => updateSharedField('clientName', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
+                      required
+                      disabled={!isNewClient}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('level')}
+                    </label>
+                    <select
+                      value={formData.delta}
+                      onChange={(e) => updateSharedField('delta', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
+                    >
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                      <option value="elite">Elite</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('block')}
+                    </label>
+                    <select
+                      value={formData.block}
+                      onChange={(e) => updateSharedField('block', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
+                    >
+                      <option value="prep">Prep</option>
+                      <option value="comp">Comp</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('block')}
-                </label>
-                <select
-                  value={formData.block}
-                  onChange={(e) => updateSharedField('block', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
-                >
-                  <option value="prep">Prep</option>
-                  <option value="comp">Comp</option>
-                </select>
+              {/* Per-lift template preload */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Lift templates (optional)</h2>
+                    <p className="text-sm text-gray-600">
+                      Pick template per lift and load its input, targets, and saved sessions into this client program.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      applySelectedLiftTemplates()
+                    }}
+                    disabled={
+                      loading ||
+                      liftTemplatesLoading ||
+                      LIFT_KEYS.every((lift) => !selectedLiftTemplateByLift[lift])
+                    }
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400"
+                  >
+                    Apply selected templates
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  {LIFT_KEYS.map((lift) => {
+                    const templatesForLift = liftTemplates
+                      .filter((template) => template.scope === 'single_lift' && template.lift === lift)
+                    return (
+                      <div key={`lift-template-${lift}`}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {getLiftLabel(lift)} template
+                        </label>
+                        <select
+                          value={selectedLiftTemplateByLift[lift]}
+                          onChange={(e) => {
+                            const slug = e.target.value
+                            setSelectedLiftTemplateByLift((prev) => ({ ...prev, [lift]: slug }))
+                          }}
+                          disabled={liftTemplatesLoading}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600"
+                        >
+                          <option value="">
+                            {liftTemplatesLoading ? 'Loading templates...' : '— No template —'}
+                          </option>
+                          {templatesForLift.map((template) => (
+                            <option key={template.slug} value={template.slug}>
+                              {template.name} ({template.block})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
 
           {/* 3-Column Layout for Lifts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <LiftColumn
-              liftName="squat"
-              liftData={formData.lifts.squat}
-              onUpdate={(field, value) => updateLiftField('squat', field, value)}
-              onNumberInput={(field, value) => handleLiftNumberInput('squat', field, value)}
-              calculateActualPercentage={calculateActualPercentage}
-              calculatePercentageFromReps={calculatePercentageFromReps}
-            />
-
-            <LiftColumn
-              liftName="bench_press"
-              liftData={formData.lifts.bench_press}
-              onUpdate={(field, value) => updateLiftField('bench_press', field, value)}
-              onNumberInput={(field, value) => handleLiftNumberInput('bench_press', field, value)}
-              calculateActualPercentage={calculateActualPercentage}
-              calculatePercentageFromReps={calculatePercentageFromReps}
-            />
-
-            <LiftColumn
-              liftName="deadlift"
-              liftData={formData.lifts.deadlift}
-              onUpdate={(field, value) => updateLiftField('deadlift', field, value)}
-              onNumberInput={(field, value) => handleLiftNumberInput('deadlift', field, value)}
-              calculateActualPercentage={calculateActualPercentage}
-              calculatePercentageFromReps={calculatePercentageFromReps}
-            />
+          <div className={`grid grid-cols-1 ${editingTemplateSlug && editingTemplateMeta?.scope === 'single_lift' ? 'lg:grid-cols-1' : 'lg:grid-cols-3'} gap-6`}>
+            {(
+              editingTemplateSlug &&
+              editingTemplateMeta?.scope === 'single_lift' &&
+              editingTemplateMeta.lift
+                ? [editingTemplateMeta.lift]
+                : (['squat', 'bench_press', 'deadlift'] as LiftKey[])
+            ).map((liftKey) => (
+              <LiftColumn
+                key={liftKey}
+                liftName={liftKey}
+                liftData={formData.lifts[liftKey]}
+                onUpdate={(field, value) => updateLiftField(liftKey, field, value)}
+                onNumberInput={(field, value) => handleLiftNumberInput(liftKey, field, value)}
+                calculateActualPercentage={calculateActualPercentage}
+                calculatePercentageFromReps={calculatePercentageFromReps}
+              />
+            ))}
           </div>
 
           {/* AI generation trigger */}
@@ -1211,6 +1915,26 @@ export default function CreateProgram() {
             </div>
 
             <div className="flex gap-4">
+              {calculatedResults && (
+                <button
+                  type="button"
+                  onClick={initializeManualSessions}
+                  disabled={loading}
+                  className="px-6 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 disabled:bg-gray-400"
+                >
+                  Start manual sessions
+                </button>
+              )}
+              {editingTemplateSlug && (
+                <button
+                  type="button"
+                  onClick={recalculateDeterministic}
+                  disabled={loading}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400"
+                >
+                  Recalculate targets
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => router.push(`/${locale}`)}
@@ -1260,7 +1984,7 @@ export default function CreateProgram() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sticky top-4 z-10">
                 <h3 className="text-lg font-semibold text-blue-900 mb-3">{t('targetValues')}</h3>
                 <div className="grid grid-cols-3 gap-6">
-                  {Object.entries(calculatedResults.calculated).map(([lift, liftData]) => {
+                  {Object.entries(calculatedResults.calculated).map(([lift]) => {
                     const liftLabel = lift === 'squat' ? 'Squat' :
                                      lift === 'bench_press' ? 'Bench Press' :
                                      lift === 'deadlift' ? 'Deadlift' : lift
@@ -1268,7 +1992,8 @@ export default function CreateProgram() {
                     // Get target zone distribution from formData
                     const liftConfig = formData.lifts[lift as keyof typeof formData.lifts]
                     const targetZones = {
-                      '65': Math.round((100 - liftConfig.zone_75_percent - liftConfig.zone_85_percent -
+                      '55': Math.round(getZone55Percent(liftConfig) * liftConfig.volume / 100),
+                      '65': Math.round((100 - getZone55Percent(liftConfig) - liftConfig.zone_75_percent - liftConfig.zone_85_percent -
                             calculatePercentageFromReps(liftConfig.zone_90_total_reps, liftConfig.volume) -
                             calculatePercentageFromReps(liftConfig.zone_95_total_reps, liftConfig.volume)) * liftConfig.volume / 100),
                       '75': Math.round(liftConfig.zone_75_percent * liftConfig.volume / 100),
@@ -1281,6 +2006,7 @@ export default function CreateProgram() {
                       <div key={lift} className="bg-white rounded p-3 shadow-sm">
                         <h4 className="font-semibold text-sm text-blue-900 mb-2">{liftLabel}</h4>
                         <div className="space-y-1 text-xs text-gray-800">
+                          <div className="flex justify-between"><span className="text-gray-700">55%:</span><span className="font-semibold text-gray-900">{targetZones['55']}</span></div>
                           <div className="flex justify-between"><span className="text-gray-700">65%:</span><span className="font-semibold text-gray-900">{targetZones['65']}</span></div>
                           <div className="flex justify-between"><span className="text-gray-700">75%:</span><span className="font-semibold text-gray-900">{targetZones['75']}</span></div>
                           <div className="flex justify-between"><span className="text-gray-700">85%:</span><span className="font-semibold text-gray-900">{targetZones['85']}</span></div>
@@ -1308,8 +2034,8 @@ export default function CreateProgram() {
                 // Get target zone distribution from formData
                 const liftConfig = formData.lifts[lift as keyof typeof formData.lifts]
                 const targetZones = {
-                  '55': 0,
-                  '65': Math.round((100 - liftConfig.zone_75_percent - liftConfig.zone_85_percent -
+                  '55': Math.round(getZone55Percent(liftConfig) * liftConfig.volume / 100),
+                  '65': Math.round((100 - getZone55Percent(liftConfig) - liftConfig.zone_75_percent - liftConfig.zone_85_percent -
                         calculatePercentageFromReps(liftConfig.zone_90_total_reps, liftConfig.volume) -
                         calculatePercentageFromReps(liftConfig.zone_95_total_reps, liftConfig.volume)) * liftConfig.volume / 100),
                   '75': Math.round(liftConfig.zone_75_percent * liftConfig.volume / 100),
@@ -1425,12 +2151,32 @@ export default function CreateProgram() {
 
                     {/* AI Sessions (manual set editing) */}
                     <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-900">AI Sessions</h4>
+                      <div className="flex items-center justify-between gap-3">
+                        <h4 className="text-lg font-semibold text-gray-900">AI Sessions</h4>
+                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={isFlexibleBridgeMode}
+                            onChange={(e) => setIsFlexibleBridgeMode(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          Flexible bridge % (50/60/70/80/90/97.5)
+                        </label>
+                      </div>
+                      {isFlexibleBridgeMode && (
+                        <p className="text-xs text-gray-500">
+                          Canonical zone deltas are validated via weekly allocation of bridge percentages.
+                        </p>
+                      )}
                       <AISessionLiftTable
                         sessions={calculatedResults.sessions}
                         lift={liftKey}
                         calculatedLift={liftData}
+                        oneRm={formData.lifts[liftKey].oneRM}
+                        rounding={formData.lifts[liftKey].rounding}
                         variantOptions={variantOptions}
+                        showVariants={!editingTemplateSlug}
+                        isFlexibleBridgeMode={isFlexibleBridgeMode}
                         isEditMode={isEditMode}
                         onUpdateSet={updateSessionSet}
                         onMoveSet={moveSessionSet}
@@ -1452,6 +2198,9 @@ export default function CreateProgram() {
                   setCalculatedResults(null)
                   setIsProgramPinned(false)
                   setIsEditingExistingProgram(false)
+                  setEditingTemplateSlug(null)
+                  setEditingTemplateMeta(null)
+                  setEditingTemplateDescription('')
                 }}
                 className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
@@ -1468,7 +2217,9 @@ export default function CreateProgram() {
                 disabled={isSaved}
                 className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
               >
-                {isSaved ? t('saved') : t('saveProgram')}
+                {isSaved
+                  ? (editingTemplateSlug ? 'Template saved' : t('saved'))
+                  : (editingTemplateSlug ? 'Save template' : t('saveProgram'))}
               </button>
             </div>
           </div>
@@ -1478,7 +2229,8 @@ export default function CreateProgram() {
   )
 }
 
-const ZONE_ROWS = [
+const BASE_ZONE_ROWS = [
+  { key: 55, label: '55%' },
   { key: 65, label: '65%' },
   { key: 75, label: '75%' },
   { key: 85, label: '85%' },
@@ -1486,11 +2238,173 @@ const ZONE_ROWS = [
   { key: 95, label: '95%' },
 ] as const
 
+const EXPANDED_ZONE_ROWS = [
+  { key: 50, label: '50%' },
+  { key: 55, label: '55%' },
+  { key: 60, label: '60%' },
+  { key: 65, label: '65%' },
+  { key: 70, label: '70%' },
+  { key: 75, label: '75%' },
+  { key: 80, label: '80%' },
+  { key: 85, label: '85%' },
+  { key: 90, label: '90%' },
+  { key: 92.5, label: '92.5%' },
+  { key: 95, label: '95%' },
+  { key: 97.5, label: '97.5%' },
+] as const
+
+type CanonicalZoneKey = '55' | '65' | '75' | '85' | '90' | '95'
+const CANONICAL_ZONE_KEYS: CanonicalZoneKey[] = ['55', '65', '75', '85', '90', '95']
+
+const normalizePercentageKey = (percentage: number): number => (
+  Math.round(percentage * 10) / 10
+)
+
+const hasBridgePercentagesInSessions = (sessions: SessionsData | null): boolean => {
+  if (!sessions) return false
+
+  for (const session of Object.values(sessions)) {
+    for (const weekKey of ['week_1', 'week_2', 'week_3', 'week_4'] as WeekKey[]) {
+      const week = session?.[weekKey]
+      if (!week?.lifts) continue
+      for (const liftData of week.lifts) {
+        for (const set of liftData.sets || []) {
+          const pct = normalizePercentageKey(Number(set.percentage))
+          if (pct === 50 || pct === 60 || pct === 70 || pct === 80 || pct === 90 || pct === 97.5) {
+            return true
+          }
+        }
+      }
+    }
+  }
+
+  return false
+}
+
+const getAllowedCanonicalZones = (percentageRaw: number, flexibleMode: boolean): CanonicalZoneKey[] => {
+  const percentage = normalizePercentageKey(percentageRaw)
+  if (Math.abs(percentage - 92.5) < 0.2) return ['90']
+  if (Math.abs(percentage - 90) < 0.2) return flexibleMode ? ['85', '90'] : ['90']
+  if (Math.abs(percentage - 97.5) < 0.2) return ['95']
+  if (Math.abs(percentage - 95) < 0.2) return ['95']
+  if (Math.abs(percentage - 85) < 0.2) return ['85']
+  if (Math.abs(percentage - 75) < 0.2) return ['75']
+  if (Math.abs(percentage - 65) < 0.2) return ['65']
+  if (Math.abs(percentage - 55) < 0.2) return ['55']
+  if (!flexibleMode) return []
+  if (Math.abs(percentage - 50) < 0.2) return ['55']
+  if (Math.abs(percentage - 60) < 0.2) return ['55', '65']
+  if (Math.abs(percentage - 70) < 0.2) return ['65', '75']
+  if (Math.abs(percentage - 80) < 0.2) return ['75', '85']
+  return []
+}
+
+const allocateCanonicalZoneReps = (
+  totalsByPercentage: Record<string, number>,
+  targets: Record<CanonicalZoneKey, number>,
+  flexibleMode: boolean,
+): { assignedByZone: Record<CanonicalZoneKey, number>; totalAssigned: number } => {
+  type Edge = { to: number; rev: number; capacity: number }
+  const graph: Edge[][] = []
+  const makeNode = () => {
+    graph.push([])
+    return graph.length - 1
+  }
+  const addEdge = (from: number, to: number, capacity: number) => {
+    const forward: Edge = { to, rev: graph[to].length, capacity }
+    const backward: Edge = { to: from, rev: graph[from].length, capacity: 0 }
+    graph[from].push(forward)
+    graph[to].push(backward)
+  }
+
+  const source = makeNode()
+  const percentageEntries = Object.entries(totalsByPercentage)
+    .filter(([, reps]) => Number.isFinite(reps) && reps > 0)
+    .map(([percentage, reps]) => ({ percentage: Number(percentage), reps: Math.round(reps) }))
+  const pctNodes = percentageEntries.map(() => makeNode())
+  const zoneNodes = CANONICAL_ZONE_KEYS.reduce((acc, key) => {
+    acc[key] = makeNode()
+    return acc
+  }, {} as Record<CanonicalZoneKey, number>)
+  const sink = makeNode()
+
+  percentageEntries.forEach(({ reps }, idx) => {
+    addEdge(source, pctNodes[idx], reps)
+  })
+  for (const [zoneKey, zoneNode] of Object.entries(zoneNodes) as Array<[CanonicalZoneKey, number]>) {
+    const target = Math.max(0, Math.round(Number(targets[zoneKey] ?? 0)))
+    addEdge(zoneNode, sink, target)
+  }
+  percentageEntries.forEach(({ percentage, reps }, idx) => {
+    const allowed = getAllowedCanonicalZones(percentage, flexibleMode)
+    if (allowed.length === 0 || reps <= 0) return
+    for (const zoneKey of allowed) {
+      addEdge(pctNodes[idx], zoneNodes[zoneKey], reps)
+    }
+  })
+
+  let totalFlow = 0
+  while (true) {
+    const parentNode = Array(graph.length).fill(-1)
+    const parentEdge = Array(graph.length).fill(-1)
+    const queue: number[] = [source]
+    parentNode[source] = source
+
+    for (let q = 0; q < queue.length; q++) {
+      const current = queue[q]
+      for (let edgeIndex = 0; edgeIndex < graph[current].length; edgeIndex++) {
+        const edge = graph[current][edgeIndex]
+        if (edge.capacity <= 0 || parentNode[edge.to] !== -1) continue
+        parentNode[edge.to] = current
+        parentEdge[edge.to] = edgeIndex
+        queue.push(edge.to)
+        if (edge.to === sink) break
+      }
+      if (parentNode[sink] !== -1) break
+    }
+
+    if (parentNode[sink] === -1) break
+
+    let bottleneck = Number.POSITIVE_INFINITY
+    for (let node = sink; node !== source; node = parentNode[node]) {
+      const prev = parentNode[node]
+      const edge = graph[prev][parentEdge[node]]
+      bottleneck = Math.min(bottleneck, edge.capacity)
+    }
+
+    for (let node = sink; node !== source; node = parentNode[node]) {
+      const prev = parentNode[node]
+      const edge = graph[prev][parentEdge[node]]
+      edge.capacity -= bottleneck
+      graph[node][edge.rev].capacity += bottleneck
+    }
+
+    totalFlow += bottleneck
+  }
+
+  const assignedByZone = CANONICAL_ZONE_KEYS.reduce((acc, key) => {
+    acc[key] = 0
+    return acc
+  }, {} as Record<CanonicalZoneKey, number>)
+  for (const [zoneKey, zoneNode] of Object.entries(zoneNodes) as Array<[CanonicalZoneKey, number]>) {
+    const edgeToSink = graph[zoneNode].find((edge) => edge.to === sink)
+    if (!edgeToSink) continue
+    const initialCapacity = Math.max(0, Math.round(Number(targets[zoneKey] ?? 0)))
+    assignedByZone[zoneKey] = initialCapacity - edgeToSink.capacity
+  }
+
+  return { assignedByZone, totalAssigned: totalFlow }
+}
+
 function AISessionLiftTable({
   sessions,
   lift,
   calculatedLift,
+  oneRm,
+  rounding,
   variantOptions,
+  showVariants,
+  isFlexibleBridgeMode,
   isEditMode,
   onUpdateSet,
   onMoveSet,
@@ -1501,7 +2415,11 @@ function AISessionLiftTable({
   sessions: SessionsData
   lift: LiftKey
   calculatedLift: Record<string, any>
+  oneRm: number
+  rounding: number
   variantOptions: VariantOption[]
+  showVariants: boolean
+  isFlexibleBridgeMode: boolean
   isEditMode: boolean
   rmProfile: Record<number, number> | null
   onUpdateSet: (
@@ -1544,14 +2462,30 @@ function AISessionLiftTable({
   } | null>(null)
   const [dragOverCell, setDragOverCell] = useState<string | null>(null)
 
-  const sessionKeys = Object.keys(sessions).sort()
+  const sessionKeySet = new Set<string>(Object.keys(sessions).filter(key => /^[A-Z]$/.test(key)))
+  for (const weekKey of ['week_1', 'week_2', 'week_3', 'week_4'] as WeekKey[]) {
+    const calculatedSessions = calculatedLift?.[weekKey]?.sessions as Record<string, unknown> | undefined
+    if (!calculatedSessions || typeof calculatedSessions !== 'object') continue
+    Object.keys(calculatedSessions).forEach((key) => {
+      if (/^[A-Z]$/.test(key)) sessionKeySet.add(key)
+    })
+  }
+  const sessionKeys = [...sessionKeySet].sort()
   const weekKeys: WeekKey[] = ['week_1', 'week_2', 'week_3', 'week_4']
-  const rowsPerWeek = ZONE_ROWS.length + 2
+  const zoneRows = isFlexibleBridgeMode ? EXPANDED_ZONE_ROWS : BASE_ZONE_ROWS
+  const summaryRowsPerWeek = rmProfile ? 3 : 2
+  const rowsPerWeek = zoneRows.length + summaryRowsPerWeek
 
   const getAllSets = (sessionKey: string, weekKey: WeekKey): SetData[] => {
     const weekData = sessions[sessionKey]?.[weekKey]
     const liftData = weekData?.lifts?.find(item => item.lift === lift)
     return liftData?.sets ?? []
+  }
+
+  const roundToStep = (value: number, step: number): number => {
+    if (!Number.isFinite(value)) return 0
+    if (!Number.isFinite(step) || step <= 0) return Math.round(value * 10) / 10
+    return Math.round(value / step) * step
   }
 
   const getWeightForZone = (zonePct: number): number | null => {
@@ -1561,12 +2495,35 @@ function AISessionLiftTable({
         if (set) return set.weight
       }
     }
+
+    const isCanonicalDisplayPercentage = (
+      zonePct === 55 ||
+      zonePct === 65 ||
+      zonePct === 75 ||
+      zonePct === 85 ||
+      zonePct === 92.5 ||
+      zonePct === 95
+    )
+
+    if (isCanonicalDisplayPercentage) {
+      const calcKey = zoneToCalculatedKey(zonePct)
+      const fallbackWeight = Number(calculatedLift?._summary?.weights?.[calcKey])
+      if (Number.isFinite(fallbackWeight) && fallbackWeight > 0) {
+        return fallbackWeight
+      }
+    }
+
+    if (Number.isFinite(oneRm) && oneRm > 0) {
+      const base = roundToStep(oneRm * (zonePct / 100), rounding)
+      if (Number.isFinite(base) && base > 0) return base
+    }
+
     return null
   }
 
-  const zoneToCalculatedKey = (zonePct: number): '65' | '75' | '85' | '90' | '95' => {
+  const zoneToCalculatedKey = (zonePct: number): '55' | '65' | '75' | '85' | '90' | '95' => {
     if (zonePct === 92.5) return '90'
-    return String(zonePct) as '65' | '75' | '85' | '90' | '95'
+    return String(zonePct) as '55' | '65' | '75' | '85' | '90' | '95'
   }
 
   const getVariantCellClass = (variantRaw: string): string => {
@@ -1667,11 +2624,26 @@ function AISessionLiftTable({
       <table className="min-w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100">
-            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">week</th>
-            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">lift</th>
-            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">%1RM</th>
-            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">kg</th>
-            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">#reps</th>
+            <th rowSpan={2} className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">week</th>
+            <th rowSpan={2} className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">lift</th>
+            <th rowSpan={2} className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">%1RM</th>
+            <th rowSpan={2} className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">kg</th>
+            <th rowSpan={2} className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">#reps</th>
+            {sessionKeys.map(sessionKey => {
+              const nCols = maxSetsPerSession[sessionKey]
+              return (
+                <th
+                  key={`${sessionKey}-group`}
+                  colSpan={nCols}
+                  className="border border-gray-300 px-2 py-1 font-semibold text-gray-900 border-l-2 border-l-gray-500"
+                >
+                  {`Session ${sessionKey}`}
+                </th>
+              )
+            })}
+            <th rowSpan={2} className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">Δ</th>
+          </tr>
+          <tr className="bg-gray-100">
             {sessionKeys.map(sessionKey => {
               const nCols = maxSetsPerSession[sessionKey]
               return Array.from({ length: nCols }, (_, idx) => (
@@ -1679,27 +2651,64 @@ function AISessionLiftTable({
                   key={`${sessionKey}-${idx}`}
                   className={`border border-gray-300 px-2 py-1 font-semibold ${idx === 0 ? 'border-l-2 border-l-gray-500' : ''} text-gray-900`}
                 >
-                  {idx === 0 ? `Session ${sessionKey}` : `#${idx + 1}`}
+                  {`#${idx + 1}`}
                 </th>
               ))
             })}
-            <th className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">Δ</th>
           </tr>
         </thead>
-        {weekKeys.map((weekKey, weekIdx) => (
-          <tbody key={weekKey}>
-              {ZONE_ROWS.map((zone, zoneIdx) => {
-                let totalZoneReps = 0
-                for (const sessionKey of sessionKeys) {
-                  totalZoneReps += getAllSets(sessionKey, weekKey)
-                    .filter(set => set.percentage === zone.key)
-                    .reduce((sum, set) => sum + set.reps, 0)
-                }
+        {weekKeys.map((weekKey, weekIdx) => {
+          const totalsByPercentage: Record<string, number> = {}
+          let actualWeekTotal = 0
+          for (const sessionKey of sessionKeys) {
+            const sets = getAllSets(sessionKey, weekKey)
+            for (const set of sets) {
+              const reps = Number(set.reps)
+              const pct = Number(set.percentage)
+              if (!Number.isFinite(reps) || reps <= 0 || !Number.isFinite(pct)) continue
+              const pctKey = String(normalizePercentageKey(pct))
+              totalsByPercentage[pctKey] = (totalsByPercentage[pctKey] || 0) + reps
+              actualWeekTotal += reps
+            }
+          }
 
-                const plannedZoneReps = Number(
-                  calculatedLift?.[weekKey]?.zones?.[zoneToCalculatedKey(zone.key)] ?? 0,
-                )
-                const zoneDiff = plannedZoneReps - totalZoneReps
+          const plannedByZone = CANONICAL_ZONE_KEYS.reduce((acc, zoneKey) => {
+            const pct = zoneKey === '90' ? 92.5 : Number(zoneKey)
+            const calcKey = zoneToCalculatedKey(pct)
+            acc[zoneKey] = Number(calculatedLift?.[weekKey]?.zones?.[calcKey] ?? 0)
+            return acc
+          }, {} as Record<CanonicalZoneKey, number>)
+
+          const canonicalActual = CANONICAL_ZONE_KEYS.reduce((acc, zoneKey) => {
+            acc[zoneKey] = 0
+            return acc
+          }, {} as Record<CanonicalZoneKey, number>)
+
+          if (isFlexibleBridgeMode) {
+            const allocated = allocateCanonicalZoneReps(totalsByPercentage, plannedByZone, true)
+            for (const zoneKey of CANONICAL_ZONE_KEYS) {
+              canonicalActual[zoneKey] = allocated.assignedByZone[zoneKey] || 0
+            }
+          } else {
+            for (const zoneKey of CANONICAL_ZONE_KEYS) {
+              const pct = zoneKey === '90' ? 92.5 : Number(zoneKey)
+              canonicalActual[zoneKey] = totalsByPercentage[String(normalizePercentageKey(pct))] || 0
+            }
+          }
+
+          const plannedWeekTotal = CANONICAL_ZONE_KEYS.reduce((sum, zoneKey) => sum + (plannedByZone[zoneKey] || 0), 0)
+          const weekDiff = plannedWeekTotal - actualWeekTotal
+
+          return (
+          <tbody key={weekKey}>
+              {zoneRows.map((zone, zoneIdx) => {
+                const exactRowReps = totalsByPercentage[String(normalizePercentageKey(zone.key))] || 0
+                const canonicalForRow = getAllowedCanonicalZones(zone.key, false)[0] || null
+                const totalZoneReps = (isFlexibleBridgeMode && canonicalForRow)
+                  ? (canonicalActual[canonicalForRow] || 0)
+                  : exactRowReps
+                const plannedZoneReps = canonicalForRow ? (plannedByZone[canonicalForRow] || 0) : 0
+                const zoneDiff = canonicalForRow ? (plannedZoneReps - totalZoneReps) : null
 
                 return (
                   <tr key={`${weekKey}-${zone.key}`} className={zoneIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -1736,7 +2745,7 @@ function AISessionLiftTable({
 
                       return Array.from({ length: nCols }, (_, idx) => {
                         const set = allSessionSets[idx]
-                        const isThisZone = !!set && set.percentage === zone.key
+                        const isThisZone = !!set && normalizePercentageKey(set.percentage) === normalizePercentageKey(zone.key)
                         const activeVariant = normalizeVariantCode(set?.variant, variantOptions)
 
                         const weekNum = Number(weekKey.replace('week_', ''))
@@ -1748,7 +2757,7 @@ function AISessionLiftTable({
                         return (
                           <td
                             key={`${weekKey}-${sessionKey}-${zone.key}-${idx}`}
-                            className={`border border-gray-300 px-2 py-1 text-center font-semibold ${idx === 0 ? 'border-l-2 border-l-gray-500' : ''} ${isThisZone ? getVariantCellClass(activeVariant) : 'text-transparent bg-transparent'} ${isDropTarget ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+                            className={`border border-gray-300 px-2 py-1 text-center font-semibold ${idx === 0 ? 'border-l-2 border-l-gray-500' : ''} ${isThisZone ? (showVariants ? getVariantCellClass(activeVariant) : '') : 'text-transparent bg-transparent'} ${isDropTarget ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
                             onDragOver={(event) => handleDragOver(event, weekNum, sessionKey, idx, allSessionSets.length, zone.key)}
                             onDrop={(event) => handleDrop(
                               event,
@@ -1781,15 +2790,17 @@ function AISessionLiftTable({
                                     onChange={(e) => onUpdateSet(lift, weekNum, sessionKey, idx, 'reps', parseInt(e.target.value) || 0)}
                                     className="w-12 px-1 py-0.5 text-center border border-blue-300 rounded text-xs"
                                   />
-                                  <select
-                                    value={activeVariant}
-                                    onChange={(e) => onUpdateSet(lift, weekNum, sessionKey, idx, 'variant', e.target.value)}
-                                    className="max-w-28 px-1 py-0.5 border border-gray-300 rounded text-xs bg-white text-gray-900"
-                                  >
-                                    {variantOptions.map(option => (
-                                      <option key={option.code} value={option.code}>{option.label}</option>
-                                    ))}
-                                  </select>
+                                  {showVariants && (
+                                    <select
+                                      value={activeVariant}
+                                      onChange={(e) => onUpdateSet(lift, weekNum, sessionKey, idx, 'variant', e.target.value)}
+                                      className="max-w-28 px-1 py-0.5 border border-gray-300 rounded text-xs bg-white text-gray-900"
+                                    >
+                                      {variantOptions.map(option => (
+                                        <option key={option.code} value={option.code}>{option.label}</option>
+                                      ))}
+                                    </select>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => onInsertSet(lift, weekNum, sessionKey, idx, zone.key, zoneWeight)}
@@ -1810,16 +2821,27 @@ function AISessionLiftTable({
                               ) : (
                                 set.reps
                               )
-                            ) : ''}
+                            ) : (
+                              isEditMode ? (
+                                <button
+                                  type="button"
+                                  onClick={() => onInsertSet(lift, weekNum, sessionKey, idx - 1, zone.key, zoneWeight)}
+                                  className="px-1 text-xs border rounded text-gray-600 hover:bg-gray-100"
+                                  title="Add set in this zone"
+                                >
+                                  +
+                                </button>
+                              ) : ''
+                            )}
                           </td>
                         )
                       })
                     })}
 
                     <td
-                      className={`border border-gray-300 px-2 py-1 text-center font-semibold ${zoneDiff === 0 ? 'text-green-700' : 'text-red-700'}`}
+                      className={`border border-gray-300 px-2 py-1 text-center font-semibold ${zoneDiff === null ? 'text-gray-400' : (zoneDiff === 0 ? 'text-green-700' : 'text-red-700')}`}
                     >
-                      {zoneDiff}
+                      {zoneDiff === null ? '—' : zoneDiff}
                     </td>
                   </tr>
                 )
@@ -1893,10 +2915,12 @@ function AISessionLiftTable({
                     </td>
                   )
                 })}
-                <td className="border border-gray-300 px-2 py-1 text-center text-gray-400">—</td>
+                <td className={`border border-gray-300 px-2 py-1 text-center font-semibold ${weekDiff === 0 ? 'text-green-700' : 'text-red-700'}`}>
+                  {weekDiff}
+                </td>
               </tr>
           </tbody>
-        ))}
+        )})}
       </table>
     </div>
   )

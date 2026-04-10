@@ -20,7 +20,7 @@ export interface ZoneTemplateWeek {
 export type ZoneTemplateSessions = Record<string, Record<string, ZoneTemplateWeek>>
 
 const LIFTS: LiftKey[] = ['squat', 'bench_press', 'deadlift']
-const ZONE_KEYS = ['65', '75', '85', '90', '95'] as const
+const ZONE_KEYS = ['55', '65', '75', '85', '90', '95'] as const
 
 function toNumber(value: unknown): number | null {
   const n = Number(value)
@@ -40,16 +40,42 @@ function roundToStep(value: number, step: number): number {
 }
 
 function normalizePercentage(raw: number): number {
+  if (Math.abs(raw - 97.5) < 0.2) return 97.5
   if (Math.abs(raw - 92.5) < 0.2) return 92.5
+  if (Math.abs(raw - 50) < 0.2) return 50
+  if (Math.abs(raw - 55) < 0.2) return 55
+  if (Math.abs(raw - 60) < 0.2) return 60
   if (Math.abs(raw - 65) < 0.2) return 65
+  if (Math.abs(raw - 70) < 0.2) return 70
   if (Math.abs(raw - 75) < 0.2) return 75
+  if (Math.abs(raw - 80) < 0.2) return 80
   if (Math.abs(raw - 85) < 0.2) return 85
+  if (Math.abs(raw - 90) < 0.2) return 90
   if (Math.abs(raw - 95) < 0.2) return 95
   return raw
 }
 
-export function percentageToZoneKey(percentage: number): '65' | '75' | '85' | '90' | '95' | null {
+function isSupportedTemplatePercentage(percentage: number): boolean {
   const p = normalizePercentage(percentage)
+  return (
+    Math.abs(p - 50) < 0.2 ||
+    Math.abs(p - 55) < 0.2 ||
+    Math.abs(p - 60) < 0.2 ||
+    Math.abs(p - 65) < 0.2 ||
+    Math.abs(p - 70) < 0.2 ||
+    Math.abs(p - 75) < 0.2 ||
+    Math.abs(p - 80) < 0.2 ||
+    Math.abs(p - 85) < 0.2 ||
+    Math.abs(p - 90) < 0.2 ||
+    Math.abs(p - 92.5) < 0.2 ||
+    Math.abs(p - 97.5) < 0.2 ||
+    Math.abs(p - 95) < 0.2
+  )
+}
+
+export function percentageToZoneKey(percentage: number): '55' | '65' | '75' | '85' | '90' | '95' | null {
+  const p = normalizePercentage(percentage)
+  if (Math.abs(p - 55) < 0.2) return '55'
   if (Math.abs(p - 65) < 0.2) return '65'
   if (Math.abs(p - 75) < 0.2) return '75'
   if (Math.abs(p - 85) < 0.2) return '85'
@@ -70,8 +96,9 @@ export function createTemplateSlug(name: string): string {
   return slug || 'template'
 }
 
-export function buildLiftWeightsFromOneRm(oneRm: number, rounding: number): Record<'65' | '75' | '85' | '90' | '95', number> {
+export function buildLiftWeightsFromOneRm(oneRm: number, rounding: number): Record<'55' | '65' | '75' | '85' | '90' | '95', number> {
   return {
+    '55': roundToStep(oneRm * 0.55, rounding),
     '65': roundToStep(oneRm * 0.65, rounding),
     '75': roundToStep(oneRm * 0.75, rounding),
     '85': roundToStep(oneRm * 0.85, rounding),
@@ -101,7 +128,8 @@ function getLiftWeightMapFromCalculated(calculated: Record<string, unknown>, lif
 function inferPercentageFromWeight(weight: number, liftWeightMap: Record<string, number>): number | null {
   let best: { percentage: number; diff: number } | null = null
 
-  const zoneToPct: Array<{ zone: '65' | '75' | '85' | '90' | '95'; percentage: number }> = [
+  const zoneToPct: Array<{ zone: '55' | '65' | '75' | '85' | '90' | '95'; percentage: number }> = [
+    { zone: '55', percentage: 55 },
     { zone: '65', percentage: 65 },
     { zone: '75', percentage: 75 },
     { zone: '85', percentage: 85 },
@@ -176,9 +204,9 @@ export function extractZoneTemplateSessions(
             }
           }
 
-          if (percentage === null || percentageToZoneKey(percentage) === null) {
+          if (percentage === null || !isSupportedTemplatePercentage(percentage)) {
             throw new Error(
-              `Cannot extract zone percentage for ${lift} ${sessionKey}/${weekKey}; template requires zone-based sets.`,
+              `Cannot extract percentage for ${lift} ${sessionKey}/${weekKey}; unsupported set intensity.`,
             )
           }
 
@@ -275,6 +303,8 @@ export function materializeSessionsForClient(
         }
 
         const weights = weightsRaw as Record<string, unknown>
+        const oneRm = toNumber((inputLiftRaw as Record<string, unknown>).one_rm)
+        const rounding = toNumber((inputLiftRaw as Record<string, unknown>).rounding) ?? 2.5
         const setsRaw = Array.isArray(liftData.sets) ? liftData.sets : []
 
         const outSets: Array<{ weight: number; reps: number; percentage: number; variant?: string }> = []
@@ -284,14 +314,22 @@ export function materializeSessionsForClient(
           const percentage = toNumber(setData?.percentage)
           if (reps === null || percentage === null) continue
 
-          const zone = percentageToZoneKey(percentage)
-          if (!zone) {
-            throw new Error(`Unsupported percentage "${percentage}" for lift "${lift}"`) 
+          if (!isSupportedTemplatePercentage(percentage)) {
+            throw new Error(`Unsupported percentage "${percentage}" for lift "${lift}"`)
           }
 
-          const weight = toNumber(weights[zone])
-          if (weight === null) {
-            throw new Error(`Missing weight for zone ${zone} on lift "${lift}"`) 
+          const zone = percentageToZoneKey(percentage)
+          let weight: number | null = null
+          if (zone) {
+            weight = toNumber(weights[zone])
+            if (weight === null) {
+              throw new Error(`Missing weight for zone ${zone} on lift "${lift}"`)
+            }
+          } else {
+            if (oneRm === null || oneRm <= 0) {
+              throw new Error(`Missing one_rm for lift "${lift}" while materializing percentage ${percentage}`)
+            }
+            weight = roundToStep(oneRm * (normalizePercentage(percentage) / 100), rounding)
           }
 
           const variant = typeof setData?.variant === 'string' ? setData.variant : undefined

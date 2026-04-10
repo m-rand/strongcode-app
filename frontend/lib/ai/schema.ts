@@ -14,7 +14,7 @@ const setSchema = z.object({
   weight: z.number().describe('Weight in kg (exact zone weight)'),
   // Keep schema Anthropic-4.6 compatible: avoid integer/min/max JSON Schema keywords.
   reps: z.number().describe('Number of repetitions (integer expected, >= 1)'),
-  percentage: z.number().describe('Zone central percentage (65, 75, 85, 92.5, or 95)'),
+  percentage: z.number().describe('Zone central percentage (55, 65, 75, 85, 92.5, or 95)'),
 })
 
 // ─── Per-lift AI output (single lift, no lift field) ────────
@@ -99,6 +99,7 @@ export interface LiftInput {
   one_rm: number           // 1RM in kg
   weights: Record<string, number> // Pre-calculated zone weights (e.g. {"65": 52.5, "75": 60, ...})
   intensity_distribution: {
+    '55_percent'?: number   // % of NL in 55% zone (optional, default 0)
     '75_percent': number   // % of NL in 75% zone
     '85_percent': number   // % of NL in 85% zone
     '90_total_reps': number  // Absolute block total (fallback)

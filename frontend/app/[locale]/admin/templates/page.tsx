@@ -61,8 +61,9 @@ export default function AdminTemplatesPage() {
     description: '',
     scope: 'full' as 'full' | 'single_lift',
     lift: 'squat' as string,
-    clientSlug: '',
-    filename: '',
+    sourceProgramKey: '',
+    block: 'prep' as 'prep' | 'comp',
+    weeks: 4,
   })
   const [creating, setCreating] = useState(false)
 
@@ -134,7 +135,15 @@ export default function AdminTemplatesPage() {
 
   const openCreate = () => {
     setShowCreate(true)
-    setCreateForm({ name: '', description: '', scope: 'full', lift: 'squat', clientSlug: '', filename: '' })
+    setCreateForm({
+      name: '',
+      description: '',
+      scope: 'full',
+      lift: 'squat',
+      sourceProgramKey: '',
+      block: 'prep',
+      weeks: 4,
+    })
     fetchPrograms()
   }
 
@@ -151,10 +160,23 @@ export default function AdminTemplatesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!createForm.name.trim() || !createForm.clientSlug || !createForm.filename) return
+    const selected = programs.find((p) => `${p.client}::${p.filename}` === createForm.sourceProgramKey)
+    if (!createForm.name.trim()) return
     setCreating(true)
     setError('')
     try {
+      let payloadProgram: unknown = undefined
+      if (selected) {
+        const programResponse = await fetch(
+          `/api/programs/${encodeURIComponent(selected.client)}/${encodeURIComponent(selected.filename)}`,
+        )
+        const programData = await programResponse.json()
+        if (!programResponse.ok || !programData?.program) {
+          throw new Error(programData?.error || 'Failed to load source program')
+        }
+        payloadProgram = programData.program
+      }
+
       const response = await fetch('/api/program-templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,7 +185,9 @@ export default function AdminTemplatesPage() {
           description: createForm.description.trim() || undefined,
           scope: createForm.scope,
           lift: createForm.scope === 'single_lift' ? createForm.lift : undefined,
-          source: { clientSlug: createForm.clientSlug, filename: createForm.filename },
+          block: createForm.block,
+          weeks: createForm.weeks,
+          ...(payloadProgram ? { program: payloadProgram } : {}),
         }),
       })
       const data = await response.json()
@@ -253,12 +277,13 @@ export default function AdminTemplatesPage() {
   }
 
   const selectedProgram = programs.find(
-    (p) => p.client === createForm.clientSlug && p.filename === createForm.filename,
+    (p) => `${p.client}::${p.filename}` === createForm.sourceProgramKey,
   )
-
-  const uniqueClients = [...new Map(programs.map((p) => [p.client, p.clientName])).entries()]
-
-  const programsForClient = programs.filter((p) => p.client === createForm.clientSlug)
+  const uniqueSourcePrograms = programs.filter((program, index, all) => (
+    all.findIndex((candidate) => (
+      candidate.client === program.client && candidate.filename === program.filename
+    )) === index
+  ))
 
   if (loading) {
     return (
@@ -350,7 +375,7 @@ export default function AdminTemplatesPage() {
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white rounded-lg shadow-md overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -365,10 +390,10 @@ export default function AdminTemplatesPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {templates.map((tmpl) => (
                   <tr key={tmpl.slug} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{tmpl.name}</div>
+                    <td className="px-6 py-4 align-top min-w-[360px]">
+                      <div className="text-sm font-medium text-gray-900 break-words">{tmpl.name}</div>
                       {tmpl.description && (
-                        <div className="text-xs text-gray-500">{tmpl.description}</div>
+                        <div className="text-xs text-gray-500 break-words whitespace-normal">{tmpl.description}</div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -391,6 +416,12 @@ export default function AdminTemplatesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/${locale}/admin/create?editTemplate=${encodeURIComponent(tmpl.slug)}`}
+                          className="px-2 py-1 text-xs font-semibold rounded bg-gray-600 text-white hover:bg-gray-700"
+                        >
+                          Open editor
+                        </Link>
                         <button
                           onClick={() => openApply(tmpl)}
                           className="px-2 py-1 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700"
@@ -481,41 +512,57 @@ export default function AdminTemplatesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('selectClient')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('selectProgram')}</label>
                 <select
-                  value={createForm.clientSlug}
-                  onChange={(e) => setCreateForm((prev) => ({ ...prev, clientSlug: e.target.value, filename: '' }))}
+                  value={createForm.sourceProgramKey}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, sourceProgramKey: e.target.value }))}
                   disabled={programsLoading}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800"
                 >
-                  <option value="">{programsLoading ? '...' : '—'}</option>
-                  {uniqueClients.map(([slug, name]) => (
-                    <option key={slug} value={slug}>{name}</option>
+                  <option value="">{programsLoading ? '...' : 'No source program (new template)'}</option>
+                  {uniqueSourcePrograms.map((p) => (
+                    <option key={`${p.client}::${p.filename}`} value={`${p.client}::${p.filename}`}>
+                      {p.clientName} — {p.filename} ({p.block}, {p.weeks}w)
+                    </option>
                   ))}
                 </select>
+                {selectedProgram && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {selectedProgram.clientName} / {selectedProgram.block} / {selectedProgram.weeks} weeks / {selectedProgram.status}
+                  </p>
+                )}
               </div>
 
-              {createForm.clientSlug && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('selectProgram')}</label>
-                  <select
-                    required
-                    value={createForm.filename}
-                    onChange={(e) => setCreateForm((prev) => ({ ...prev, filename: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800"
-                  >
-                    <option value="">—</option>
-                    {programsForClient.map((p) => (
-                      <option key={p.filename} value={p.filename}>
-                        {p.filename} ({p.block}, {p.weeks}w)
-                      </option>
-                    ))}
-                  </select>
-                  {selectedProgram && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {selectedProgram.block} / {selectedProgram.weeks} weeks / {selectedProgram.status}
-                    </p>
-                  )}
+              {!createForm.sourceProgramKey && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.block')}</label>
+                    <select
+                      value={createForm.block}
+                      onChange={(e) => setCreateForm((prev) => ({ ...prev, block: e.target.value as 'prep' | 'comp' }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800"
+                    >
+                      <option value="prep">Prep</option>
+                      <option value="comp">Comp</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.weeks')}</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={6}
+                      value={createForm.weeks}
+                      onChange={(e) => {
+                        const numeric = Number(e.target.value)
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          weeks: Number.isFinite(numeric) ? Math.max(1, Math.min(6, Math.round(numeric))) : 4,
+                        }))
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -530,7 +577,7 @@ export default function AdminTemplatesPage() {
               </button>
               <button
                 type="submit"
-                disabled={creating || !createForm.name.trim() || !createForm.filename}
+                disabled={creating || !createForm.name.trim()}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
               >
                 {creating ? t('saving') : t('save')}

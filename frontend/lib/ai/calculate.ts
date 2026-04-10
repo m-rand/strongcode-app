@@ -16,6 +16,7 @@ import type { LiftInput } from './schema'
 // ─── Types ──────────────────────────────────────────────────
 
 export interface ZoneReps {
+  '55': number
   '65': number
   '75': number
   '85': number
@@ -87,9 +88,10 @@ function calculateAri(zoneReps: ZoneReps): number {
   return totalReps > 0 ? Math.round((totalIntensity / totalReps) * 10) / 10 : 0
 }
 
-/** Convert zone_90/95 absolute reps to percentages, auto-calc 65% */
+/** Convert absolute reps to percentages, auto-calc 65% as remainder after optional 55%. */
 function convertToZonePercentages(
   totalNl: number,
+  zone55Pct: number,
   zone75Pct: number,
   zone85Pct: number,
   zone90Reps: number,
@@ -97,9 +99,10 @@ function convertToZonePercentages(
 ): Record<string, number> {
   const zone90Pct = totalNl > 0 ? (zone90Reps / totalNl * 100) : 0
   const zone95Pct = totalNl > 0 ? (zone95Reps / totalNl * 100) : 0
-  const zone65Pct = 100 - zone75Pct - zone85Pct - zone90Pct - zone95Pct
+  const zone65Pct = 100 - zone55Pct - zone75Pct - zone85Pct - zone90Pct - zone95Pct
 
   return {
+    '55': zone55Pct,
     '65': Math.round(zone65Pct * 10) / 10,
     '75': zone75Pct,
     '85': zone85Pct,
@@ -191,6 +194,7 @@ export function calculateLiftTargets(
   // 3. Convert intensity distribution to zone percentages
   const zonePcts = convertToZonePercentages(
     monthlyNl,
+    intensityDist['55_percent'] ?? 0,
     intensityDist['75_percent'],
     intensityDist['85_percent'],
     total90,
@@ -199,6 +203,7 @@ export function calculateLiftTargets(
 
   // 4. Calculate monthly NL per zone
   const monthlyZoneNl: Record<string, number> = {
+    '55': Math.round(monthlyNl * zonePcts['55'] / 100),
     '65': Math.round(monthlyNl * zonePcts['65'] / 100),
     '75': Math.round(monthlyNl * zonePcts['75'] / 100),
     '85': Math.round(monthlyNl * zonePcts['85'] / 100),
@@ -210,6 +215,7 @@ export function calculateLiftTargets(
   // 65%, 75% use main pattern; 85% uses 8190 pattern
   // 90%, 95% use per-week values if specified, otherwise 8190 pattern
   const weeklyZones: Record<string, number[]> = {
+    '55': distributeVolume(monthlyZoneNl['55'], weeklyDistMain.slice(0, weeks)),
     '65': distributeVolume(monthlyZoneNl['65'], weeklyDistMain.slice(0, weeks)),
     '75': distributeVolume(monthlyZoneNl['75'], weeklyDistMain.slice(0, weeks)),
     '85': distributeVolume(monthlyZoneNl['85'], weeklyDist8190.slice(0, weeks)),
@@ -218,7 +224,7 @@ export function calculateLiftTargets(
   }
 
   // 6. Calculate per-week data (now supporting per-week session config via weekly_plan)
-  const allZoneReps: ZoneReps = { '65': 0, '75': 0, '85': 0, '90': 0, '95': 0 }
+  const allZoneReps: ZoneReps = { '55': 0, '65': 0, '75': 0, '85': 0, '90': 0, '95': 0 }
   const result: Record<string, WeekCalculated | LiftSummary> = {}
 
   for (let w = 0; w < weeks; w++) {
@@ -232,6 +238,7 @@ export function calculateLiftTargets(
     const weekSessionLetters = 'ABCDEFGH'.slice(0, weekSessionCount).split('')
 
     const weekZones: ZoneReps = {
+      '55': weeklyZones['55'][w],
       '65': weeklyZones['65'][w],
       '75': weeklyZones['75'][w],
       '85': weeklyZones['85'][w],

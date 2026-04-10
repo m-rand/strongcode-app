@@ -9,7 +9,7 @@
  */
 
 import { REP_RANGES, SESSION_PATTERNS } from './constants'
-import type { CalculatedResult, WeekCalculated, SessionTarget } from './calculate'
+import type { WeekCalculated, SessionTarget } from './calculate'
 import { getPromptVersion, DEFAULT_PROMPT_VERSION } from './prompts/registry'
 
 export { getPromptVersion, listPromptVersions, PROMPT_REGISTRY, DEFAULT_PROMPT_VERSION } from './prompts/registry'
@@ -38,7 +38,7 @@ export function buildLiftPrompt(
 
   // Weights reference
   const weightLines: string[] = []
-  for (const zone of ['65', '75', '85', '90', '95'] as const) {
+  for (const zone of ['55', '65', '75', '85', '90', '95'] as const) {
     if (weights[zone]) {
       const repRange = REP_RANGES[zone]
       weightLines.push(`${zone}% zone: ${weights[zone]}kg (${repRange[0]}-${repRange[1]} reps per set)`)
@@ -49,7 +49,7 @@ export function buildLiftPrompt(
   sections.push('')
 
   // Per-week data
-  const ZONE_KEYS = ['65', '75', '85', '90', '95'] as const
+  const ZONE_KEYS = ['55', '65', '75', '85', '90', '95'] as const
 
   for (let w = 1; w <= weeks; w++) {
     const week = liftCalc[`week_${w}`] as WeekCalculated | undefined
@@ -114,7 +114,7 @@ export function buildZonesOnlyPrompt(
 
   // Weights reference
   const weightLines: string[] = []
-  for (const zone of ['65', '75', '85', '90', '95'] as const) {
+  for (const zone of ['55', '65', '75', '85', '90', '95'] as const) {
     if (weights[zone]) {
       const repRange = REP_RANGES[zone]
       weightLines.push(`${zone}% zone: ${weights[zone]}kg (${repRange[0]}-${repRange[1]} reps per set)`)
@@ -126,7 +126,7 @@ export function buildZonesOnlyPrompt(
 
   // Session distributions reference
   const distLines: string[] = []
-  for (const [count, patterns] of Object.entries(SESSION_PATTERNS)) {
+  for (const patterns of Object.values(SESSION_PATTERNS)) {
     for (const [code, percents] of Object.entries(patterns)) {
       distLines.push(`  ${code}: [${percents.join(', ')}]%`)
     }
@@ -136,7 +136,7 @@ export function buildZonesOnlyPrompt(
   sections.push(distLines.join('\n'))
 
   // Per-week zone totals only — no session targets
-  const ZONE_KEYS = ['65', '75', '85', '90', '95'] as const
+  const ZONE_KEYS = ['55', '65', '75', '85', '90', '95'] as const
 
   for (let w = 1; w <= weeks; w++) {
     const week = liftCalc[`week_${w}`] as WeekCalculated | undefined

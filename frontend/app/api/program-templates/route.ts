@@ -3,17 +3,22 @@ import { db } from '@/db'
 import { clients, programs, programTemplates } from '@/db/schema'
 import { and, desc, eq } from 'drizzle-orm'
 import {
+  buildLiftWeightsFromOneRm,
   createTemplateSlug,
   extractZoneTemplateSessions,
   type LiftKey,
   type TemplateScope,
 } from '@/lib/program/templates'
+import { calculateAllTargets } from '@/lib/ai/calculate'
+import type { LiftInput } from '@/lib/ai/schema'
 
 interface CreateTemplateBody {
   name?: string
   description?: string
   scope?: TemplateScope
   lift?: LiftKey
+  block?: 'prep' | 'comp'
+  weeks?: number
   program?: unknown
   source?: {
     clientSlug?: string
@@ -23,6 +28,44 @@ interface CreateTemplateBody {
 }
 
 const ALL_LIFTS: LiftKey[] = ['squat', 'bench_press', 'deadlift']
+
+function defaultLiftVolume(lift: LiftKey): number {
+  if (lift === 'squat') return 350
+  if (lift === 'bench_press') return 300
+  return 250
+}
+
+function buildDefaultLiftInput(lift: LiftKey): LiftInput {
+  const oneRm = 100
+  const rounding = 2.5
+
+  return {
+    volume: defaultLiftVolume(lift),
+    rounding,
+    one_rm: oneRm,
+    weights: buildLiftWeightsFromOneRm(oneRm, rounding),
+    intensity_distribution: {
+      '55_percent': 0,
+      '75_percent': 45,
+      '85_percent': 13,
+      '90_total_reps': 4,
+      '95_total_reps': 0,
+    },
+    volume_pattern_main: '3a',
+    volume_pattern_8190: '3a',
+    sessions_per_week: 3,
+    session_distribution: 'd25_33_42',
+  }
+}
+
+function buildDefaultInputForLifts(allowedLifts: Set<LiftKey>): Record<string, LiftInput> {
+  const out: Record<string, LiftInput> = {}
+  for (const lift of ALL_LIFTS) {
+    if (!allowedLifts.has(lift)) continue
+    out[lift] = buildDefaultLiftInput(lift)
+  }
+  return out
+}
 
 function uniqueLiftSet(scope: TemplateScope, lift?: LiftKey): Set<LiftKey> {
   if (scope === 'single_lift') {
@@ -200,6 +243,16 @@ export async function POST(request: Request) {
     let sourceSessions: unknown = {}
     let sourceFilename: string | null = null
 
+    let allowedLifts: Set<LiftKey>
+    try {
+      allowedLifts = uniqueLiftSet(scope, body?.lift)
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid lift selection' },
+        { status: 400 },
+      )
+    }
+
     if (body.program) {
       const parsed = readProgramShape(body.program)
       schemaVersion = parsed.schemaVersion
@@ -212,60 +265,57 @@ export async function POST(request: Request) {
     } else {
       const clientSlug = body?.source?.clientSlug?.trim()
       const filename = body?.source?.filename?.trim()
-      if (!clientSlug || !filename) {
-        return NextResponse.json(
-          { error: 'Provide either `program` payload, or source.clientSlug + source.filename' },
-          { status: 400 },
-        )
+
+      if (clientSlug && filename) {
+        const [client] = await db
+          .select({ id: clients.id })
+          .from(clients)
+          .where(eq(clients.slug, clientSlug))
+          .limit(1)
+
+        if (!client) {
+          return NextResponse.json({ error: `Client "${clientSlug}" not found` }, { status: 404 })
+        }
+
+        const [sourceProgram] = await db
+          .select()
+          .from(programs)
+          .where(and(
+            eq(programs.clientId, client.id),
+            eq(programs.filename, filename),
+          ))
+          .limit(1)
+
+        if (!sourceProgram) {
+          return NextResponse.json(
+            { error: `Program "${filename}" not found for client "${clientSlug}"` },
+            { status: 404 },
+          )
+        }
+
+        schemaVersion = sourceProgram.schemaVersion || '1.2'
+        block = sourceProgram.block
+        weeks = sourceProgram.weeks
+        sourceInput = (sourceProgram.input && typeof sourceProgram.input === 'object')
+          ? sourceProgram.input as Record<string, unknown>
+          : {}
+        sourceCalculated = (sourceProgram.calculated && typeof sourceProgram.calculated === 'object')
+          ? sourceProgram.calculated as Record<string, unknown>
+          : {}
+        sourceSessions = sourceProgram.sessionsData
+        sourceFilename = sourceProgram.filename
+      } else {
+        // No source selected: create an empty/skeleton template that can be refined later.
+        block = body.block === 'comp' ? 'comp' : 'prep'
+        const candidateWeeks = Number(body.weeks ?? 4)
+        weeks = Number.isFinite(candidateWeeks) ? Math.max(1, Math.min(6, Math.round(candidateWeeks))) : 4
+
+        const defaultInput = buildDefaultInputForLifts(allowedLifts)
+        sourceInput = defaultInput
+        sourceCalculated = calculateAllTargets(defaultInput, 'intermediate', weeks) as Record<string, unknown>
+        sourceSessions = {}
+        sourceFilename = null
       }
-
-      const [client] = await db
-        .select({ id: clients.id })
-        .from(clients)
-        .where(eq(clients.slug, clientSlug))
-        .limit(1)
-
-      if (!client) {
-        return NextResponse.json({ error: `Client "${clientSlug}" not found` }, { status: 404 })
-      }
-
-      const [sourceProgram] = await db
-        .select()
-        .from(programs)
-        .where(and(
-          eq(programs.clientId, client.id),
-          eq(programs.filename, filename),
-        ))
-        .limit(1)
-
-      if (!sourceProgram) {
-        return NextResponse.json(
-          { error: `Program "${filename}" not found for client "${clientSlug}"` },
-          { status: 404 },
-        )
-      }
-
-      schemaVersion = sourceProgram.schemaVersion || '1.2'
-      block = sourceProgram.block
-      weeks = sourceProgram.weeks
-      sourceInput = (sourceProgram.input && typeof sourceProgram.input === 'object')
-        ? sourceProgram.input as Record<string, unknown>
-        : {}
-      sourceCalculated = (sourceProgram.calculated && typeof sourceProgram.calculated === 'object')
-        ? sourceProgram.calculated as Record<string, unknown>
-        : {}
-      sourceSessions = sourceProgram.sessionsData
-      sourceFilename = sourceProgram.filename
-    }
-
-    let allowedLifts: Set<LiftKey>
-    try {
-      allowedLifts = uniqueLiftSet(scope, body?.lift)
-    } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Invalid lift selection' },
-        { status: 400 },
-      )
     }
 
     const inputSubset = pickLiftSubset(sourceInput, allowedLifts)

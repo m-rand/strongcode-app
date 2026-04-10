@@ -25,11 +25,11 @@ export async function POST(request: Request) {
         '95': liftData.weight_95,
       },
       intensity_distribution: {
+        '55_percent': liftData.include_55_zone ? liftData.zone_55_percent : 0,
         '75_percent': liftData.zone_75_percent,
         '85_percent': liftData.zone_85_percent,
         '90_total_reps': liftData.zone_90_total_reps,
         '95_total_reps': liftData.zone_95_total_reps,
-        '65_percent': null,
       },
       volume_pattern_main: liftData.volume_pattern_main,
       volume_pattern_8190: liftData.volume_pattern_8190,

@@ -1,5 +1,9 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
+import bcrypt from 'bcryptjs'
+import { sql } from 'drizzle-orm'
+import { db } from '@/db'
+import { users } from '@/db/schema'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -14,22 +18,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         try {
-          // Call our API route to validate user
-          const response = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/validate-user`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-            }),
-          })
+          const email = String(credentials.email).trim().toLowerCase()
+          const password = String(credentials.password)
 
-          if (!response.ok) {
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(sql`lower(${users.email}) = ${email}`)
+            .limit(1)
+
+          if (!user) {
             return null
           }
 
-          const user = await response.json()
-          return user
+          const passwordMatch = await bcrypt.compare(password, user.password)
+          if (!passwordMatch) {
+            return null
+          }
+
+          return {
+            id: user.id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            client_slug: user.clientSlug,
+          }
         } catch (error) {
           console.error('Auth error:', error)
           return null
