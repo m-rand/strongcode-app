@@ -421,6 +421,10 @@
         "surveys": {
           "title": "Čekající dotazníky",
           "description": "Zkontroluj a schval nové dotazníky"
+        },
+        "templates": {
+          "title": "Šablony",
+          "description": "Znovupoužitelné šablony programů"
         }
       }
     },
@@ -670,6 +674,47 @@
         "mainPattern": "Main Pattern",
         "pattern8190": "81-90% Pattern"
       }
+    },
+    "templates": {
+      "title": "Šablony programů",
+      "backToDashboard": "← Dashboard",
+      "loading": "Načítání šablon...",
+      "noTemplates": "Žádné šablony",
+      "noTemplatesDescription": "Zatím nebyly vytvořeny žádné šablony. Vytvoř jednu z existujícího programu.",
+      "createFromProgram": "Vytvořit z programu",
+      "table": {
+        "name": "Název",
+        "scope": "Rozsah",
+        "lift": "Cvik",
+        "block": "Blok",
+        "weeks": "Týdny",
+        "source": "Zdroj",
+        "actions": "Akce"
+      },
+      "scopeFull": "Kompletní",
+      "scopeSingleLift": "Jeden cvik",
+      "delete": "Smazat",
+      "edit": "Upravit",
+      "apply": "Použít",
+      "applyToClient": "Přiřadit klientovi",
+      "confirmDelete": "Smazat šablonu \"{name}\"?",
+      "deleting": "Mazání...",
+      "applying": "Přiřazování...",
+      "saving": "Ukládání...",
+      "createTemplate": "Vytvořit šablonu",
+      "createTemplateTitle": "Vytvořit šablonu z programu",
+      "templateName": "Název šablony",
+      "templateDescription": "Popis (volitelné)",
+      "selectProgram": "Vyber program",
+      "selectClient": "Vyber klienta",
+      "selectStartDate": "Datum zahájení",
+      "allLifts": "Všechny cviky",
+      "cancel": "Zrušit",
+      "save": "Uložit",
+      "filterAll": "Vše",
+      "applied": "Šablona úspěšně přiřazena",
+      "created": "Šablona úspěšně vytvořena",
+      "deleted": "Šablona smazána"
     },
     "programs": {
       "title": "Programy",

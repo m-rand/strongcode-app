@@ -262,6 +262,28 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
+          {/* Templates Card */}
+          <Link href={`/${locale}/admin/templates`}>
+            <div
+              className="rounded-lg p-6 transition-shadow cursor-pointer"
+              style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}
+            >
+              <div className="flex items-center mb-4">
+                <div className="bg-orange-100 rounded-full p-3">
+                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                  </svg>
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                {t('cards.templates.title')}
+              </h3>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                {t('cards.templates.description')}
+              </p>
+            </div>
+          </Link>
+
           {/* Pending Surveys Card */}
           <Link href={`/${locale}/admin/surveys`}>
             <div

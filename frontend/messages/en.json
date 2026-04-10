@@ -458,6 +458,10 @@
         "surveys": {
           "title": "Pending Surveys",
           "description": "Review and approve new survey submissions"
+        },
+        "templates": {
+          "title": "Templates",
+          "description": "Reusable zone-based program templates"
         }
       }
     },
@@ -707,6 +711,47 @@
         "mainPattern": "Main Pattern",
         "pattern8190": "81-90% Pattern"
       }
+    },
+    "templates": {
+      "title": "Program Templates",
+      "backToDashboard": "← Dashboard",
+      "loading": "Loading templates...",
+      "noTemplates": "No templates",
+      "noTemplatesDescription": "No program templates have been created yet. Create one from an existing program.",
+      "createFromProgram": "Create from program",
+      "table": {
+        "name": "Name",
+        "scope": "Scope",
+        "lift": "Lift",
+        "block": "Block",
+        "weeks": "Weeks",
+        "source": "Source",
+        "actions": "Actions"
+      },
+      "scopeFull": "Full",
+      "scopeSingleLift": "Single lift",
+      "delete": "Delete",
+      "edit": "Edit",
+      "apply": "Apply",
+      "applyToClient": "Apply to client",
+      "confirmDelete": "Delete template \"{name}\"?",
+      "deleting": "Deleting...",
+      "applying": "Applying...",
+      "saving": "Saving...",
+      "createTemplate": "Create Template",
+      "createTemplateTitle": "Create template from program",
+      "templateName": "Template name",
+      "templateDescription": "Description (optional)",
+      "selectProgram": "Select a program",
+      "selectClient": "Select client",
+      "selectStartDate": "Start date",
+      "allLifts": "All lifts",
+      "cancel": "Cancel",
+      "save": "Save",
+      "filterAll": "All",
+      "applied": "Template applied successfully",
+      "created": "Template created successfully",
+      "deleted": "Template deleted"
     },
     "programs": {
       "title": "Programs",
