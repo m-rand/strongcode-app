@@ -81,11 +81,37 @@ export const programs = sqliteTable("programs", {
     name: string;
     delta: string;
     one_rm: { squat: number; bench_press: number; deadlift: number };
+    template_source?: Record<string, string>;
   }>(),
   // Large JSON columns for program data
   input: text("input", { mode: "json" }).notNull(),
   calculated: text("calculated", { mode: "json" }).notNull(),
   sessionsData: text("sessions_data", { mode: "json" }).notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  createdBy: text("created_by"),
+});
+
+// ─── Program Templates ──────────────────────────────────────
+// Reusable, client-independent templates that store zone-based sessions
+// (percentage + reps [+ variant]) and are materialized for a specific
+// client only when applied.
+export const programTemplates = sqliteTable("program_templates", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  scope: text("scope", { enum: ["full", "single_lift"] }).notNull(),
+  lift: text("lift", { enum: ["squat", "bench_press", "deadlift"] }),
+  block: text("block", { enum: ["prep", "comp"] }).notNull(),
+  weeks: integer("weeks").notNull(),
+  schemaVersion: text("schema_version").notNull().default("1.2"),
+  // Shape mirrors program payload parts, but sessions are zone-only.
+  input: text("input", { mode: "json" }).notNull(),
+  calculated: text("calculated", { mode: "json" }).notNull(),
+  sessionsTemplate: text("sessions_template", { mode: "json" }).notNull(),
+  sourceProgramFilename: text("source_program_filename"),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
