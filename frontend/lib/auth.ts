@@ -12,7 +12,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, _request) {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
@@ -41,7 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             email: user.email,
             name: user.name,
             role: user.role,
-            client_slug: user.clientSlug,
+            client_slug: user.clientSlug ?? undefined,
           }
         } catch (error) {
           console.error('Auth error:', error)
