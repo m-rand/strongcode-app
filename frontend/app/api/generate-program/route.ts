@@ -246,6 +246,7 @@ export async function POST(request: Request) {
       promptVersion?: string
       model?: string
       calculated?: Record<string, unknown>
+      programNotes?: string
     } = await request.json()
     const provider: AIProvider = body.provider === 'openai' ? 'openai' : 'anthropic'
     const promptVersion = getPromptVersion(body.promptVersion)
@@ -565,6 +566,7 @@ export async function POST(request: Request) {
         input: inputSection,
         calculated,
         sessionsData: sessions,
+        notes: typeof body.programNotes === 'string' ? body.programNotes : null,
         createdAt: new Date().toISOString(),
         createdBy: 'AI Generator',
       })

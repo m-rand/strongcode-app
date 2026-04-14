@@ -305,6 +305,29 @@ export default function AdminDashboard() {
               </p>
             </div>
           </Link>
+
+          {/* Settings Card */}
+          <Link href={`/${locale}/admin/settings`}>
+            <div
+              className="rounded-lg p-6 transition-shadow cursor-pointer"
+              style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}
+            >
+              <div className="flex items-center mb-4">
+                <div className="bg-slate-100 rounded-full p-3">
+                  <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936l1.3.744a1 1 0 001.02 0l1.3-.744a1 1 0 011.35.936l.066 1.495a1 1 0 00.587.86l1.356.62a1 1 0 01.51 1.31l-.51 1.407a1 1 0 000 .684l.51 1.407a1 1 0 01-.51 1.31l-1.356.62a1 1 0 00-.587.86l-.066 1.495a1 1 0 01-1.35.936l-1.3-.744a1 1 0 00-1.02 0l-1.3.744a1 1 0 01-1.35-.936l-.066-1.495a1 1 0 00-.587-.86l-1.356-.62a1 1 0 01-.51-1.31l.51-1.407a1 1 0 000-.684l-.51-1.407a1 1 0 01.51-1.31l1.356-.62a1 1 0 00.587-.86l.066-1.495z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Settings
+              </h3>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Manage global instructions shown in all client programs.
+              </p>
+            </div>
+          </Link>
         </div>
       </main>
     </div>

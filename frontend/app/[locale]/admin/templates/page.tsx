@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 
 interface Template {
@@ -13,6 +14,7 @@ interface Template {
   lift: string | null
   block: 'prep' | 'comp'
   weeks: number
+  infoSummary?: string | null
   sourceProgramFilename: string | null
   createdAt: string
   createdBy: string | null
@@ -39,6 +41,7 @@ const LIFT_LABELS: Record<string, string> = {
 }
 
 export default function AdminTemplatesPage() {
+  const router = useRouter()
   const t = useTranslations('admin.templates')
   const locale = useLocale()
 
@@ -74,13 +77,9 @@ export default function AdminTemplatesPage() {
   const [applyForm, setApplyForm] = useState({ clientSlug: '', startDate: '' })
   const [applying, setApplying] = useState(false)
 
-  // Edit modal
-  const [editTemplate, setEditTemplate] = useState<Template | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', description: '' })
-  const [editing, setEditing] = useState(false)
-
   // Delete
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null)
+  const [duplicatingSlug, setDuplicatingSlug] = useState<string | null>(null)
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -151,11 +150,6 @@ export default function AdminTemplatesPage() {
     setApplyTemplate(tmpl)
     setApplyForm({ clientSlug: '', startDate: new Date().toISOString().split('T')[0] })
     fetchClients()
-  }
-
-  const openEdit = (tmpl: Template) => {
-    setEditTemplate(tmpl)
-    setEditForm({ name: tmpl.name, description: tmpl.description || '' })
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -233,31 +227,6 @@ export default function AdminTemplatesPage() {
     }
   }
 
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!editTemplate || !editForm.name.trim()) return
-    setEditing(true)
-    setError('')
-    try {
-      const response = await fetch(`/api/program-templates/${editTemplate.slug}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: editForm.name.trim(),
-          description: editForm.description.trim(),
-        }),
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Failed to update template')
-      setEditTemplate(null)
-      fetchTemplates()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update template')
-    } finally {
-      setEditing(false)
-    }
-  }
-
   const handleDelete = async (tmpl: Template) => {
     if (!confirm(t('confirmDelete', { name: tmpl.name }))) return
     setDeletingSlug(tmpl.slug)
@@ -273,6 +242,31 @@ export default function AdminTemplatesPage() {
       setError(err instanceof Error ? err.message : 'Failed to delete template')
     } finally {
       setDeletingSlug(null)
+    }
+  }
+
+  const handleDuplicate = async (tmpl: Template) => {
+    setDuplicatingSlug(tmpl.slug)
+    setError('')
+    try {
+      const response = await fetch(`/api/program-templates/${encodeURIComponent(tmpl.slug)}/duplicate`, {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to duplicate template')
+
+      const duplicated = data?.template as Template | undefined
+      setSuccess('Template duplicated')
+      setTimeout(() => setSuccess(''), 3000)
+      if (duplicated?.slug) {
+        router.push(`/${locale}/admin/create?editTemplate=${encodeURIComponent(duplicated.slug)}`)
+        return
+      }
+      await fetchTemplates()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate template')
+    } finally {
+      setDuplicatingSlug(null)
     }
   }
 
@@ -383,7 +377,7 @@ export default function AdminTemplatesPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.scope')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.block')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.weeks')}</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.source')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">INFO</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.actions')}</th>
                 </tr>
               </thead>
@@ -411,8 +405,8 @@ export default function AdminTemplatesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{tmpl.weeks}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 max-w-[200px] truncate">
-                      {tmpl.sourceProgramFilename || '—'}
+                    <td className="px-6 py-4 text-xs text-gray-500 min-w-[260px]">
+                      {tmpl.infoSummary || '—'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
@@ -420,7 +414,7 @@ export default function AdminTemplatesPage() {
                           href={`/${locale}/admin/create?editTemplate=${encodeURIComponent(tmpl.slug)}`}
                           className="px-2 py-1 text-xs font-semibold rounded bg-gray-600 text-white hover:bg-gray-700"
                         >
-                          Open editor
+                          {t('edit')}
                         </Link>
                         <button
                           onClick={() => openApply(tmpl)}
@@ -429,10 +423,11 @@ export default function AdminTemplatesPage() {
                           {t('apply')}
                         </button>
                         <button
-                          onClick={() => openEdit(tmpl)}
-                          className="px-2 py-1 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-700"
+                          onClick={() => handleDuplicate(tmpl)}
+                          disabled={duplicatingSlug === tmpl.slug}
+                          className="px-2 py-1 text-xs font-semibold rounded bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
                         >
-                          {t('edit')}
+                          {duplicatingSlug === tmpl.slug ? 'Duplicating...' : 'Duplicate'}
                         </button>
                         <button
                           onClick={() => handleDelete(tmpl)}
@@ -648,57 +643,6 @@ export default function AdminTemplatesPage() {
                 className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60"
               >
                 {applying ? t('applying') : t('apply')}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {editTemplate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <form
-            onSubmit={handleEdit}
-            className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4"
-          >
-            <h2 className="text-lg font-bold text-gray-900 mb-4">{t('edit')}</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templateName')}</label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templateDescription')}</label>
-                <input
-                  type="text"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setEditTemplate(null)}
-                className="px-4 py-2 text-sm border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                type="submit"
-                disabled={editing || !editForm.name.trim()}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
-              >
-                {editing ? t('saving') : t('save')}
               </button>
             </div>
           </form>

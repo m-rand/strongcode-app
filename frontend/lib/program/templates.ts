@@ -21,6 +21,7 @@ export type ZoneTemplateSessions = Record<string, Record<string, ZoneTemplateWee
 
 const LIFTS: LiftKey[] = ['squat', 'bench_press', 'deadlift']
 const ZONE_KEYS = ['55', '65', '75', '85', '90', '95'] as const
+const SUPPORTED_TEMPLATE_PERCENTAGES = [50, 55, 60, 65, 70, 75, 80, 85, 90, 92.5, 95, 97.5] as const
 
 function toNumber(value: unknown): number | null {
   const n = Number(value)
@@ -53,6 +54,45 @@ function normalizePercentage(raw: number): number {
   if (Math.abs(raw - 90) < 0.2) return 90
   if (Math.abs(raw - 95) < 0.2) return 95
   return raw
+}
+
+function parsePercentageLikeValue(raw: unknown): number | null {
+  const numeric = toNumber(raw)
+  if (numeric !== null) return numeric
+  if (typeof raw !== 'string') return null
+
+  const cleaned = raw
+    .trim()
+    .replace(',', '.')
+    .replace('%', '')
+    .trim()
+
+  const parsed = Number(cleaned)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function snapToSupportedTemplatePercentage(raw: number, tolerance = 0.8): number | null {
+  let best: { percentage: number; diff: number } | null = null
+
+  for (const percentage of SUPPORTED_TEMPLATE_PERCENTAGES) {
+    const diff = Math.abs(raw - percentage)
+    if (!best || diff < best.diff) {
+      best = { percentage, diff }
+    }
+  }
+
+  if (!best || best.diff > tolerance) return null
+  return best.percentage
+}
+
+function coerceTemplatePercentage(raw: unknown): number | null {
+  const parsed = parsePercentageLikeValue(raw)
+  if (parsed === null) return null
+
+  const normalized = normalizePercentage(parsed)
+  if (isSupportedTemplatePercentage(normalized)) return normalized
+
+  return snapToSupportedTemplatePercentage(parsed)
 }
 
 function isSupportedTemplatePercentage(percentage: number): boolean {
@@ -193,12 +233,12 @@ export function extractZoneTemplateSessions(
           if (!setRaw || typeof setRaw !== 'object') continue
 
           const setObj = setRaw as Record<string, unknown>
-          const reps = toRoundedInteger(setObj.reps)
+          const reps = toRoundedInteger(setObj.reps ?? setObj.repetitions)
           if (reps === null) continue
 
-          let percentage = toNumber(setObj.percentage)
+          let percentage = coerceTemplatePercentage(setObj.percentage ?? setObj.intensity)
           if (percentage === null) {
-            const weight = toNumber(setObj.weight)
+            const weight = toNumber(setObj.weight ?? setObj.kg)
             if (weight !== null) {
               percentage = inferPercentageFromWeight(weight, liftWeightMap)
             }

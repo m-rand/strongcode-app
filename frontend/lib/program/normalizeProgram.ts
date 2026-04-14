@@ -19,6 +19,7 @@ type NormalizedProgram = {
     created_at: string
     created_by?: string
     status?: string
+    notes?: string
   }
   client: Record<string, unknown>
   program_info: {
@@ -175,6 +176,7 @@ export function normalizeProgramForView(rawProgram: unknown): NormalizedProgram 
       created_at: typeof meta.created_at === 'string' ? meta.created_at : new Date().toISOString(),
       ...(typeof meta.created_by === 'string' ? { created_by: meta.created_by } : {}),
       ...(typeof meta.status === 'string' ? { status: meta.status } : {}),
+      ...(typeof meta.notes === 'string' ? { notes: meta.notes } : {}),
     },
     client: (program.client && typeof program.client === 'object') ? (program.client as Record<string, unknown>) : {},
     program_info: {

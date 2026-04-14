@@ -87,6 +87,7 @@ export const programs = sqliteTable("programs", {
   input: text("input", { mode: "json" }).notNull(),
   calculated: text("calculated", { mode: "json" }).notNull(),
   sessionsData: text("sessions_data", { mode: "json" }).notNull(),
+  notes: text("notes"),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
@@ -144,6 +145,15 @@ export const auditLog = sqliteTable("audit_log", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── App Settings ───────────────────────────────────────────
+export const appSettings = sqliteTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value"),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Training Log ───────────────────────────────────────────
 // Client records actual performance per set (RPE, actual weight/reps, notes).
 // Program (prescription) stays untouched — this table tracks what was actually done.
@@ -154,11 +164,18 @@ export const trainingLog = sqliteTable("training_log", {
     .references(() => programs.id, { onDelete: "cascade" }),
   week: integer("week").notNull(), // 1-4 (or up to 6)
   session: text("session").notNull(), // "A", "B", "C", "D"
+  // Session letter from the program plan (A/B/C...), preserved even if the
+  // workout is performed on a different calendar day.
+  plannedSession: text("planned_session"),
+  // Actual calendar date when the client performed this set/session.
+  performedDate: text("performed_date"),
   lift: text("lift").notNull(), // "squat", "bench_press", "deadlift"
   setIndex: integer("set_index").notNull(), // 0-based index within lift's sets
   // Prescription (copied from program for easy comparison)
   prescribedWeight: real("prescribed_weight"),
   prescribedReps: integer("prescribed_reps"),
+  // Actual variant used by client (can differ from planned set.variant).
+  performedVariant: text("performed_variant"),
   // Actual performance (what the client did)
   actualWeight: real("actual_weight"),
   actualReps: integer("actual_reps"),

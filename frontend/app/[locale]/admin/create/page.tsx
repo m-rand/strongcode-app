@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, type DragEvent } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, type DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
+import Link from 'next/link'
 import LiftColumn from './LiftColumn'
 import { calculateAllTargets } from '@/lib/ai/calculate'
 import { buildRmLookup, calculateAre } from '@/lib/program/are'
@@ -74,6 +75,7 @@ interface ProgramData {
     created_at: string
     created_by: string
     status: string
+    notes?: string
   }
   client: {
     name: string
@@ -212,6 +214,7 @@ const getLiftLabel = (lift: string) => (
 )
 
 const LIFT_KEYS: LiftKey[] = ['squat', 'bench_press', 'deadlift']
+const SESSION_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 const toClientSlug = (name: string) => {
   const slug = name
@@ -243,6 +246,7 @@ export default function CreateProgram() {
   const [editingTemplateSlug, setEditingTemplateSlug] = useState<string | null>(null)
   const [editingTemplateMeta, setEditingTemplateMeta] = useState<EditingTemplateMeta | null>(null)
   const [editingTemplateDescription, setEditingTemplateDescription] = useState<string>('')
+  const [programInstructions, setProgramInstructions] = useState<string>('')
   const [isProgramPinned, setIsProgramPinned] = useState(false)
   const [clientRmProfiles, setClientRmProfiles] = useState<Record<string, Record<number, number>> | null>(null)
   const [existingClients, setExistingClients] = useState<ExistingClientSummary[]>([])
@@ -428,6 +432,7 @@ export default function CreateProgram() {
         created_at: new Date().toISOString(),
         created_by: 'AI Generator',
         status: 'draft',
+        ...(programInstructions.trim() ? { notes: programInstructions.trim() } : {}),
       },
       client: payload.client,
       program_info: {
@@ -668,7 +673,7 @@ export default function CreateProgram() {
     const loadLiftTemplates = async () => {
       setLiftTemplatesLoading(true)
       try {
-        const response = await fetch('/api/program-templates?scope=single_lift')
+        const response = await fetch('/api/program-templates')
         if (!response.ok) throw new Error('Failed to load lift templates')
 
         const data = await response.json() as TemplateListResponse
@@ -713,6 +718,60 @@ export default function CreateProgram() {
   const applySelectedLiftTemplates = async () => {
     if (editingTemplateSlug) return
 
+    const isLiftKey = (value: unknown): value is LiftKey => (
+      value === 'squat' || value === 'bench_press' || value === 'deadlift'
+    )
+
+    const remapTemplateSessionsLift = (
+      sessionsTemplate: unknown,
+      sourceLift: LiftKey,
+      targetLift: LiftKey,
+    ): unknown => {
+      if (sourceLift === targetLift) return sessionsTemplate
+      if (!sessionsTemplate || typeof sessionsTemplate !== 'object') return sessionsTemplate
+
+      const clone = JSON.parse(JSON.stringify(sessionsTemplate)) as Record<string, unknown>
+      for (const sessionValue of Object.values(clone)) {
+        if (!sessionValue || typeof sessionValue !== 'object') continue
+        for (const weekValue of Object.values(sessionValue as Record<string, unknown>)) {
+          if (!weekValue || typeof weekValue !== 'object') continue
+          const weekRecord = weekValue as Record<string, unknown>
+          const liftsRaw = Array.isArray(weekRecord.lifts) ? weekRecord.lifts : []
+          weekRecord.lifts = liftsRaw.map((liftData) => {
+            if (!liftData || typeof liftData !== 'object') return liftData
+            const liftRecord = liftData as Record<string, unknown>
+            if (liftRecord.lift !== sourceLift) return liftData
+            return { ...liftRecord, lift: targetLift }
+          })
+        }
+      }
+
+      return clone
+    }
+
+    const filterTemplateSessionsToLift = (
+      sessionsTemplate: unknown,
+      allowedLift: LiftKey,
+    ): unknown => {
+      if (!sessionsTemplate || typeof sessionsTemplate !== 'object') return sessionsTemplate
+
+      const clone = JSON.parse(JSON.stringify(sessionsTemplate)) as Record<string, unknown>
+      for (const sessionValue of Object.values(clone)) {
+        if (!sessionValue || typeof sessionValue !== 'object') continue
+        for (const weekValue of Object.values(sessionValue as Record<string, unknown>)) {
+          if (!weekValue || typeof weekValue !== 'object') continue
+          const weekRecord = weekValue as Record<string, unknown>
+          const liftsRaw = Array.isArray(weekRecord.lifts) ? weekRecord.lifts : []
+          weekRecord.lifts = liftsRaw.filter((liftData) => {
+            if (!liftData || typeof liftData !== 'object') return false
+            return (liftData as Record<string, unknown>).lift === allowedLift
+          })
+        }
+      }
+
+      return clone
+    }
+
     const selections = LIFT_KEYS
       .map((lift) => [lift, (selectedLiftTemplateByLift[lift] || '').trim()] as [LiftKey, string])
       .filter(([, slug]) => slug.length > 0)
@@ -735,17 +794,41 @@ export default function CreateProgram() {
           }
 
           const template = data.template
-          if (template.scope !== 'single_lift') {
-            throw new Error(`Template "${template.name}" is not single-lift.`)
-          }
-          if (template.lift !== lift) {
-            throw new Error(`Template "${template.name}" does not match ${getLiftLabel(lift)}.`)
+          if (template.scope !== 'single_lift' && template.scope !== 'full') {
+            throw new Error(`Template "${template.name}" has unsupported scope.`)
           }
           if (template.weeks !== 4) {
             throw new Error(`Template "${template.name}" has ${template.weeks} weeks. Create Program editor currently supports 4 weeks.`)
           }
 
-          return { lift, template }
+          const templateInput = (template.input && typeof template.input === 'object')
+            ? template.input as Record<string, unknown>
+            : {}
+          const templateCalculated = (template.calculated && typeof template.calculated === 'object')
+            ? template.calculated as Record<string, unknown>
+            : {}
+
+          const inputLiftCandidates = Object.keys(templateInput).filter(isLiftKey)
+          const calculatedLiftCandidates = Object.keys(templateCalculated).filter(isLiftKey)
+
+          let sourceLift: LiftKey | null = null
+          if (template.scope === 'full') {
+            if (inputLiftCandidates.includes(lift) || calculatedLiftCandidates.includes(lift)) {
+              sourceLift = lift
+            } else {
+              sourceLift = inputLiftCandidates[0] || calculatedLiftCandidates[0] || null
+            }
+          } else {
+            sourceLift = isLiftKey(template.lift)
+              ? template.lift
+              : (inputLiftCandidates[0] || calculatedLiftCandidates[0] || null)
+          }
+
+          if (!sourceLift) {
+            throw new Error(`Template "${template.name}" has no valid source lift payload.`)
+          }
+
+          return { lift, template, sourceLift, templateInput, templateCalculated }
         }),
       )
 
@@ -775,26 +858,27 @@ export default function CreateProgram() {
       const weekKeys: WeekKey[] = ['week_1', 'week_2', 'week_3', 'week_4']
       const sessionsByLift: Partial<Record<LiftKey, SessionsData>> = {}
 
-      for (const { lift, template } of detailResults) {
-        const templateInput = (template.input && typeof template.input === 'object')
-          ? template.input as Record<string, unknown>
-          : {}
-        const clientInput = buildClientInputFromTemplateInput(templateInput, clientOneRm)
+      for (const { lift, template, sourceLift, templateInput, templateCalculated } of detailResults) {
+        const sourceLiftInput = (templateInput[sourceLift] && typeof templateInput[sourceLift] === 'object')
+          ? templateInput[sourceLift] as Record<string, unknown>
+          : null
+        if (!sourceLiftInput) {
+          throw new Error(`Template "${template.name}" is missing source lift input (${getLiftLabel(sourceLift)}).`)
+        }
+
+        const clientInput = buildClientInputFromTemplateInput({ [lift]: sourceLiftInput }, clientOneRm)
         const liftInputRecord = (clientInput[lift] && typeof clientInput[lift] === 'object')
           ? clientInput[lift] as Record<string, unknown>
           : null
         if (!liftInputRecord) {
-          throw new Error(`Template "${template.name}" is missing ${getLiftLabel(lift)} input.`)
+          throw new Error(`Template "${template.name}" cannot be mapped to ${getLiftLabel(lift)} input.`)
         }
 
         const fallbackVolume = lift === 'squat' ? 350 : (lift === 'bench_press' ? 300 : 250)
         nextLifts[lift] = getTemplateLiftConfig(clientInput, lift, clientOneRm[lift], fallbackVolume)
         nextInput[lift] = buildLiftPayload(nextLifts[lift])
 
-        const calculatedRecord = (template.calculated && typeof template.calculated === 'object')
-          ? template.calculated as Record<string, unknown>
-          : {}
-        const calculatedLiftRaw = calculatedRecord[lift]
+        const calculatedLiftRaw = templateCalculated[sourceLift]
         if (calculatedLiftRaw && typeof calculatedLiftRaw === 'object') {
           const calculatedLift = JSON.parse(JSON.stringify(calculatedLiftRaw)) as Record<string, unknown>
           const weights = (liftInputRecord.weights && typeof liftInputRecord.weights === 'object')
@@ -816,8 +900,17 @@ export default function CreateProgram() {
           if (fallbackCalculated[lift]) nextCalculated[lift] = fallbackCalculated[lift]
         }
 
-        sessionsByLift[lift] = materializeSessionsForClient(
+        const filteredSessionsTemplate = filterTemplateSessionsToLift(
           template.sessionsTemplate || {},
+          sourceLift,
+        )
+        const remappedSessionsTemplate = remapTemplateSessionsLift(
+          filteredSessionsTemplate,
+          sourceLift,
+          lift,
+        )
+        sessionsByLift[lift] = materializeSessionsForClient(
+          remappedSessionsTemplate,
           clientInput,
         ) as unknown as SessionsData
       }
@@ -871,9 +964,9 @@ export default function CreateProgram() {
         for (const sessionKey of allSessionKeys) {
           for (const weekKey of weekKeys) {
             const week = baseSessions[sessionKey][weekKey]
-            const sourceLift = sourceSessions[sessionKey]?.[weekKey]?.lifts?.find(item => item.lift === lift)
-            const nextSets = Array.isArray(sourceLift?.sets)
-              ? sourceLift.sets.map((set) => ({
+            const sourceLiftEntry = sourceSessions[sessionKey]?.[weekKey]?.lifts?.find(item => item.lift === lift)
+            const nextSets = Array.isArray(sourceLiftEntry?.sets)
+              ? sourceLiftEntry.sets.map((set) => ({
                 weight: Number(set.weight),
                 reps: Number(set.reps),
                 percentage: Number(set.percentage),
@@ -907,6 +1000,7 @@ export default function CreateProgram() {
           created_at: prev?.meta.created_at || new Date().toISOString(),
           created_by: prev?.meta.created_by || 'AI Generator',
           status: prev?.meta.status || 'draft',
+          ...(prev?.meta?.notes ? { notes: prev.meta.notes } : (programInstructions.trim() ? { notes: programInstructions.trim() } : {})),
         },
         client: {
           name: formData.clientName,
@@ -1025,8 +1119,9 @@ export default function CreateProgram() {
             scope: template.scope,
             lift: template.lift,
           })
-          setEditingTemplateDescription((template.description || '').trim())
-          setIsEditingExistingProgram(true)
+        setEditingTemplateDescription((template.description || '').trim())
+        setProgramInstructions('')
+        setIsEditingExistingProgram(true)
 
           const templateInput = (template.input && typeof template.input === 'object')
             ? template.input as Record<string, unknown>
@@ -1122,6 +1217,7 @@ export default function CreateProgram() {
         setEditingTemplateSlug(null)
         setEditingTemplateMeta(null)
         setEditingTemplateDescription('')
+        setProgramInstructions(((program.meta as { notes?: string } | undefined)?.notes || '').trim())
 
         const getLiftConfigFromProgram = (lift: LiftKey, fallbackOneRm: number, fallbackVolume: number) => {
           const inputLift = (program.input?.[lift] || {}) as any
@@ -1201,19 +1297,45 @@ export default function CreateProgram() {
 
     try {
       setLoading(true)
+      const normalizedNotes = programInstructions.trim()
+      const programToSave: ProgramData = {
+        ...calculatedResults,
+        meta: {
+          ...calculatedResults.meta,
+          ...(normalizedNotes ? { notes: normalizedNotes } : {}),
+        },
+      }
 
       if (editingTemplateSlug) {
+        const trimmedTemplateName = formData.clientName.trim()
+        if (!trimmedTemplateName) {
+          throw new Error('Template name is required')
+        }
+
         const response = await fetch(`/api/program-templates/${encodeURIComponent(editingTemplateSlug)}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            program: calculatedResults,
+            program: programToSave,
+            name: trimmedTemplateName,
+            description: editingTemplateDescription.trim(),
           }),
         })
 
         const data = await response.json()
         if (!response.ok) {
           throw new Error(data?.error || 'Failed to save template')
+        }
+
+        const updatedSlug = typeof data?.slug === 'string' && data.slug
+          ? data.slug
+          : editingTemplateSlug
+        if (updatedSlug !== editingTemplateSlug) {
+          setEditingTemplateSlug(updatedSlug)
+          const params = new URLSearchParams(window.location.search)
+          params.set('editTemplate', updatedSlug)
+          const query = params.toString()
+          window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`)
         }
 
         setIsSaved(true)
@@ -1224,7 +1346,7 @@ export default function CreateProgram() {
       const response = await fetch('/api/import-program', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(calculatedResults),
+        body: JSON.stringify(programToSave),
       })
 
       const data = await response.json()
@@ -1310,6 +1432,114 @@ export default function CreateProgram() {
       return {
         ...prev,
         sessions,
+      }
+    })
+
+    setIsProgramPinned(true)
+    setIsEditMode(true)
+    setIsSaved(false)
+  }
+
+  const addSessionColumn = () => {
+    if (!calculatedResults) return
+
+    const existingKeys = new Set<string>(
+      Object.keys(calculatedResults.sessions || {}).filter((key) => /^[A-Z]$/.test(key)),
+    )
+    const weekKeys: WeekKey[] = ['week_1', 'week_2', 'week_3', 'week_4']
+    for (const lift of Object.keys(calculatedResults.calculated || {})) {
+      const liftData = calculatedResults.calculated[lift]
+      if (!liftData || typeof liftData !== 'object') continue
+      for (const weekKey of weekKeys) {
+        const weekSessions = (liftData[weekKey] as Record<string, unknown> | undefined)?.sessions
+        if (!weekSessions || typeof weekSessions !== 'object') continue
+        Object.keys(weekSessions).forEach((key) => {
+          if (/^[A-Z]$/.test(key)) existingKeys.add(key)
+        })
+      }
+    }
+
+    const nextSessionKey = SESSION_LETTERS.find((key) => !existingKeys.has(key))
+    if (!nextSessionKey) {
+      alert('Cannot add more session columns (A-Z already used).')
+      return
+    }
+
+    const liftKeys = Object.keys(calculatedResults.calculated).filter((lift): lift is LiftKey => (
+      lift === 'squat' || lift === 'bench_press' || lift === 'deadlift'
+    ))
+
+    setCalculatedResults(prev => {
+      if (!prev) return prev
+      const nextSessions: SessionsData = JSON.parse(JSON.stringify(prev.sessions || {}))
+      nextSessions[nextSessionKey] = {
+        week_1: { lifts: liftKeys.map((lift) => ({ lift, sets: [] })) },
+        week_2: { lifts: liftKeys.map((lift) => ({ lift, sets: [] })) },
+        week_3: { lifts: liftKeys.map((lift) => ({ lift, sets: [] })) },
+        week_4: { lifts: liftKeys.map((lift) => ({ lift, sets: [] })) },
+      }
+
+      return {
+        ...prev,
+        sessions: nextSessions,
+      }
+    })
+
+    setIsProgramPinned(true)
+    setIsEditMode(true)
+    setIsSaved(false)
+  }
+
+  const plannedSessionKeys = useMemo(() => {
+    const keys = new Set<string>()
+    if (!calculatedResults) return keys
+
+    const weekKeys: WeekKey[] = ['week_1', 'week_2', 'week_3', 'week_4']
+    for (const liftData of Object.values(calculatedResults.calculated || {})) {
+      if (!liftData || typeof liftData !== 'object') continue
+      for (const weekKey of weekKeys) {
+        const week = (liftData as Record<string, unknown>)[weekKey]
+        if (!week || typeof week !== 'object') continue
+        const weekSessions = (week as Record<string, unknown>).sessions
+        if (!weekSessions || typeof weekSessions !== 'object') continue
+        Object.keys(weekSessions).forEach((key) => {
+          if (/^[A-Z]$/.test(key)) keys.add(key)
+        })
+      }
+    }
+
+    return keys
+  }, [calculatedResults])
+
+  const removeSessionColumn = (sessionKey: string) => {
+    if (!calculatedResults) return
+    if (!/^[A-Z]$/.test(sessionKey)) return
+    if (plannedSessionKeys.has(sessionKey)) {
+      alert(`Session ${sessionKey} is part of planned weekly targets and cannot be removed. Leave it empty if unused.`)
+      return
+    }
+
+    const sessionData = calculatedResults.sessions?.[sessionKey]
+    if (!sessionData) return
+
+    const weekKeys: WeekKey[] = ['week_1', 'week_2', 'week_3', 'week_4']
+    const hasAnySets = weekKeys.some((weekKey) => (
+      (sessionData[weekKey]?.lifts || []).some((liftData) => (liftData.sets || []).length > 0)
+    ))
+    if (hasAnySets && !confirm(`Session ${sessionKey} contains sets. Remove the whole column?`)) {
+      return
+    }
+
+    setCalculatedResults(prev => {
+      if (!prev) return prev
+      if (!prev.sessions?.[sessionKey]) return prev
+
+      const nextSessions: SessionsData = JSON.parse(JSON.stringify(prev.sessions))
+      delete nextSessions[sessionKey]
+
+      return {
+        ...prev,
+        sessions: nextSessions,
       }
     })
 
@@ -1422,6 +1652,27 @@ export default function CreateProgram() {
   // Update shared field (clientName, delta, etc.)
   const updateSharedField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    setIsSaved(false)
+  }
+
+  const updateProgramInstructions = (value: string) => {
+    setProgramInstructions(value)
+    setCalculatedResults((prev) => {
+      if (!prev) return prev
+
+      const trimmed = value.trim()
+      const nextMeta: ProgramData['meta'] = { ...prev.meta }
+      if (trimmed) {
+        nextMeta.notes = trimmed
+      } else {
+        delete nextMeta.notes
+      }
+
+      return {
+        ...prev,
+        meta: nextMeta,
+      }
+    })
     setIsSaved(false)
   }
 
@@ -1701,14 +1952,35 @@ export default function CreateProgram() {
 
           {editingTemplateSlug && (
             <div className="bg-white border border-gray-200 rounded-lg p-5">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                {formData.clientName || 'Template'}
-              </h2>
-              {editingTemplateDescription && (
-                <p className="mt-2 text-sm text-gray-600">
-                  {editingTemplateDescription}
-                </p>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Template name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.clientName}
+                    onChange={(e) => updateSharedField('clientName', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    value={editingTemplateDescription}
+                    onChange={(e) => {
+                      setEditingTemplateDescription(e.target.value)
+                      setIsSaved(false)
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800"
+                    placeholder="Optional template description"
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -1823,6 +2095,30 @@ export default function CreateProgram() {
                     </select>
                   </div>
                 </div>
+
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Program-specific instructions (optional)
+                    </label>
+                    <Link
+                      href={`/${locale}/admin/settings`}
+                      className="text-xs text-indigo-700 hover:text-indigo-900"
+                    >
+                      Edit global instructions in Settings
+                    </Link>
+                  </div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    Visible only in this specific program.
+                  </label>
+                  <textarea
+                    value={programInstructions}
+                    onChange={(e) => updateProgramInstructions(e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-500"
+                    placeholder="Extra notes only for this one program."
+                  />
+                </div>
               </div>
 
               {/* Per-lift template preload */}
@@ -1855,7 +2151,7 @@ export default function CreateProgram() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                   {LIFT_KEYS.map((lift) => {
                     const templatesForLift = liftTemplates
-                      .filter((template) => template.scope === 'single_lift' && template.lift === lift)
+                      .filter((template) => template.scope === 'single_lift' || template.scope === 'full')
                     return (
                       <div key={`lift-template-${lift}`}>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1875,7 +2171,9 @@ export default function CreateProgram() {
                           </option>
                           {templatesForLift.map((template) => (
                             <option key={template.slug} value={template.slug}>
-                              {template.name} ({template.block})
+                              {template.name} ({template.block}, {template.scope === 'full'
+                                ? 'full'
+                                : (template.lift ? getLiftLabel(template.lift) : 'single lift')})
                             </option>
                           ))}
                         </select>
@@ -2151,17 +2449,19 @@ export default function CreateProgram() {
 
                     {/* AI Sessions (manual set editing) */}
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
                         <h4 className="text-lg font-semibold text-gray-900">AI Sessions</h4>
-                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                          <input
-                            type="checkbox"
-                            checked={isFlexibleBridgeMode}
-                            onChange={(e) => setIsFlexibleBridgeMode(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          Flexible bridge % (50/60/70/80/90/97.5)
-                        </label>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={isFlexibleBridgeMode}
+                              onChange={(e) => setIsFlexibleBridgeMode(e.target.checked)}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            Flexible bridge % (50/60/70/80/90/97.5)
+                          </label>
+                        </div>
                       </div>
                       {isFlexibleBridgeMode && (
                         <p className="text-xs text-gray-500">
@@ -2182,6 +2482,10 @@ export default function CreateProgram() {
                         onMoveSet={moveSessionSet}
                         onInsertSet={insertSessionSet}
                         onDeleteSet={deleteSessionSet}
+                        onAddSessionColumn={addSessionColumn}
+                        onRemoveSessionColumn={removeSessionColumn}
+                        isSessionRemovable={(sessionKey) => !plannedSessionKeys.has(sessionKey)}
+                        showSessionColumnControls={index === 0}
                         rmProfile={clientRmProfiles?.[liftKey] || null}
                       />
                     </div>
@@ -2410,6 +2714,10 @@ function AISessionLiftTable({
   onMoveSet,
   onInsertSet,
   onDeleteSet,
+  onAddSessionColumn,
+  onRemoveSessionColumn,
+  isSessionRemovable,
+  showSessionColumnControls,
   rmProfile,
 }: {
   sessions: SessionsData
@@ -2454,6 +2762,10 @@ function AISessionLiftTable({
     sessionLetter: string,
     setIndex: number,
   ) => void
+  onAddSessionColumn?: () => void
+  onRemoveSessionColumn?: (sessionKey: string) => void
+  isSessionRemovable?: (sessionKey: string) => boolean
+  showSessionColumnControls?: boolean
 }) {
   const dragSetRef = useRef<{
     weekNum: number
@@ -2631,13 +2943,37 @@ function AISessionLiftTable({
             <th rowSpan={2} className="border border-gray-300 px-2 py-1 font-semibold text-gray-900">#reps</th>
             {sessionKeys.map(sessionKey => {
               const nCols = maxSetsPerSession[sessionKey]
+              const canRemove = !!showSessionColumnControls && !!onRemoveSessionColumn && !!isSessionRemovable?.(sessionKey)
+              const canAdd = !!showSessionColumnControls && !!onAddSessionColumn && sessionKey === sessionKeys[sessionKeys.length - 1]
               return (
                 <th
                   key={`${sessionKey}-group`}
                   colSpan={nCols}
                   className="border border-gray-300 px-2 py-1 font-semibold text-gray-900 border-l-2 border-l-gray-500"
                 >
-                  {`Session ${sessionKey}`}
+                  <div className="flex items-center justify-center gap-1">
+                    <span>{`Session ${sessionKey}`}</span>
+                    {canRemove && (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveSessionColumn(sessionKey)}
+                        className="h-5 w-5 leading-none rounded border border-gray-400 text-gray-700 hover:bg-gray-100"
+                        title={`Remove session ${sessionKey}`}
+                      >
+                        ×
+                      </button>
+                    )}
+                    {canAdd && (
+                      <button
+                        type="button"
+                        onClick={onAddSessionColumn}
+                        className="h-5 w-5 leading-none rounded border border-gray-400 text-gray-700 hover:bg-gray-100"
+                        title="Add session column"
+                      >
+                        +
+                      </button>
+                    )}
+                  </div>
                 </th>
               )
             })}

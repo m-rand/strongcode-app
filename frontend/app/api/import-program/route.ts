@@ -156,6 +156,7 @@ export async function POST(request: Request) {
       input: programData.input,
       calculated: programData.calculated,
       sessionsData: programData.sessions || {},
+      notes: typeof programData.meta?.notes === 'string' ? programData.meta.notes : null,
       createdAt: programData.meta.created_at,
       createdBy: programData.meta.created_by || 'Import',
     })

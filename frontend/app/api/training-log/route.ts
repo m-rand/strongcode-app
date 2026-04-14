@@ -51,7 +51,14 @@ export async function GET(request: Request) {
 }
 
 // POST /api/training-log
-// Body: { entries: [{ programId, week, session, lift, setIndex, prescribedWeight, prescribedReps, actualWeight?, actualReps?, rpe?, completed, notes? }] }
+// Body: {
+//   entries: [{
+//     programId, week, session, lift, setIndex,
+//     prescribedWeight, prescribedReps,
+//     plannedSession?, performedDate?, performedVariant?,
+//     actualWeight?, actualReps?, rpe?, completed, notes?
+//   }]
+// }
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -101,6 +108,9 @@ export async function POST(request: Request) {
         await db
           .update(trainingLog)
           .set({
+            plannedSession: entry.plannedSession ?? entry.session ?? null,
+            performedDate: entry.performedDate ?? null,
+            performedVariant: entry.performedVariant ?? null,
             actualWeight: entry.actualWeight ?? entry.prescribedWeight,
             actualReps: entry.actualReps ?? entry.prescribedReps,
             rpe: entry.rpe,
@@ -118,10 +128,13 @@ export async function POST(request: Request) {
             programId: entry.programId,
             week: entry.week,
             session: entry.session,
+            plannedSession: entry.plannedSession ?? entry.session ?? null,
+            performedDate: entry.performedDate ?? null,
             lift: entry.lift,
             setIndex: entry.setIndex,
             prescribedWeight: entry.prescribedWeight,
             prescribedReps: entry.prescribedReps,
+            performedVariant: entry.performedVariant ?? null,
             actualWeight: entry.actualWeight ?? entry.prescribedWeight,
             actualReps: entry.actualReps ?? entry.prescribedReps,
             rpe: entry.rpe,

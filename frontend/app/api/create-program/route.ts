@@ -144,6 +144,7 @@ export async function POST(request: Request) {
       input: result.input || programData.input,
       calculated: result.calculated || {},
       sessionsData: result.sessions || {},
+      notes: typeof formData?.programInstructions === 'string' ? formData.programInstructions : null,
       createdAt: new Date().toISOString(),
       createdBy: 'Web Form',
     })

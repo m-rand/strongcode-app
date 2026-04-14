@@ -29,6 +29,94 @@ interface CreateTemplateBody {
 
 const ALL_LIFTS: LiftKey[] = ['squat', 'bench_press', 'deadlift']
 
+function isLiftKey(value: unknown): value is LiftKey {
+  return value === 'squat' || value === 'bench_press' || value === 'deadlift'
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+function buildTemplateInfoSummary(
+  scope: 'full' | 'single_lift',
+  lift: string | null,
+  inputRaw: unknown,
+  calculatedRaw: unknown,
+): string | null {
+  const input = (inputRaw && typeof inputRaw === 'object')
+    ? inputRaw as Record<string, unknown>
+    : {}
+  const calculated = (calculatedRaw && typeof calculatedRaw === 'object')
+    ? calculatedRaw as Record<string, unknown>
+    : {}
+
+  const lifts: LiftKey[] = (() => {
+    if (scope === 'single_lift' && isLiftKey(lift)) return [lift]
+    const set = new Set<LiftKey>()
+    Object.keys(input).forEach((key) => { if (isLiftKey(key)) set.add(key) })
+    Object.keys(calculated).forEach((key) => { if (isLiftKey(key)) set.add(key) })
+    return [...set]
+  })()
+
+  if (lifts.length === 0) return null
+
+  let volumeTotal = 0
+  let hasVolume = false
+  let weightedAri = 0
+  let weightedNl = 0
+  const patternPairs = new Set<string>()
+
+  for (const liftKey of lifts) {
+    const inputLift = (input[liftKey] && typeof input[liftKey] === 'object')
+      ? input[liftKey] as Record<string, unknown>
+      : {}
+    const volume = toFiniteNumber(inputLift.volume)
+    if (volume !== null && volume > 0) {
+      volumeTotal += volume
+      hasVolume = true
+    }
+
+    const mainPattern = typeof inputLift.volume_pattern_main === 'string'
+      ? inputLift.volume_pattern_main.trim()
+      : ''
+    const hiPattern = typeof inputLift.volume_pattern_8190 === 'string'
+      ? inputLift.volume_pattern_8190.trim()
+      : ''
+    if (mainPattern || hiPattern) {
+      patternPairs.add(`main ${mainPattern || '—'} + HI ${hiPattern || '—'}`)
+    }
+
+    const calculatedLift = (calculated[liftKey] && typeof calculated[liftKey] === 'object')
+      ? calculated[liftKey] as Record<string, unknown>
+      : {}
+    const summary = (calculatedLift._summary && typeof calculatedLift._summary === 'object')
+      ? calculatedLift._summary as Record<string, unknown>
+      : {}
+    const totalNl = toFiniteNumber(summary.total_nl)
+    const blockAri = toFiniteNumber(summary.block_ari)
+    if (totalNl !== null && totalNl > 0 && blockAri !== null) {
+      weightedAri += blockAri * totalNl
+      weightedNl += totalNl
+    }
+  }
+
+  const infoParts: string[] = []
+  if (hasVolume) {
+    infoParts.push(`${Math.round(volumeTotal)}NL`)
+  }
+  if (weightedNl > 0) {
+    infoParts.push(`ARI${(weightedAri / weightedNl).toFixed(1)}`)
+  }
+  if (patternPairs.size === 1) {
+    infoParts.push([...patternPairs][0])
+  } else if (patternPairs.size > 1) {
+    infoParts.push('mixed patterns')
+  }
+
+  return infoParts.length > 0 ? infoParts.join(', ') : null
+}
+
 function defaultLiftVolume(lift: LiftKey): number {
   if (lift === 'squat') return 350
   if (lift === 'bench_press') return 300
@@ -203,6 +291,8 @@ export async function GET(request: Request) {
         lift: programTemplates.lift,
         block: programTemplates.block,
         weeks: programTemplates.weeks,
+        input: programTemplates.input,
+        calculated: programTemplates.calculated,
         sourceProgramFilename: programTemplates.sourceProgramFilename,
         createdAt: programTemplates.createdAt,
         createdBy: programTemplates.createdBy,
@@ -211,7 +301,27 @@ export async function GET(request: Request) {
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(programTemplates.createdAt), desc(programTemplates.id))
 
-    return NextResponse.json({ templates })
+    const templatesWithInfo = templates.map((template) => ({
+      id: template.id,
+      slug: template.slug,
+      name: template.name,
+      description: template.description,
+      scope: template.scope,
+      lift: template.lift,
+      block: template.block,
+      weeks: template.weeks,
+      sourceProgramFilename: template.sourceProgramFilename,
+      createdAt: template.createdAt,
+      createdBy: template.createdBy,
+      infoSummary: buildTemplateInfoSummary(
+        template.scope,
+        template.lift,
+        template.input,
+        template.calculated,
+      ),
+    }))
+
+    return NextResponse.json({ templates: templatesWithInfo })
   } catch (error) {
     console.error('Error listing program templates:', error)
     return NextResponse.json(

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Program {
   id: number
@@ -40,10 +42,13 @@ interface LogEntry {
   programId: number
   week: number
   session: string
+  plannedSession?: string | null
+  performedDate?: string | null
   lift: string
   setIndex: number
   prescribedWeight: number
   prescribedReps: number
+  performedVariant?: string | null
   actualWeight: number | null
   actualReps: number | null
   rpe: number | null
@@ -52,9 +57,67 @@ interface LogEntry {
   loggedAt: string
 }
 
+interface FaqItem {
+  question: string
+  answer: string
+}
+
+interface InstructionSection {
+  title: string
+  content: string
+}
+
+function MarkdownText({ content }: { content: string }) {
+  return (
+    <div className="content-markdown text-sm text-amber-900">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => <p className="text-sm text-amber-900">{children}</p>,
+          li: ({ children }) => <li className="text-sm text-amber-900">{children}</li>,
+          strong: ({ children }) => <strong className="font-semibold text-amber-900">{children}</strong>,
+          a: ({ children, href }) => (
+            <a href={href} className="underline underline-offset-2 text-amber-900">
+              {children}
+            </a>
+          ),
+          ul: ({ children }) => <ul className="content-markdown-list">{children}</ul>,
+          ol: ({ children }) => <ol className="content-markdown-ordered-list">{children}</ol>,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  )
+}
+
 function liftDisplayName(lift: string): string {
   if (lift === 'bench_press') return 'Bench Press'
   return lift.charAt(0).toUpperCase() + lift.slice(1)
+}
+
+function liftShortCode(lift: string): string {
+  if (lift === 'squat') return 'SQ'
+  if (lift === 'bench_press') return 'BP'
+  if (lift === 'deadlift') return 'DL'
+  return lift.toUpperCase()
+}
+
+function calendarItemClass(itemCode: string): string {
+  const liftCode = itemCode.split('#')[0]
+  if (liftCode === 'SQ') return 'bg-sky-100 text-sky-800'
+  if (liftCode === 'BP') return 'bg-emerald-100 text-emerald-800'
+  if (liftCode === 'DL') return 'bg-violet-100 text-violet-800'
+  return 'bg-blue-100 text-blue-800'
+}
+
+const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
+
+function isoDateToMondayIndex(isoDate: string): number | null {
+  const date = new Date(`${isoDate}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return null
+  const sundayBased = date.getDay() // Sun=0..Sat=6
+  return (sundayBased + 6) % 7 // Mon=0..Sun=6
 }
 
 function rpeColor(rpe: number | null): string {
@@ -65,6 +128,96 @@ function rpeColor(rpe: number | null): string {
   return 'text-red-600'
 }
 
+function splitGeneralSections(rawGeneral: string): InstructionSection[] {
+  const general = (rawGeneral || '').trim()
+  if (!general) return []
+
+  const lines = general.split('\n')
+  const sections: InstructionSection[] = []
+  let currentTitle = ''
+  let currentBody: string[] = []
+
+  const flush = () => {
+    const content = currentBody.join('\n').trim()
+    if (!currentTitle && !content) return
+    sections.push({
+      title: currentTitle || 'General Instructions',
+      content,
+    })
+  }
+
+  const isHeadingLine = (line: string, nextNonEmpty: string | null): boolean => {
+    if (!line) return false
+    if (line.startsWith('-')) return false
+    if (/^\d+[\.\)]/.test(line)) return false
+    if (/^[ivxlcdm]+\)/i.test(line)) return false
+    if (!nextNonEmpty) return false
+    return (
+      nextNonEmpty.startsWith('-') ||
+      /^\d+[\.\)]/.test(nextNonEmpty) ||
+      /^[ivxlcdm]+\)/i.test(nextNonEmpty)
+    )
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i]
+    const line = rawLine.trim()
+    const nextNonEmptyLine = (() => {
+      for (let j = i + 1; j < lines.length; j++) {
+        const candidate = lines[j].trim()
+        if (candidate) return candidate
+      }
+      return null
+    })()
+
+    if (isHeadingLine(line, nextNonEmptyLine)) {
+      if (currentTitle || currentBody.length > 0) flush()
+      currentTitle = line
+        .replace(/^#{1,6}\s*/, '')
+        .replace(/:\s*$/, '')
+        .trim()
+      currentBody = []
+      continue
+    }
+
+    currentBody.push(rawLine)
+  }
+
+  if (currentTitle || currentBody.length > 0) flush()
+
+  if (sections.length === 0) {
+    return [{ title: 'General Instructions', content: general }]
+  }
+
+  return sections
+}
+
+function parseGlobalInstructions(raw: string): { sections: InstructionSection[]; faqItems: FaqItem[] } {
+  const text = (raw || '').trim()
+  if (!text) return { sections: [], faqItems: [] }
+
+  const faqMatch = text.match(/\n\s*FAQ\s*:?\s*\n/i)
+  if (!faqMatch || faqMatch.index == null) {
+    return { sections: splitGeneralSections(text), faqItems: [] }
+  }
+
+  const splitIndex = faqMatch.index
+  const general = text.slice(0, splitIndex).trim()
+  const faqRaw = text.slice(splitIndex + faqMatch[0].length).trim()
+  const faqItems: FaqItem[] = []
+
+  const regex = /(?:^|\n)Q:\s*(.+?)\nA:\s*([\s\S]*?)(?=\nQ:\s*|$)/g
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(faqRaw)) !== null) {
+    const question = (match[1] || '').trim()
+    const answer = (match[2] || '').trim()
+    if (!question || !answer) continue
+    faqItems.push({ question, answer })
+  }
+
+  return { sections: splitGeneralSections(general), faqItems }
+}
+
 export default function ProgramDetailPage() {
   const params = useParams()
   const t = useTranslations('admin.programDetail')
@@ -73,6 +226,7 @@ export default function ProgramDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [trainingLog, setTrainingLog] = useState<LogEntry[]>([])
+  const [globalProgramInstructions, setGlobalProgramInstructions] = useState('')
   const [logLoading, setLogLoading] = useState(false)
   const [enriching, setEnriching] = useState(false)
 
@@ -85,6 +239,25 @@ export default function ProgramDetailPage() {
       fetchTrainingLog()
     }
   }, [program?.id])
+
+  useEffect(() => {
+    let cancelled = false
+    const loadGlobalProgramInstructions = async () => {
+      try {
+        const response = await fetch('/api/settings/program-instructions')
+        if (!response.ok) return
+        const data = await response.json()
+        if (cancelled) return
+        setGlobalProgramInstructions(typeof data?.instructions === 'string' ? data.instructions : '')
+      } catch {
+        if (!cancelled) setGlobalProgramInstructions('')
+      }
+    }
+    loadGlobalProgramInstructions()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const fetchProgram = async () => {
     try {
@@ -221,6 +394,27 @@ export default function ProgramDetailPage() {
     )
   }
 
+  const calendarByWeekDay = (() => {
+    const byWeek: Record<number, Array<Set<string>>> = {}
+    for (let week = 1; week <= program.program_info.weeks; week++) {
+      byWeek[week] = Array.from({ length: 7 }, () => new Set<string>())
+    }
+
+    for (const entry of trainingLog) {
+      if (!entry.performedDate) continue
+      if (!byWeek[entry.week]) continue
+      const dayIdx = isoDateToMondayIndex(entry.performedDate)
+      if (dayIdx === null) continue
+
+      const sessionCode = entry.plannedSession || entry.session
+      const itemCode = `${liftShortCode(entry.lift)}#${entry.week}#${sessionCode}`
+      byWeek[entry.week][dayIdx].add(itemCode)
+    }
+
+    return byWeek
+  })()
+  const parsedGlobal = parseGlobalInstructions(globalProgramInstructions)
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -303,6 +497,55 @@ export default function ProgramDetailPage() {
               <p className="font-semibold text-gray-900">{program.client.delta}</p>
             </div>
           </div>
+          {(globalProgramInstructions || program.meta.notes) && (
+            <div className="mt-4 border border-amber-200 bg-amber-50 rounded-md px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-900 mb-1">
+                Client instructions
+              </p>
+              {parsedGlobal.sections.map((section, idx) => (
+                <details key={`${section.title}-${idx}`} className={`rounded border border-amber-200 bg-white/60 ${idx > 0 ? 'mt-2' : ''}`}>
+                  <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
+                    {section.title}
+                  </summary>
+                  <div className="px-3 pb-3">
+                    <MarkdownText content={section.content} />
+                  </div>
+                </details>
+              ))}
+              {parsedGlobal.faqItems.length > 0 && (
+                <details className="mt-2 rounded border border-amber-200 bg-white/60">
+                  <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
+                    FAQ
+                  </summary>
+                  <div className="px-3 pb-3 space-y-2">
+                    {parsedGlobal.faqItems.map((item, idx) => (
+                      <details key={`${item.question}-${idx}`} className="rounded border border-amber-100 bg-white">
+                        <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-amber-900">
+                          {item.question}
+                        </summary>
+                        <div className="px-3 pb-3">
+                          <MarkdownText content={item.answer} />
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </details>
+              )}
+              {globalProgramInstructions && program.meta.notes && (
+                <div className="my-2 border-t border-amber-200" />
+              )}
+              {program.meta.notes && (
+                <details className="rounded border border-amber-200 bg-white/60">
+                  <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
+                    Program-specific notes
+                  </summary>
+                  <div className="px-3 pb-3">
+                    <MarkdownText content={program.meta.notes} />
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 1RM Info */}
@@ -568,6 +811,47 @@ export default function ProgramDetailPage() {
                 </div>
               )}
             </div>
+
+            <div className="mb-6 overflow-x-auto">
+              <table className="min-w-full border border-gray-200 text-sm">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-200 px-3 py-2 text-left text-gray-700 font-semibold">Week</th>
+                    {WEEKDAY_LABELS.map((day) => (
+                      <th key={day} className="border border-gray-200 px-3 py-2 text-left text-gray-700 font-semibold">
+                        {day}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: program.program_info.weeks }, (_, idx) => idx + 1).map((weekNum) => (
+                    <tr key={`calendar-week-${weekNum}`} className="align-top">
+                      <td className="border border-gray-200 px-3 py-2 font-medium text-gray-800">W{weekNum}</td>
+                      {Array.from({ length: 7 }, (_, dayIdx) => {
+                        const items = [...(calendarByWeekDay[weekNum]?.[dayIdx] || new Set<string>())].sort()
+                        return (
+                          <td key={`calendar-week-${weekNum}-day-${dayIdx}`} className="border border-gray-200 px-3 py-2 min-w-36">
+                            {items.length > 0 ? (
+                              <div className="flex flex-col gap-1">
+                                {items.map((item) => (
+                                  <span key={item} className={`inline-flex w-fit px-2 py-0.5 rounded text-xs font-medium ${calendarItemClass(item)}`}>
+                                    {item}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
             <div className="space-y-6">
               {Object.entries(program.sessions).map(([sessionLetter, sessionData]: [string, any]) => (
                 <div key={sessionLetter} className="border-l-4 border-green-500 pl-4">
@@ -584,9 +868,26 @@ export default function ProgramDetailPage() {
                           </h4>
                           {weekData.lifts?.map((liftData: any, idx: number) => (
                             <div key={idx} className="mb-3">
-                              <p className="text-sm font-semibold text-gray-800 mb-2">
-                                {liftData.lift === 'bench_press' ? 'Bench Press' : liftData.lift.charAt(0).toUpperCase() + liftData.lift.slice(1)}
-                              </p>
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-sm font-semibold text-gray-800">
+                                  {liftData.lift === 'bench_press' ? 'Bench Press' : liftData.lift.charAt(0).toUpperCase() + liftData.lift.slice(1)}
+                                </p>
+                                {(() => {
+                                  const liftDates = [
+                                    ...new Set(
+                                      ((groupedLog[weekNum]?.[sessionLetter]?.[liftData.lift] || []) as LogEntry[])
+                                        .map((entry) => entry.performedDate)
+                                        .filter((value): value is string => !!value)
+                                    ),
+                                  ].sort()
+                                  if (liftDates.length === 0) return null
+                                  return (
+                                    <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700">
+                                      Performed: {liftDates.join(', ')}
+                                    </span>
+                                  )
+                                })()}
+                              </div>
                               <div className="overflow-x-auto">
                                 <table className="min-w-full text-sm">
                                   <thead>
@@ -610,10 +911,20 @@ export default function ProgramDetailPage() {
                                       const logEntry = findLogEntry(weekNum, sessionLetter, liftData.lift, setIdx)
                                       const weightDiff = logEntry?.actualWeight != null && set.weight
                                         ? logEntry.actualWeight - set.weight : null
+                                      const variantActual = logEntry?.performedVariant || null
+                                      const variantPlanned = set.variant || null
+                                      const variantChanged = !!variantActual && variantActual !== variantPlanned
                                       return (
                                       <tr key={setIdx} className={`border-b ${logEntry?.completed ? 'bg-green-50/40' : ''}`}>
                                         <td className="py-1 px-2">{setIdx + 1}</td>
-                                        <td className="py-1 px-2 text-gray-600">{set.variant}</td>
+                                        <td className="py-1 px-2 text-gray-600">
+                                          {variantActual || variantPlanned || '—'}
+                                          {variantChanged && (
+                                            <span className="ml-1 text-xs text-amber-700">
+                                              (planned: {variantPlanned})
+                                            </span>
+                                          )}
+                                        </td>
                                         <td className="text-right py-1 px-2 font-medium">{set.weight} kg</td>
                                         <td className="text-right py-1 px-2 font-medium">{set.reps}</td>
                                         {hasAnyLog && (

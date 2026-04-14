@@ -39,6 +39,7 @@ export async function GET(
         created_at: program.createdAt,
         created_by: program.createdBy,
         status: program.status,
+        notes: program.notes || undefined,
       },
       client: program.clientSnapshot,
       program_info: {
