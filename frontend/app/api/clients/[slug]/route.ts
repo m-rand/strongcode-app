@@ -104,16 +104,26 @@ export async function GET(
       .select()
       .from(programs)
       .where(eq(programs.clientId, client.id))
-      .orderBy(sql`start_date DESC`)
+      .orderBy(sql`start_date DESC`, sql`id DESC`)
 
-    const programList = clientPrograms.map(p => ({
-      filename: p.filename,
-      block: p.block,
-      startDate: p.startDate,
-      weeks: p.weeks,
-      status: p.status,
-      hasSessions: !!p.sessionsData && Object.keys(p.sessionsData as object).length > 0,
-    }))
+    // Show only the latest row for each filename (older duplicates can exist
+    // from historical saves before upsert logic was fixed).
+    const seenFilenames = new Set<string>()
+    const programList = clientPrograms
+      .filter((p) => {
+        if (seenFilenames.has(p.filename)) return false
+        seenFilenames.add(p.filename)
+        return true
+      })
+      .map(p => ({
+        id: p.id,
+        filename: p.filename,
+        block: p.block,
+        startDate: p.startDate,
+        weeks: p.weeks,
+        status: p.status,
+        hasSessions: !!p.sessionsData && Object.keys(p.sessionsData as object).length > 0,
+      }))
 
     // Build profile-like response for backward compatibility
     const profile = {

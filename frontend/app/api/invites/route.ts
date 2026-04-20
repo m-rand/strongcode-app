@@ -3,7 +3,54 @@ import { Resend } from 'resend'
 import crypto from 'crypto'
 import { db } from '@/db'
 import { inviteTokens, clients } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
+
+const isLocalHost = (hostname: string): boolean => {
+  const normalized = hostname.toLowerCase().replace(/:\d+$/, '')
+  return normalized === 'localhost' || normalized === '127.0.0.1' || normalized === '[::1]'
+}
+
+const parseOrigin = (raw: string): string | null => {
+  if (!raw) return null
+  const candidate = raw.trim()
+  if (!candidate) return null
+  const withProtocol = /^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`
+  try {
+    const parsed = new URL(withProtocol)
+    if (isLocalHost(parsed.hostname)) return null
+    return parsed.origin
+  } catch {
+    return null
+  }
+}
+
+const firstHeaderValue = (value: string | null): string => (value || '').split(',')[0].trim()
+
+const resolvePublicBaseUrl = (request: Request): string => {
+  const envCandidates = [
+    process.env.INVITE_BASE_URL,
+    process.env.APP_BASE_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXTAUTH_URL,
+  ]
+
+  for (const candidate of envCandidates) {
+    const origin = parseOrigin(candidate || '')
+    if (origin) return origin
+  }
+
+  const forwardedHost = firstHeaderValue(request.headers.get('x-forwarded-host'))
+  const forwardedProto = firstHeaderValue(request.headers.get('x-forwarded-proto')) || 'https'
+  if (forwardedHost && !isLocalHost(forwardedHost)) {
+    return `${forwardedProto}://${forwardedHost}`
+  }
+
+  const requestOrigin = parseOrigin(new URL(request.url).origin)
+  if (requestOrigin) return requestOrigin
+
+  // Last-resort fallback (never localhost in outgoing invite emails).
+  return 'https://www.strong-code.com'
+}
 
 export async function POST(request: Request) {
   try {
@@ -35,7 +82,7 @@ export async function POST(request: Request) {
     })
 
     // Build registration URL
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const baseUrl = resolvePublicBaseUrl(request)
     const registerUrl = `${baseUrl}/register?token=${token}`
 
     // Send email if Resend is configured

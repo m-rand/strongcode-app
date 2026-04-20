@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { programs, clients } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { normalizeProgramForView } from '@/lib/program/normalizeProgram'
 
 export async function GET(
@@ -25,6 +25,7 @@ export async function GET(
         eq(programs.clientId, client.id),
         eq(programs.filename, decodedFilename)
       ))
+      .orderBy(desc(programs.id))
       .limit(1)
 
     if (!program) {
@@ -94,6 +95,7 @@ export async function PATCH(
         eq(programs.clientId, client.id),
         eq(programs.filename, decodedFilename)
       ))
+      .orderBy(desc(programs.id))
       .limit(1)
 
     if (!program) {

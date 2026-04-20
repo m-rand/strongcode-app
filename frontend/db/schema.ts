@@ -186,3 +186,23 @@ export const trainingLog = sqliteTable("training_log", {
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
 });
+
+// ─── Training Day Log ───────────────────────────────────────
+// One row per performed day (within a program/week), used for
+// session-level notes and completed accessory work.
+export const trainingDayLog = sqliteTable("training_day_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  programId: integer("program_id")
+    .notNull()
+    .references(() => programs.id, { onDelete: "cascade" }),
+  week: integer("week").notNull(),
+  performedDate: text("performed_date").notNull(), // YYYY-MM-DD
+  notes: text("notes"),
+  accessories: text("accessories"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});

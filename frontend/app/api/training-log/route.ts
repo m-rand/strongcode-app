@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     // Verify program exists
     const programId = entries[0].programId;
     const [program] = await db
-      .select({ id: programs.id })
+      .select({ id: programs.id, status: programs.status })
       .from(programs)
       .where(eq(programs.id, programId))
       .limit(1);
@@ -83,6 +83,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Program not found" },
         { status: 404 }
+      );
+    }
+
+    if (program.status !== "active") {
+      return NextResponse.json(
+        { error: "Only active programs can be updated by training log." },
+        { status: 403 }
       );
     }
 

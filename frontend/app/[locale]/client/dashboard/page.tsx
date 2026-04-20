@@ -17,6 +17,7 @@ interface OneRMEntry {
 }
 
 interface Program {
+  id: number
   filename: string
   block: string
   startDate: string
@@ -348,9 +349,9 @@ export default function ClientDashboard() {
               {t('allPrograms')} ({programs.length})
             </h2>
             {programs.length > 0 ? (
-              <div className="space-y-2">
-                {programs.slice(0, 3).map((program, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {programs.map((program) => (
+                  <div key={program.id} className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: 'var(--border-color)' }}>
                     <div>
                       <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
                         program.block === 'prep' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
@@ -359,20 +360,24 @@ export default function ClientDashboard() {
                       </span>
                       <span className="ml-2 text-sm" style={{ color: 'var(--text-secondary)' }}>{program.startDate}</span>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      program.status === 'active' ? 'bg-green-100 text-green-800' :
-                      program.status === 'completed' ? 'bg-gray-100 text-gray-600' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {program.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        program.status === 'active' ? 'bg-green-100 text-green-800' :
+                        program.status === 'completed' ? 'bg-gray-100 text-gray-600' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {program.status}
+                      </span>
+                      <Link
+                        href={`/${locale}/client/programs/${encodeURIComponent(program.filename)}`}
+                        className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                        style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                      >
+                        {t('viewProgram')}
+                      </Link>
+                    </div>
                   </div>
                 ))}
-                {programs.length > 3 && (
-                  <p className="text-sm text-center pt-2" style={{ color: 'var(--text-secondary)' }}>
-                    +{programs.length - 3} {t('morePrograms')}
-                  </p>
-                )}
               </div>
             ) : (
               <p className="text-center py-4" style={{ color: 'var(--text-secondary)' }}>{t('noPrograms')}</p>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { programs, clients } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { validateProgramWithVersion } from '@/lib/program/schemaValidation'
 
 const FILENAME_PATTERN = /^\d{4}-\d{2}-\d{2}_[a-z0-9-]+_(prep|comp)_all_lifts\.json$/
@@ -142,12 +142,23 @@ export async function POST(request: Request) {
       programData.meta.created_at = new Date().toISOString()
     }
 
-    // Save to database
-    await db.insert(programs).values({
+    const [existingProgram] = await db
+      .select({
+        id: programs.id,
+        status: programs.status,
+        createdAt: programs.createdAt,
+        createdBy: programs.createdBy,
+      })
+      .from(programs)
+      .where(and(eq(programs.clientId, client.id), eq(programs.filename, filename)))
+      .orderBy(desc(programs.id))
+      .limit(1)
+
+    const rowValues = {
       clientId: client.id,
       filename,
       schemaVersion: programData.schema_version || '1.0',
-      status: programData.meta.status || 'draft',
+      status: programData.meta.status || existingProgram?.status || 'draft',
       block: programData.program_info.block,
       startDate: programData.program_info.start_date,
       endDate: programData.program_info.end_date || '',
@@ -157,9 +168,15 @@ export async function POST(request: Request) {
       calculated: programData.calculated,
       sessionsData: programData.sessions || {},
       notes: typeof programData.meta?.notes === 'string' ? programData.meta.notes : null,
-      createdAt: programData.meta.created_at,
-      createdBy: programData.meta.created_by || 'Import',
-    })
+      createdAt: programData.meta.created_at || existingProgram?.createdAt || new Date().toISOString(),
+      createdBy: programData.meta.created_by || existingProgram?.createdBy || 'Import',
+    }
+
+    if (existingProgram) {
+      await db.update(programs).set(rowValues).where(eq(programs.id, existingProgram.id))
+    } else {
+      await db.insert(programs).values(rowValues)
+    }
 
     return NextResponse.json({
       success: true,

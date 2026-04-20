@@ -84,6 +84,14 @@ interface InstructionSection {
 
 type LiftKey = 'squat' | 'bench_press' | 'deadlift'
 type ViewMode = 'lift' | 'session'
+type DetailTab = 'plan' | 'history'
+
+interface ProgramDayLog {
+  id?: number
+  performedDate: string
+  notes?: string
+  accessories?: string
+}
 
 function MarkdownText({ content }: { content: string }) {
   return (
@@ -114,6 +122,18 @@ function MarkdownText({ content }: { content: string }) {
 function liftDisplayName(lift: string): string {
   if (lift === 'bench_press') return 'Bench Press'
   return lift.charAt(0).toUpperCase() + lift.slice(1)
+}
+
+function liftShortCode(lift: string): string {
+  if (lift === 'bench_press') return 'BP'
+  if (lift === 'deadlift') return 'DL'
+  return 'SQ'
+}
+
+function liftBadgeClass(lift: string): string {
+  if (lift === 'bench_press') return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200'
+  if (lift === 'deadlift') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
+  return 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200'
 }
 
 // RPE color coding
@@ -279,6 +299,7 @@ export default function ClientProgramDetailPage() {
 
   // Current view state
   const [selectedWeek, setSelectedWeek] = useState(1)
+  const [detailTab, setDetailTab] = useState<DetailTab>('plan')
   const [selectedSession, setSelectedSession] = useState('A')
   const [selectedLift, setSelectedLift] = useState<LiftKey>('squat')
   const [viewMode, setViewMode] = useState<ViewMode>('lift')
@@ -289,6 +310,10 @@ export default function ClientProgramDetailPage() {
   const [globalProgramInstructions, setGlobalProgramInstructions] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [dayLogsByDate, setDayLogsByDate] = useState<Record<string, ProgramDayLog>>({})
+  const [dayLogSavingByDate, setDayLogSavingByDate] = useState<Record<string, boolean>>({})
+  const [dayLogMessageByDate, setDayLogMessageByDate] = useState<Record<string, string>>({})
+  const isReadOnly = program?.meta?.status !== 'active'
 
   // Auth redirect
   useEffect(() => {
@@ -323,10 +348,11 @@ export default function ClientProgramDetailPage() {
     }
   }, [])
 
-  // Fetch training log when program/week/session changes
+  // Fetch training + day logs when program/week changes
   useEffect(() => {
     if (program?.id) {
       fetchTrainingLog()
+      fetchTrainingDayLogs()
     }
   }, [program?.id, selectedWeek])
 
@@ -371,6 +397,35 @@ export default function ClientProgramDetailPage() {
       setLogEntries(entries)
     } catch {
       // Silently fail — log might not exist yet
+    }
+  }
+
+  const fetchTrainingDayLogs = async () => {
+    if (!program?.id) return
+
+    try {
+      const response = await fetch(
+        `/api/training-day-log?programId=${program.id}&week=${selectedWeek}`
+      )
+      if (!response.ok) return
+
+      const data = await response.json()
+      const rows = Array.isArray(data?.logs) ? data.logs : []
+      const next: Record<string, ProgramDayLog> = {}
+      for (const row of rows) {
+        const performedDate = typeof row?.performedDate === 'string' ? row.performedDate : ''
+        if (!performedDate) continue
+        next[performedDate] = {
+          id: typeof row?.id === 'number' ? row.id : undefined,
+          performedDate,
+          notes: typeof row?.notes === 'string' ? row.notes : '',
+          accessories: typeof row?.accessories === 'string' ? row.accessories : '',
+        }
+      }
+      setDayLogsByDate(next)
+      setDayLogMessageByDate({})
+    } catch {
+      // Silently fail — optional day-level notes
     }
   }
 
@@ -462,6 +517,10 @@ export default function ClientProgramDetailPage() {
   // Save all log entries for current week/session
   const saveLog = async () => {
     if (!program) return
+    if (isReadOnly) {
+      setSaveMessage('This program is read-only.')
+      return
+    }
     setSaving(true)
     setSaveMessage('')
 
@@ -501,6 +560,56 @@ export default function ClientProgramDetailPage() {
       setSaveMessage(`Error: ${err.message}`)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const updateDayLogField = (
+    performedDate: string,
+    field: 'notes' | 'accessories',
+    value: string,
+  ) => {
+    setDayLogsByDate((prev) => ({
+      ...prev,
+      [performedDate]: {
+        ...(prev[performedDate] || { performedDate }),
+        [field]: value,
+      },
+    }))
+    setDayLogMessageByDate((prev) => ({ ...prev, [performedDate]: '' }))
+  }
+
+  const saveDayLog = async (performedDate: string) => {
+    if (!program || isReadOnly) return
+
+    const draft = dayLogsByDate[performedDate] || { performedDate, notes: '', accessories: '' }
+    setDayLogSavingByDate((prev) => ({ ...prev, [performedDate]: true }))
+    setDayLogMessageByDate((prev) => ({ ...prev, [performedDate]: '' }))
+
+    try {
+      const response = await fetch('/api/training-day-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          programId: program.id,
+          week: selectedWeek,
+          performedDate,
+          notes: draft.notes || '',
+          accessories: draft.accessories || '',
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data?.error || 'Failed to save day note')
+
+      setDayLogMessageByDate((prev) => ({
+        ...prev,
+        [performedDate]: data?.deleted ? 'Removed' : 'Saved ✓',
+      }))
+      await fetchTrainingDayLogs()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save day note'
+      setDayLogMessageByDate((prev) => ({ ...prev, [performedDate]: `Error: ${message}` }))
+    } finally {
+      setDayLogSavingByDate((prev) => ({ ...prev, [performedDate]: false }))
     }
   }
 
@@ -575,6 +684,81 @@ export default function ClientProgramDetailPage() {
     }
   }
   const parsedGlobal = parseGlobalInstructions(globalProgramInstructions)
+  const getPlannedPercentageForEntry = (entry: LogEntry): number | null => {
+    const weekData = program.sessions?.[entry.session]?.[weekKey]
+    const liftData = weekData?.lifts?.find((item) => item.lift === entry.lift)
+    const set = liftData?.sets?.[entry.setIndex]
+    return typeof set?.percentage === 'number' ? set.percentage : null
+  }
+
+  const historyByDate = (() => {
+    const byDate = new Map<
+      string,
+      {
+        sessionTags: Set<string>
+        lifts: Record<string, {
+          sessionLetters: Set<string>
+          totalSets: number
+          completedSets: number
+          rpeSum: number
+          rpeCount: number
+        }>
+      }
+    >()
+
+    for (const entry of Object.values(logEntries)) {
+      if (entry.week !== selectedWeek) continue
+      if (!entry.performedDate) continue
+      const sessionLetter = entry.plannedSession || entry.session
+      const key = entry.performedDate
+      if (!byDate.has(key)) {
+        byDate.set(key, { sessionTags: new Set<string>(), lifts: {} })
+      }
+      const day = byDate.get(key)!
+      day.sessionTags.add(`${liftShortCode(entry.lift)} ${sessionLetter}`)
+
+      if (!day.lifts[entry.lift]) {
+        day.lifts[entry.lift] = {
+          sessionLetters: new Set<string>(),
+          totalSets: 0,
+          completedSets: 0,
+          rpeSum: 0,
+          rpeCount: 0,
+        }
+      }
+      const liftRow = day.lifts[entry.lift]
+      liftRow.sessionLetters.add(sessionLetter)
+      liftRow.totalSets += 1
+      if (entry.completed) liftRow.completedSets += 1
+      if (typeof entry.rpe === 'number') {
+        liftRow.rpeSum += entry.rpe
+        liftRow.rpeCount += 1
+      }
+    }
+
+    for (const performedDate of Object.keys(dayLogsByDate)) {
+      if (!byDate.has(performedDate)) {
+        byDate.set(performedDate, { sessionTags: new Set<string>(), lifts: {} })
+      }
+    }
+
+    return [...byDate.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([performedDate, value]) => {
+        const lifts = Object.entries(value.lifts).map(([lift, row]) => ({
+          lift,
+          sessionLetters: [...row.sessionLetters].sort(),
+          totalSets: row.totalSets,
+          completedSets: row.completedSets,
+          avgRpe: row.rpeCount > 0 ? row.rpeSum / row.rpeCount : null,
+        }))
+        return {
+          performedDate,
+          sessionTags: [...value.sessionTags].sort(),
+          lifts,
+        }
+      })
+  })()
 
   const renderSessionLiftCard = (
     sessionLetter: string,
@@ -596,7 +780,8 @@ export default function ClientProgramDetailPage() {
               type="date"
               value={workoutDateBySessionLift[sessionLiftKey(sessionLetter, liftData.lift)] || getTodayIsoDate()}
               onChange={(e) => updateLiftWorkoutDate(sessionLetter, liftData.lift, e.target.value)}
-              className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs text-gray-800 dark:text-gray-200"
+              disabled={isReadOnly}
+              className={`px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs text-gray-800 dark:text-gray-200 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
             />
           </div>
         </div>
@@ -643,11 +828,12 @@ export default function ClientProgramDetailPage() {
                           set,
                         )
                       }
+                      disabled={isReadOnly}
                       className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
                         entry.completed
                           ? 'bg-green-500 border-green-500 text-white'
                           : 'border-gray-300 dark:border-gray-600 hover:border-green-400'
-                      }`}
+                      } ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                       {entry.completed && '✓'}
                     </button>
@@ -669,7 +855,8 @@ export default function ClientProgramDetailPage() {
                           { performedVariant: e.target.value || undefined },
                         )
                       }
-                      className="w-full rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 px-2 text-sm text-gray-700 dark:text-gray-200"
+                      disabled={isReadOnly}
+                      className={`w-full rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 px-2 text-sm text-gray-700 dark:text-gray-200 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                       {getVariantOptions(program, liftData.lift, set.variant).map((option) => (
                         <option key={option.value} value={option.value}>
@@ -709,7 +896,8 @@ export default function ClientProgramDetailPage() {
                           },
                         )
                       }
-                      className="w-24 text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 px-2 text-sm text-gray-700 dark:text-gray-200"
+                      disabled={isReadOnly}
+                      className={`w-24 text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 px-2 text-sm text-gray-700 dark:text-gray-200 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                     />
                   </td>
 
@@ -733,7 +921,8 @@ export default function ClientProgramDetailPage() {
                           },
                         )
                       }
-                      className={`w-16 text-center rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 text-sm ${rpeColor(entry.rpe)}`}
+                      disabled={isReadOnly}
+                      className={`w-16 text-center rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 text-sm ${rpeColor(entry.rpe)} ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                       <option value="">-</option>
                       {[6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map(
@@ -760,7 +949,8 @@ export default function ClientProgramDetailPage() {
                         )
                       }
                       placeholder="..."
-                      className="w-full text-sm border-0 border-b border-gray-200 dark:border-gray-600 bg-transparent py-1 focus:ring-0 focus:border-blue-500 text-gray-700 dark:text-gray-300 placeholder-gray-300"
+                      disabled={isReadOnly}
+                      className={`w-full text-sm border-0 border-b border-gray-200 dark:border-gray-600 bg-transparent py-1 focus:ring-0 focus:border-blue-500 text-gray-700 dark:text-gray-300 placeholder-gray-300 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                     />
                   </td>
                 </tr>
@@ -812,6 +1002,17 @@ export default function ClientProgramDetailPage() {
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 {program.program_info.weeks} weeks
               </span>
+              <span
+                className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  program.meta.status === 'active'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : program.meta.status === 'completed'
+                      ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
+                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                }`}
+              >
+                {program.meta.status.toUpperCase()}
+              </span>
             </div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
               {program.program_info.start_date}
@@ -821,6 +1022,11 @@ export default function ClientProgramDetailPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {isReadOnly && (
+          <div className="mb-4 rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
+            This program is in <strong>{program.meta.status}</strong> status and is shown in read-only mode.
+          </div>
+        )}
         {!hasSessions ? (
           /* No sessions — show calculated targets only */
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -853,198 +1059,429 @@ export default function ClientProgramDetailPage() {
               )}
             </div>
 
-            {/* View Mode Selector */}
+            {/* Plan/History tabs */}
             <div className="flex gap-2 mb-4">
               <button
-                onClick={() => setViewMode('lift')}
+                onClick={() => setDetailTab('plan')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  viewMode === 'lift'
+                  detailTab === 'plan'
                     ? 'bg-indigo-600 text-white'
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow'
                 }`}
               >
-                By Lift
+                Plan
               </button>
               <button
-                onClick={() => setViewMode('session')}
+                onClick={() => setDetailTab('history')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  viewMode === 'session'
+                  detailTab === 'history'
                     ? 'bg-indigo-600 text-white'
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow'
                 }`}
               >
-                By Session
+                History
               </button>
             </div>
 
-            {viewMode === 'session' ? (
-              <div className="flex gap-2 mb-6">
-                {sessionKeys.map((key) => (
+            {detailTab === 'plan' && (
+              <>
+                {/* View Mode Selector */}
+                <div className="flex gap-2 mb-4">
                   <button
-                    key={key}
-                    onClick={() => setSelectedSession(key)}
+                    onClick={() => setViewMode('lift')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      selectedSession === key
-                        ? 'bg-green-600 text-white'
+                      viewMode === 'lift'
+                        ? 'bg-indigo-600 text-white'
                         : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow'
                     }`}
                   >
-                    Session {key}
+                    By Lift
                   </button>
-                ))}
-              </div>
-            ) : (
-              <div className="flex gap-2 mb-6">
-                {(['squat', 'bench_press', 'deadlift'] as LiftKey[]).map((lift) => (
                   <button
-                    key={lift}
-                    onClick={() => setSelectedLift(lift)}
+                    onClick={() => setViewMode('session')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      selectedLift === lift
-                        ? 'bg-green-600 text-white'
+                      viewMode === 'session'
+                        ? 'bg-indigo-600 text-white'
                         : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow'
                     }`}
                   >
-                    {liftDisplayName(lift)}
+                    By Session
                   </button>
-                ))}
-              </div>
+                </div>
+
+                {viewMode === 'session' ? (
+                  <div className="flex gap-2 mb-6">
+                    {sessionKeys.map((key) => (
+                      <button
+                        key={key}
+                        onClick={() => setSelectedSession(key)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          selectedSession === key
+                            ? 'bg-green-600 text-white'
+                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow'
+                        }`}
+                      >
+                        Session {key}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex gap-2 mb-6">
+                    {(['squat', 'bench_press', 'deadlift'] as LiftKey[]).map((lift) => (
+                      <button
+                        key={lift}
+                        onClick={() => setSelectedLift(lift)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          selectedLift === lift
+                            ? 'bg-green-600 text-white'
+                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow'
+                        }`}
+                      >
+                        {liftDisplayName(lift)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
-            {/* Weekly Lift Progress */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-              {(['squat', 'bench_press', 'deadlift'] as const).map((lift) => (
-                <div
-                  key={`week-progress-${lift}`}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow px-4 py-3 border border-gray-100 dark:border-gray-700"
-                >
-                  <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    {liftDisplayName(lift)}
-                  </div>
-                  <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
-                    Completed this week:{' '}
-                    <span className="font-semibold text-green-700 dark:text-green-400">
-                      {completedSessionSetsByLift[lift].size}
-                    </span>
-                    <span className="text-gray-400"> / </span>
-                    <span className="font-semibold">{prescribedSessionsByLift[lift]}</span>
-                  </div>
+            {detailTab === 'plan' && (
+              <>
+                {/* Weekly Lift Progress */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  {(['squat', 'bench_press', 'deadlift'] as const).map((lift) => (
+                    <div
+                      key={`week-progress-${lift}`}
+                      className="bg-white dark:bg-gray-800 rounded-lg shadow px-4 py-3 border border-gray-100 dark:border-gray-700"
+                    >
+                      <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        {liftDisplayName(lift)}
+                      </div>
+                      <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                        Completed this week:{' '}
+                        <span className="font-semibold text-green-700 dark:text-green-400">
+                          {completedSessionSetsByLift[lift].size}
+                        </span>
+                        <span className="text-gray-400"> / </span>
+                        <span className="font-semibold">{prescribedSessionsByLift[lift]}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            {(globalProgramInstructions || program.meta.notes) && (
-              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-900 mb-1">
-                  Program instructions
-                </p>
-                {parsedGlobal.sections.map((section, idx) => (
-                  <details key={`${section.title}-${idx}`} className={`rounded border border-amber-200 bg-white/60 ${idx > 0 ? 'mt-2' : ''}`}>
-                    <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
-                      {section.title}
-                    </summary>
-                    <div className="px-3 pb-3">
-                      <MarkdownText content={section.content} />
-                    </div>
-                  </details>
-                ))}
-                {parsedGlobal.faqItems.length > 0 && (
-                  <details className="mt-2 rounded border border-amber-200 bg-white/60">
-                    <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
-                      FAQ
-                    </summary>
-                    <div className="px-3 pb-3 space-y-2">
-                      {parsedGlobal.faqItems.map((item, idx) => (
-                        <details key={`${item.question}-${idx}`} className="rounded border border-amber-100 bg-white">
-                          <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-amber-900">
-                            {item.question}
-                          </summary>
-                          <div className="px-3 pb-3">
-                            <MarkdownText content={item.answer} />
-                          </div>
-                        </details>
-                      ))}
-                    </div>
-                  </details>
+                {(parsedGlobal.sections.length > 0 || parsedGlobal.faqItems.length > 0) && (
+                  <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-900 mb-1">
+                      Global Instructions
+                    </p>
+                    {parsedGlobal.sections.map((section, idx) => (
+                      <details key={`${section.title}-${idx}`} className={`rounded border border-amber-200 bg-white/60 ${idx > 0 ? 'mt-2' : ''}`}>
+                        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
+                          {section.title}
+                        </summary>
+                        <div className="px-3 pb-3">
+                          <MarkdownText content={section.content} />
+                        </div>
+                      </details>
+                    ))}
+                    {parsedGlobal.faqItems.length > 0 && (
+                      <details className="mt-2 rounded border border-amber-200 bg-white/60">
+                        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
+                          FAQ
+                        </summary>
+                        <div className="px-3 pb-3 space-y-2">
+                          {parsedGlobal.faqItems.map((item, idx) => (
+                            <details key={`${item.question}-${idx}`} className="rounded border border-amber-100 bg-white">
+                              <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-amber-900">
+                                {item.question}
+                              </summary>
+                              <div className="px-3 pb-3">
+                                <MarkdownText content={item.answer} />
+                              </div>
+                            </details>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                  </div>
                 )}
-                {(globalProgramInstructions && program.meta.notes) && (
-                  <div className="my-2 border-t border-amber-200" />
-                )}
+
                 {program.meta.notes && (
-                  <details className="rounded border border-amber-200 bg-white/60">
-                    <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
-                      Program-specific notes
-                    </summary>
-                    <div className="px-3 pb-3">
+                  <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-900 mb-1">
+                      Program-specific Notes
+                    </p>
+                    <div className="rounded border border-indigo-200 bg-white/70 px-3 py-3">
                       <MarkdownText content={program.meta.notes} />
                     </div>
-                  </details>
+                  </div>
                 )}
-              </div>
+              </>
             )}
 
-            {/* Session Content */}
-            {(viewMode === 'session' ? !!currentWeekData?.lifts : sessionsForSelectedLift.length > 0) ? (
-              <div className="space-y-6">
-                {viewMode === 'session' ? (
-                  <>
-                    {currentWeekData?.lifts?.map((liftData) => (
-                      renderSessionLiftCard(selectedSession, liftData)
-                    ))}
+            {/* Main Content by tab */}
+            {detailTab === 'plan' ? (
+              (viewMode === 'session' ? !!currentWeekData?.lifts : sessionsForSelectedLift.length > 0) ? (
+                <div className="space-y-6">
+                  {viewMode === 'session' ? (
+                    <>
+                      {currentWeekData?.lifts?.map((liftData) => (
+                        renderSessionLiftCard(selectedSession, liftData)
+                      ))}
 
-                    {currentWeekData?.accessories && currentWeekData.accessories.length > 0 && (
-                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-                        <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                          Accessories
-                        </h4>
-                        <ul className="text-sm space-y-1">
-                          {currentWeekData.accessories.map((acc, idx) => (
-                            <li key={idx} className="text-gray-700 dark:text-gray-300">
-                              {acc.name}: {acc.prescription}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  sessionsForSelectedLift.map(({ sessionKey, weekData, liftData }) =>
-                    renderSessionLiftCard(sessionKey, liftData, {
-                      showSessionLabel: true,
-                      accessories: weekData?.accessories,
-                    }),
-                  )
-                )}
-
-                {/* Save Button */}
-                <div className="flex items-center gap-4 pt-2">
-                  <button
-                    onClick={saveLog}
-                    disabled={saving}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
-                  >
-                    {saving ? 'Saving...' : 'Save Progress'}
-                  </button>
-                  {saveMessage && (
-                    <span
-                      className={`text-sm ${
-                        saveMessage.includes('Error')
-                          ? 'text-red-600'
-                          : 'text-green-600'
-                      }`}
-                    >
-                      {saveMessage}
-                    </span>
+                      {currentWeekData?.accessories && currentWeekData.accessories.length > 0 && (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+                          <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            Accessories
+                          </h4>
+                          <ul className="text-sm space-y-1">
+                            {currentWeekData.accessories.map((acc, idx) => (
+                              <li key={idx} className="text-gray-700 dark:text-gray-300">
+                                {acc.name}: {acc.prescription}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    sessionsForSelectedLift.map(({ sessionKey, weekData, liftData }) =>
+                      renderSessionLiftCard(sessionKey, liftData, {
+                        showSessionLabel: true,
+                        accessories: weekData?.accessories,
+                      }),
+                    )
                   )}
+
+                  {/* Save Button */}
+                  <div className="flex items-center gap-4 pt-2">
+                    {!isReadOnly && (
+                      <button
+                        onClick={saveLog}
+                        disabled={saving}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
+                      >
+                        {saving ? 'Saving...' : 'Save Progress'}
+                      </button>
+                    )}
+                    {saveMessage && (
+                      <span
+                        className={`text-sm ${
+                          saveMessage.includes('Error')
+                            ? 'text-red-600'
+                            : 'text-green-600'
+                        }`}
+                      >
+                        {saveMessage}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                  <p className="text-gray-500 dark:text-gray-400 text-center">
+                    {viewMode === 'session'
+                      ? `No session data for Week ${selectedWeek}, Session ${selectedSession}`
+                      : `No session data for ${liftDisplayName(selectedLift)} in Week ${selectedWeek}`}
+                  </p>
+                </div>
+              )
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <p className="text-gray-500 dark:text-gray-400 text-center">
-                  {viewMode === 'session'
-                    ? `No session data for Week ${selectedWeek}, Session ${selectedSession}`
-                    : `No session data for ${liftDisplayName(selectedLift)} in Week ${selectedWeek}`}
-                </p>
+              <div className="space-y-3">
+                {historyByDate.length === 0 ? (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <p className="text-gray-500 dark:text-gray-400 text-center">
+                      No completed sessions logged yet for Week {selectedWeek}.
+                    </p>
+                  </div>
+                ) : (
+                  historyByDate.map((day, idx) => {
+                    const dayLog = dayLogsByDate[day.performedDate] || { performedDate: day.performedDate, notes: '', accessories: '' }
+                    const dayMessage = dayLogMessageByDate[day.performedDate] || ''
+                    const daySaving = !!dayLogSavingByDate[day.performedDate]
+                    const dayEntries = Object.values(logEntries)
+                      .filter((entry) => entry.week === selectedWeek && entry.performedDate === day.performedDate)
+                      .sort((a, b) => {
+                        if (a.lift !== b.lift) return a.lift.localeCompare(b.lift)
+                        if (a.session !== b.session) return a.session.localeCompare(b.session)
+                        return a.setIndex - b.setIndex
+                      })
+                    const dayEntriesByLift = dayEntries.reduce<Record<string, LogEntry[]>>((acc, entry) => {
+                      if (!acc[entry.lift]) acc[entry.lift] = []
+                      acc[entry.lift].push(entry)
+                      return acc
+                    }, {})
+
+                    return (
+                      <details key={day.performedDate} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden" open={idx === 0}>
+                        <summary className="cursor-pointer list-none px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                            <div>
+                              <div className="font-semibold text-gray-900 dark:text-gray-100">
+                                {day.performedDate}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                Week {selectedWeek}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {day.sessionTags.map((tag) => {
+                                const lift = tag.startsWith('BP') ? 'bench_press' : tag.startsWith('DL') ? 'deadlift' : 'squat'
+                                return (
+                                  <span
+                                    key={`${day.performedDate}-${tag}`}
+                                    className={`px-2 py-1 text-xs rounded-full font-medium ${liftBadgeClass(lift)}`}
+                                  >
+                                    {tag}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </summary>
+                        <div className="px-4 py-4 space-y-4">
+                          {Object.entries(dayEntriesByLift).length > 0 && (
+                            <div className="space-y-4">
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Cell values are reps in <strong>planned/actual</strong> format.
+                              </p>
+                              {Object.entries(dayEntriesByLift).map(([lift, liftEntries]) => {
+                                const columns = liftEntries.map((entry, colIndex) => ({
+                                  ...entry,
+                                  colId: `${entry.session}-${entry.setIndex}-${colIndex}`,
+                                  header: `${entry.session}${entry.setIndex + 1}`,
+                                }))
+
+                                type LiftRow = {
+                                  key: string
+                                  label: string
+                                  sortPct: number
+                                  sortKg: number
+                                  cells: Record<string, string>
+                                }
+                                const rowMap: Record<string, LiftRow> = {}
+
+                                for (const col of columns) {
+                                  const pctRaw = getPlannedPercentageForEntry(col)
+                                  const pct = typeof pctRaw === 'number'
+                                    ? Number(pctRaw.toFixed(1))
+                                    : Number((((col.prescribedWeight || 0) / Math.max(1, Number(program.client.one_rm[col.lift as LiftKey] || 1))) * 100).toFixed(1))
+                                  const kg = Number(col.prescribedWeight || 0)
+                                  const pctLabel = Number.isFinite(pct) ? `${String(pct).replace(/\.0$/, '')}%` : '—'
+                                  const key = `${pctLabel}-${kg}`
+                                  if (!rowMap[key]) {
+                                    rowMap[key] = {
+                                      key,
+                                      label: `${pctLabel} / ${kg}kg`,
+                                      sortPct: Number.isFinite(pct) ? pct : 999,
+                                      sortKg: Number.isFinite(kg) ? kg : 0,
+                                      cells: {},
+                                    }
+                                  }
+                                  const actual = typeof col.actualReps === 'number' ? col.actualReps : '—'
+                                  rowMap[key].cells[col.colId] = `${col.prescribedReps}/${actual}`
+                                }
+
+                                const rows = Object.values(rowMap).sort((a, b) => {
+                                  if (a.sortPct !== b.sortPct) return a.sortPct - b.sortPct
+                                  return a.sortKg - b.sortKg
+                                })
+
+                                return (
+                                  <div key={`${day.performedDate}-${lift}`} className="overflow-x-auto">
+                                    <div className="mb-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                      {liftDisplayName(lift)}
+                                    </div>
+                                    <table className="min-w-full text-sm border border-gray-200 dark:border-gray-700">
+                                      <thead className="bg-gray-50 dark:bg-gray-700/50">
+                                        <tr>
+                                          <th className="px-3 py-2 text-left text-gray-700 dark:text-gray-200">Zone / kg</th>
+                                          {columns.map((col) => (
+                                            <th key={`${day.performedDate}-${lift}-${col.colId}`} className="px-2 py-2 text-center text-gray-700 dark:text-gray-200">
+                                              {col.header}
+                                            </th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {rows.map((row) => (
+                                          <tr key={`${day.performedDate}-${lift}-${row.key}`} className="border-t border-gray-200 dark:border-gray-700">
+                                            <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">
+                                              {row.label}
+                                            </td>
+                                            {columns.map((col) => (
+                                              <td key={`${day.performedDate}-${lift}-${row.key}-${col.colId}`} className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">
+                                                {row.cells[col.colId] || '—'}
+                                              </td>
+                                            ))}
+                                          </tr>
+                                        ))}
+                                        <tr className="border-t border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/30">
+                                          <td className="px-3 py-2 font-semibold text-gray-900 dark:text-gray-100">RPE</td>
+                                          {columns.map((col) => (
+                                            <td key={`${day.performedDate}-${lift}-rpe-${col.colId}`} className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">
+                                              {typeof col.rpe === 'number' ? col.rpe : '—'}
+                                            </td>
+                                          ))}
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 mb-1">
+                                Session note
+                              </label>
+                              <textarea
+                                value={dayLog.notes || ''}
+                                onChange={(e) => updateDayLogField(day.performedDate, 'notes', e.target.value)}
+                                disabled={isReadOnly}
+                                rows={4}
+                                placeholder="How the day felt, key takeaways..."
+                                className={`w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm text-gray-800 dark:text-gray-200 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 mb-1">
+                                Completed accessories
+                              </label>
+                              <textarea
+                                value={dayLog.accessories || ''}
+                                onChange={(e) => updateDayLogField(day.performedDate, 'accessories', e.target.value)}
+                                disabled={isReadOnly}
+                                rows={4}
+                                placeholder="e.g. Pull-ups 4x8, dips 3x12, abs 3x20..."
+                                className={`w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm text-gray-800 dark:text-gray-200 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            {!isReadOnly && (
+                              <button
+                                onClick={() => saveDayLog(day.performedDate)}
+                                disabled={daySaving}
+                                className="px-4 py-2 rounded bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-60"
+                              >
+                                {daySaving ? 'Saving...' : 'Save day note'}
+                              </button>
+                            )}
+                            {dayMessage && (
+                              <span className={`text-sm ${dayMessage.startsWith('Error:') ? 'text-red-600' : 'text-green-600'}`}>
+                                {dayMessage}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </details>
+                    )
+                  })
+                )}
               </div>
             )}
           </>
