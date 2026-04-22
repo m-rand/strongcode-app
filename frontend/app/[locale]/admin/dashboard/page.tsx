@@ -3,8 +3,54 @@
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
+
+type AdminNotification = {
+  programFilename: string
+  clientSlug: string
+  clientName: string
+  week: number
+  lift: string
+  sessionLetter: string
+  performedDate: string
+  loggedSets: number
+  completedSets: number
+  lastLoggedAt: string
+}
+
+function liftLabel(lift: string): string {
+  if (lift === 'bench_press') return 'BP'
+  if (lift === 'deadlift') return 'DL'
+  return 'SQ'
+}
+
+function formatRelativeTime(dateIso: string, locale: string): string {
+  const target = new Date(dateIso).getTime()
+  if (Number.isNaN(target)) return dateIso
+  const diffMs = target - Date.now()
+  const diffMinutes = Math.round(diffMs / 60000)
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+  const absMinutes = Math.abs(diffMinutes)
+
+  if (absMinutes < 60) return rtf.format(diffMinutes, 'minute')
+  const diffHours = Math.round(diffMinutes / 60)
+  if (Math.abs(diffHours) < 24) return rtf.format(diffHours, 'hour')
+  const diffDays = Math.round(diffHours / 24)
+  return rtf.format(diffDays, 'day')
+}
+
+function notificationKey(item: AdminNotification): string {
+  return [
+    item.clientSlug,
+    item.programFilename,
+    item.week,
+    item.lift,
+    item.sessionLetter,
+    item.performedDate,
+    item.lastLoggedAt,
+  ].join('|')
+}
 
 export default function AdminDashboard() {
   const t = useTranslations('admin.dashboard')
@@ -20,6 +66,62 @@ export default function AdminDashboard() {
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState('')
   const [passwordError, setPasswordError] = useState('')
+  const [notifications, setNotifications] = useState<AdminNotification[]>([])
+  const [notificationsLoading, setNotificationsLoading] = useState(true)
+  const [notificationsError, setNotificationsError] = useState('')
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [seenNotificationKeys, setSeenNotificationKeys] = useState<Set<string>>(new Set())
+
+  const markNotificationsAsSeen = (items: AdminNotification[]) => {
+    if (!items.length) return
+    setSeenNotificationKeys((prev) => {
+      const next = new Set(prev)
+      for (const item of items) {
+        next.add(notificationKey(item))
+      }
+      return next
+    })
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchNotifications = async () => {
+      try {
+        setNotificationsLoading(true)
+        setNotificationsError('')
+        const response = await fetch('/api/admin/notifications')
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to load notifications')
+        }
+        if (!cancelled) {
+          const loaded = Array.isArray(data?.notifications) ? data.notifications : []
+          setNotifications(loaded)
+          if (showNotifications) {
+            markNotificationsAsSeen(loaded)
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setNotificationsError(error instanceof Error ? error.message : 'Failed to load notifications')
+        }
+      } finally {
+        if (!cancelled) setNotificationsLoading(false)
+      }
+    }
+
+    fetchNotifications()
+    const intervalId = window.setInterval(fetchNotifications, 60000)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [showNotifications])
+
+  const unreadNotificationsCount = notifications.filter(
+    (item) => !seenNotificationKeys.has(notificationKey(item)),
+  ).length
 
   const submitPasswordChange = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -98,6 +200,24 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-4">
               <ThemeSwitcher />
               <button
+                onClick={() => {
+                  const nextOpen = !showNotifications
+                  setShowNotifications(nextOpen)
+                  if (nextOpen) {
+                    markNotificationsAsSeen(notifications)
+                  }
+                }}
+                className="px-3 py-2 text-sm rounded border flex items-center gap-2"
+                style={{ color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+              >
+                <span>{t('notifications.headerButton')}</span>
+                {unreadNotificationsCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-600 text-white">
+                    {unreadNotificationsCount}
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => setShowPasswordForm((prev) => !prev)}
                 className="px-3 py-2 text-sm rounded border"
                 style={{ color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
@@ -120,6 +240,74 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {showNotifications && (
+          <section
+            className="mb-6 rounded-lg border p-4"
+            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-color)' }}
+          >
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {t('notifications.title')}
+            </h2>
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              {t('notifications.refreshHint')}
+            </span>
+          </div>
+          <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+            {t('notifications.description')}
+          </p>
+
+          {notificationsLoading ? (
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {t('notifications.loading')}
+            </p>
+          ) : notificationsError ? (
+            <p className="text-sm text-red-600">{notificationsError}</p>
+          ) : notifications.length === 0 ? (
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {t('notifications.empty')}
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              {notifications.map((item, index) => (
+                <div
+                  key={`${item.clientSlug}-${item.programFilename}-${item.week}-${item.lift}-${item.sessionLetter}-${item.performedDate}-${index}`}
+                  className="rounded border px-3 py-2"
+                  style={{ borderColor: 'var(--border-color)', background: 'var(--bg-secondary)' }}
+                >
+                  <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                    <div className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                      <span className="font-semibold">{item.clientName}</span>
+                      {' · '}
+                      {`W${item.week} ${liftLabel(item.lift)} ${item.sessionLetter}`}
+                      {' · '}
+                      {item.performedDate}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      {formatRelativeTime(item.lastLoggedAt, locale)}
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between">
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      {t('notifications.sets', {
+                        completed: item.completedSets,
+                        logged: item.loggedSets,
+                      })}
+                    </span>
+                    <Link
+                      href={`/${locale}/client/programs/${encodeURIComponent(item.programFilename)}?adminPreview=1&client=${encodeURIComponent(item.clientSlug)}`}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      {t('notifications.viewProgram')}
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          </section>
+        )}
+
         {showPasswordForm && (
           <form
             onSubmit={submitPasswordChange}

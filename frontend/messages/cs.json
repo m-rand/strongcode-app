@@ -396,6 +396,16 @@
     "dashboard": {
       "title": "Nástěnka",
       "welcome": "Vítejte",
+      "notifications": {
+        "title": "Notifikace tréninkových zápisů klientů",
+        "description": "Poslední session zápisy od klientů. Seznam se automaticky obnovuje každou minutu.",
+        "refreshHint": "Auto-refresh: 60 s",
+        "headerButton": "Notifikace",
+        "loading": "Načítání notifikací...",
+        "empty": "Žádné nové zápisy klientů.",
+        "viewProgram": "Otevřít program",
+        "sets": "Série: {completed}/{logged} hotovo"
+      },
       "stats": {
         "totalClients": "Celkem klientů",
         "activePrograms": "Aktivní programy",
@@ -584,6 +594,16 @@
       "saving": "Ukládám...",
       "saved": "Klient úspěšně uložen. Přesměrování..."
     },
+    "clientSurveyForm": {
+      "title": "Be Strong Advanced Survey",
+      "backToClients": "Zpět na klienty",
+      "save": "Uložit dotazník",
+      "saving": "Ukládání...",
+      "errors": {
+        "loadClient": "Nepodařilo se načíst klienta",
+        "saveSurvey": "Nepodařilo se uložit dotazník"
+      }
+    },
     "import": {
       "title": "Import programu",
       "backToDashboard": "← Dashboard",
@@ -724,10 +744,11 @@
       "noProgramsDescription": "Zatím nebyly vytvořeny žádné programy",
       "createProgram": "Vytvořit program",
       "importProgram": "Importovat program",
-      "import": "Importovat",
-      "createNew": "Vytvořit nový",
-      "hasSessionsYes": "Ano",
-      "hasSessionsNo": "Pouze targets",
+    "import": "Importovat",
+    "createNew": "Vytvořit nový",
+    "edit": "Upravit",
+    "hasSessionsYes": "Ano",
+    "hasSessionsNo": "Pouze targets",
       "table": {
         "client": "Klient",
         "program": "Program",

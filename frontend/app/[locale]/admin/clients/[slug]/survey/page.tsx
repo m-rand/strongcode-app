@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Client {
   slug: string
@@ -14,6 +15,10 @@ interface Client {
 export default function ClientSurveyPage() {
   const params = useParams()
   const router = useRouter()
+  const locale = useLocale()
+  const tSurvey = useTranslations('survey')
+  const tCommon = useTranslations('common')
+  const tForm = useTranslations('admin.clientSurveyForm')
   const [client, setClient] = useState<Client | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -116,7 +121,7 @@ export default function ClientSurveyPage() {
   const fetchClient = async () => {
     try {
       const response = await fetch(`/api/clients/${params.slug}`)
-      if (!response.ok) throw new Error('Failed to load client')
+      if (!response.ok) throw new Error(tForm('errors.loadClient'))
 
       const data = await response.json()
       setClient(data.client)
@@ -156,8 +161,8 @@ export default function ClientSurveyPage() {
         max_training_sessions_per_week: data.client.survey?.max_training_sessions_per_week?.toString() || '',
         muscle_mass_importance: data.client.survey?.muscle_mass_importance || ''
       }))
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : tForm('errors.loadClient'))
     } finally {
       setLoading(false)
     }
@@ -237,13 +242,13 @@ export default function ClientSurveyPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to save survey')
+        throw new Error(data.error || tForm('errors.saveSurvey'))
       }
 
       // Redirect back to client detail page
-      router.push(`/admin/clients/${params.slug}`)
-    } catch (err: any) {
-      setError(err.message)
+      router.push(`/${locale}/admin/clients/${params.slug}`)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : tForm('errors.saveSurvey'))
     } finally {
       setSaving(false)
     }
@@ -252,7 +257,7 @@ export default function ClientSurveyPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Načítání...</p>
+        <p className="text-gray-600">{tCommon('loading')}</p>
       </div>
     )
   }
@@ -263,10 +268,10 @@ export default function ClientSurveyPage() {
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <Link
-            href="/admin/clients"
+            href={`/${locale}/admin/clients`}
             className="text-blue-600 hover:text-blue-800"
           >
-            ← Zpět na klienty
+            ← {tForm('backToClients')}
           </Link>
         </div>
       </div>
@@ -280,13 +285,13 @@ export default function ClientSurveyPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <Link
-              href={`/admin/clients/${client?.slug}`}
+              href={`/${locale}/admin/clients/${client?.slug}`}
               className="text-blue-600 hover:text-blue-800"
             >
               ← {client?.name}
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">
-              Be Strong Advanced Survey
+              {tForm('title')}
             </h1>
           </div>
         </div>
@@ -297,11 +302,11 @@ export default function ClientSurveyPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Personal Information */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Osobní údaje</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.personal.title')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Celé jméno
+                  {tSurvey('sections.personal.name')}
                 </label>
                 <input
                   type="text"
@@ -313,7 +318,7 @@ export default function ClientSurveyPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Národnost
+                  {tSurvey('sections.personal.nationality')}
                 </label>
                 <input
                   type="text"
@@ -325,23 +330,23 @@ export default function ClientSurveyPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pohlaví
+                  {tSurvey('sections.personal.gender')}
                 </label>
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData({...formData, gender: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 >
-                  <option value="">Vyberte...</option>
-                  <option value="male">Muž</option>
-                  <option value="female">Žena</option>
-                  <option value="other">Jiné</option>
+                  <option value="">{tSurvey('sections.personal.genderOptions.select')}</option>
+                  <option value="male">{tSurvey('sections.personal.genderOptions.male')}</option>
+                  <option value="female">{tSurvey('sections.personal.genderOptions.female')}</option>
+                  <option value="other">{tSurvey('sections.personal.genderOptions.other')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Datum narození
+                  {tSurvey('sections.personal.dateOfBirth')}
                 </label>
                 <input
                   type="date"
@@ -353,7 +358,7 @@ export default function ClientSurveyPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Výška (cm)
+                  {tSurvey('sections.personal.height')}
                 </label>
                 <input
                   type="number"
@@ -366,7 +371,7 @@ export default function ClientSurveyPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Váha (kg)
+                  {tSurvey('sections.personal.weight')}
                 </label>
                 <input
                   type="number"
@@ -379,27 +384,27 @@ export default function ClientSurveyPage() {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Zdravotní problémy
+                  {tSurvey('sections.personal.healthIssues')}
                 </label>
                 <textarea
                   value={formData.health_issues}
                   onChange={(e) => setFormData({...formData, health_issues: e.target.value})}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  placeholder="Popište případné zdravotní problémy nebo omezení..."
+                  placeholder={tSurvey('sections.personal.healthIssuesPlaceholder')}
                 />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Další poznámky
+                  {tSurvey('sections.personal.otherComments')}
                 </label>
                 <textarea
                   value={formData.other_comments}
                   onChange={(e) => setFormData({...formData, other_comments: e.target.value})}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  placeholder="Jakékoli další informace..."
+                  placeholder={tSurvey('sections.personal.otherCommentsPlaceholder')}
                 />
               </div>
             </div>
@@ -407,11 +412,11 @@ export default function ClientSurveyPage() {
 
           {/* 1RM Data */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Aktuální 1RM (kg)</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.oneRM.title')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Squat
+                  {tSurvey('sections.oneRM.squat')}
                 </label>
                 <input
                   type="number"
@@ -424,7 +429,7 @@ export default function ClientSurveyPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bench Press
+                  {tSurvey('sections.oneRM.bench')}
                 </label>
                 <input
                   type="number"
@@ -437,7 +442,7 @@ export default function ClientSurveyPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Deadlift
+                  {tSurvey('sections.oneRM.deadlift')}
                 </label>
                 <input
                   type="number"
@@ -452,8 +457,8 @@ export default function ClientSurveyPage() {
 
           {/* Psyching Readiness */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Psychická připravenost</h2>
-            <p className="text-sm text-gray-600 mb-4">Můžeš kdykoli zdvihnout své 1RM?</p>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.psyching.title')}</h2>
+            <p className="text-sm text-gray-600 mb-4">{tSurvey('sections.psyching.subtitle')}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center">
                 <input
@@ -463,7 +468,7 @@ export default function ClientSurveyPage() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label className="ml-2 text-sm font-medium text-gray-900">
-                  Squat
+                  {tSurvey('sections.psyching.squat')}
                 </label>
               </div>
 
@@ -475,7 +480,7 @@ export default function ClientSurveyPage() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label className="ml-2 text-sm font-medium text-gray-900">
-                  Bench Press
+                  {tSurvey('sections.psyching.bench')}
                 </label>
               </div>
 
@@ -487,7 +492,7 @@ export default function ClientSurveyPage() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label className="ml-2 text-sm font-medium text-gray-900">
-                  Deadlift
+                  {tSurvey('sections.psyching.deadlift')}
                 </label>
               </div>
             </div>
@@ -495,14 +500,14 @@ export default function ClientSurveyPage() {
 
           {/* Performance Tests */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Výkonnostní testy</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.performance.title')}</h2>
 
             {/* 75% */}
             <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3 text-gray-900">Kolik opakování při 75% 1RM?</h3>
+              <h3 className="text-lg font-medium mb-3 text-gray-900">{tSurvey('sections.performance.repsAt75')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Squat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.performance.squat')}</label>
                   <input
                     type="number"
                     value={formData.reps_at_75_percent.squat}
@@ -511,7 +516,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bench</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.performance.bench')}</label>
                   <input
                     type="number"
                     value={formData.reps_at_75_percent.bench}
@@ -520,7 +525,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadlift</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.performance.deadlift')}</label>
                   <input
                     type="number"
                     value={formData.reps_at_75_percent.deadlift}
@@ -533,10 +538,10 @@ export default function ClientSurveyPage() {
 
             {/* 85% */}
             <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3 text-gray-900">Kolik opakování při 85% 1RM?</h3>
+              <h3 className="text-lg font-medium mb-3 text-gray-900">{tSurvey('sections.performance.repsAt85')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Squat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.performance.squat')}</label>
                   <input
                     type="number"
                     value={formData.reps_at_85_percent.squat}
@@ -545,7 +550,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bench</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.performance.bench')}</label>
                   <input
                     type="number"
                     value={formData.reps_at_85_percent.bench}
@@ -554,7 +559,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadlift</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.performance.deadlift')}</label>
                   <input
                     type="number"
                     value={formData.reps_at_85_percent.deadlift}
@@ -567,10 +572,10 @@ export default function ClientSurveyPage() {
 
             {/* 92.5% */}
             <div>
-              <h3 className="text-lg font-medium mb-3 text-gray-900">Kolik opakování při 92.5% 1RM?</h3>
+              <h3 className="text-lg font-medium mb-3 text-gray-900">{tSurvey('sections.performance.repsAt925')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Squat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.performance.squat')}</label>
                   <input
                     type="number"
                     value={formData.reps_at_92_5_percent.squat}
@@ -579,7 +584,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bench</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.performance.bench')}</label>
                   <input
                     type="number"
                     value={formData.reps_at_92_5_percent.bench}
@@ -588,7 +593,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadlift</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.performance.deadlift')}</label>
                   <input
                     type="number"
                     value={formData.reps_at_92_5_percent.deadlift}
@@ -602,40 +607,40 @@ export default function ClientSurveyPage() {
 
           {/* Equipment */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Vybavení</h2>
-            <p className="text-sm text-gray-600 mb-4">Minimální skok váhy v kg (kotouče k dispozici)</p>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.equipment.title')}</h2>
+            <p className="text-sm text-gray-600 mb-4">{tSurvey('sections.equipment.subtitle')}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Squat (kg)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.equipment.squat')}</label>
                 <input
                   type="number"
                   step="0.5"
                   value={formData.minimum_weight_jump.squat}
                   onChange={(e) => setFormData({...formData, minimum_weight_jump: {...formData.minimum_weight_jump, squat: e.target.value}})}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  placeholder="např. 2.5"
+                  placeholder="2.5"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bench (kg)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.equipment.bench')}</label>
                 <input
                   type="number"
                   step="0.5"
                   value={formData.minimum_weight_jump.bench}
                   onChange={(e) => setFormData({...formData, minimum_weight_jump: {...formData.minimum_weight_jump, bench: e.target.value}})}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  placeholder="např. 2.5"
+                  placeholder="2.5"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Deadlift (kg)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.equipment.deadlift')}</label>
                 <input
                   type="number"
                   step="0.5"
                   value={formData.minimum_weight_jump.deadlift}
                   onChange={(e) => setFormData({...formData, minimum_weight_jump: {...formData.minimum_weight_jump, deadlift: e.target.value}})}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  placeholder="např. 2.5"
+                  placeholder="2.5"
                 />
               </div>
             </div>
@@ -643,33 +648,33 @@ export default function ClientSurveyPage() {
 
           {/* Stress Level */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Vnější stres</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.stress.title')}</h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Úroveň externího stresu (1-5)
+                {tSurvey('sections.stress.level')}
               </label>
               <select
                 value={formData.external_stress_level}
                 onChange={(e) => setFormData({...formData, external_stress_level: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               >
-                <option value="">Vyberte...</option>
-                <option value="1">1 - Velmi nízký</option>
-                <option value="2">2 - Nízký</option>
-                <option value="3">3 - Střední</option>
-                <option value="4">4 - Vysoký</option>
-                <option value="5">5 - Velmi vysoký</option>
+                <option value="">{tSurvey('sections.stress.options.select')}</option>
+                <option value="1">{tSurvey('sections.stress.options.1')}</option>
+                <option value="2">{tSurvey('sections.stress.options.2')}</option>
+                <option value="3">{tSurvey('sections.stress.options.3')}</option>
+                <option value="4">{tSurvey('sections.stress.options.4')}</option>
+                <option value="5">{tSurvey('sections.stress.options.5')}</option>
               </select>
             </div>
           </div>
 
           {/* Training Frequency */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Frekvence tréninku</h2>
-            <p className="text-sm text-gray-600 mb-4">Kolikrát týdně trénuješ každý cvik?</p>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.frequency.title')}</h2>
+            <p className="text-sm text-gray-600 mb-4">{tSurvey('sections.frequency.subtitle')}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Squat (×/týden)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.frequency.squat')}</label>
                 <input
                   type="number"
                   value={formData.training_frequency_per_week.squat}
@@ -678,7 +683,7 @@ export default function ClientSurveyPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bench (×/týden)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.frequency.bench')}</label>
                 <input
                   type="number"
                   value={formData.training_frequency_per_week.bench}
@@ -687,7 +692,7 @@ export default function ClientSurveyPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Deadlift (×/týden)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.frequency.deadlift')}</label>
                 <input
                   type="number"
                   value={formData.training_frequency_per_week.deadlift}
@@ -700,13 +705,13 @@ export default function ClientSurveyPage() {
 
           {/* Volume Metrics */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Objem tréninku (poslední 2 měsíce)</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.volume.title')}</h2>
 
             <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3 text-gray-900">Průměrné počty zdvihů ≥70% za týden</h3>
+              <h3 className="text-lg font-medium mb-3 text-gray-900">{tSurvey('sections.volume.avgLifts70')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Squat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.volume.squat')}</label>
                   <input
                     type="number"
                     value={formData.avg_lifts_70_percent_per_week.squat}
@@ -715,7 +720,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bench</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.volume.bench')}</label>
                   <input
                     type="number"
                     value={formData.avg_lifts_70_percent_per_week.bench}
@@ -724,7 +729,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadlift</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.volume.deadlift')}</label>
                   <input
                     type="number"
                     value={formData.avg_lifts_70_percent_per_week.deadlift}
@@ -736,10 +741,10 @@ export default function ClientSurveyPage() {
             </div>
 
             <div>
-              <h3 className="text-lg font-medium mb-3 text-gray-900">Zdvihy při 95-100% za měsíc</h3>
+              <h3 className="text-lg font-medium mb-3 text-gray-900">{tSurvey('sections.volume.lifts95100')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Squat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.volume.squat')}</label>
                   <input
                     type="number"
                     value={formData.lifts_95_100_percent_per_month.squat}
@@ -748,7 +753,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bench</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.volume.bench')}</label>
                   <input
                     type="number"
                     value={formData.lifts_95_100_percent_per_month.bench}
@@ -757,7 +762,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadlift</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.volume.deadlift')}</label>
                   <input
                     type="number"
                     value={formData.lifts_95_100_percent_per_month.deadlift}
@@ -771,13 +776,13 @@ export default function ClientSurveyPage() {
 
           {/* Progress Tracking */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Sledování pokroku</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.progress.title')}</h2>
 
             <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3 text-gray-900">Zlepšení 1RM za poslední 2 měsíce (kg)</h3>
+              <h3 className="text-lg font-medium mb-3 text-gray-900">{tSurvey('sections.progress.improvement2Months')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Squat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.progress.squat')}</label>
                   <input
                     type="number"
                     step="0.5"
@@ -787,7 +792,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bench</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.progress.bench')}</label>
                   <input
                     type="number"
                     step="0.5"
@@ -797,7 +802,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadlift</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.progress.deadlift')}</label>
                   <input
                     type="number"
                     step="0.5"
@@ -810,10 +815,10 @@ export default function ClientSurveyPage() {
             </div>
 
             <div>
-              <h3 className="text-lg font-medium mb-3 text-gray-900">Zlepšení 1RM za poslední rok (kg)</h3>
+              <h3 className="text-lg font-medium mb-3 text-gray-900">{tSurvey('sections.progress.improvementYear')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Squat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.progress.squat')}</label>
                   <input
                     type="number"
                     step="0.5"
@@ -823,7 +828,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bench</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.progress.bench')}</label>
                   <input
                     type="number"
                     step="0.5"
@@ -833,7 +838,7 @@ export default function ClientSurveyPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadlift</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tSurvey('sections.progress.deadlift')}</label>
                   <input
                     type="number"
                     step="0.5"
@@ -848,11 +853,11 @@ export default function ClientSurveyPage() {
 
           {/* Capacity */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Kapacita</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">{tSurvey('sections.capacity.title')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tréninkové jednotky za týden v poslední době
+                  {tSurvey('sections.capacity.sessionsLately')}
                 </label>
                 <input
                   type="number"
@@ -864,7 +869,7 @@ export default function ClientSurveyPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Maximální počet tréninkových jednotek za týden
+                  {tSurvey('sections.capacity.maxSessions')}
                 </label>
                 <input
                   type="number"
@@ -877,14 +882,14 @@ export default function ClientSurveyPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Důležitost svalové hmoty (kromě síly)
+                {tSurvey('sections.capacity.muscleMass')}
               </label>
               <textarea
                 value={formData.muscle_mass_importance}
                 onChange={(e) => setFormData({...formData, muscle_mass_importance: e.target.value})}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                placeholder="Popiš jak důležitý je pro tebe nárůst svalové hmoty..."
+                placeholder={tSurvey('sections.capacity.muscleMassPlaceholder')}
               />
             </div>
           </div>
@@ -899,17 +904,17 @@ export default function ClientSurveyPage() {
           {/* Submit Buttons */}
           <div className="flex gap-4 justify-end">
             <Link
-              href={`/admin/clients/${client?.slug}`}
+              href={`/${locale}/admin/clients/${client?.slug}`}
               className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-50 text-gray-900"
             >
-              Zrušit
+              {tCommon('cancel')}
             </Link>
             <button
               type="submit"
               disabled={saving}
               className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
             >
-              {saving ? 'Ukládání...' : 'Uložit dotazník'}
+              {saving ? tForm('saving') : tForm('save')}
             </button>
           </div>
         </form>

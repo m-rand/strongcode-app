@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
@@ -48,8 +48,8 @@ interface Program {
     end_date: string
     weeks: number
   }
-  input: any
-  calculated: any
+  input: Record<string, { variants?: Record<string, unknown> | string[] } | undefined>
+  calculated: Record<string, unknown>
   sessions?: Record<string, Record<string, WeekSession>>
 }
 
@@ -136,6 +136,45 @@ function liftBadgeClass(lift: string): string {
   return 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200'
 }
 
+function variantBarClass(index: number): string {
+  const palette = [
+    'bg-blue-500',
+    'bg-emerald-500',
+    'bg-violet-500',
+    'bg-amber-500',
+  ]
+  return palette[index % palette.length]
+}
+
+function variantCodeToNumberLabel(variant: string | undefined): string {
+  if (!variant || variant === 'variant_1' || variant === 'comp') return 'V1'
+  const match = variant.match(/^variant_(\d+)$/)
+  if (match) return `V${match[1]}`
+  return variant
+}
+
+function getLiftVariantName(program: Program | null, lift: string, variant: string | undefined): string {
+  if (!variant || variant === 'variant_1' || variant === 'comp') return 'main'
+  const variantsRaw = program?.input?.[lift]?.variants
+  if (Array.isArray(variantsRaw)) {
+    const match = variant.match(/^variant_(\d+)$/)
+    const index = match ? Number(match[1]) - 2 : -1
+    const name = index >= 0 ? String(variantsRaw[index] || '').trim() : ''
+    return name || variant
+  }
+  if (variantsRaw && typeof variantsRaw === 'object') {
+    const raw = (variantsRaw as Record<string, unknown>)[variant]
+    const name = typeof raw === 'string' ? raw.trim() : ''
+    return name || variant
+  }
+  return variant
+}
+
+function formatVariantPercent(percent: number): string {
+  const rounded = percent >= 10 ? Math.round(percent) : Number(percent.toFixed(1))
+  return `${rounded}%`
+}
+
 // RPE color coding
 function rpeColor(rpe: number | undefined): string {
   if (rpe === undefined) return ''
@@ -145,22 +184,39 @@ function rpeColor(rpe: number | undefined): string {
   return 'text-red-600'
 }
 
+function isMeaningfulLogEntry(entry: LogEntry): boolean {
+  const hasNotes = typeof entry.notes === 'string' && entry.notes.trim().length > 0
+  const hasRpe = typeof entry.rpe === 'number'
+  const hasWeightOverride = typeof entry.actualWeight === 'number' && entry.actualWeight !== entry.prescribedWeight
+  const hasRepsOverride = typeof entry.actualReps === 'number' && entry.actualReps !== entry.prescribedReps
+  const hasNonDefaultVariant =
+    typeof entry.performedVariant === 'string' &&
+    entry.performedVariant.length > 0 &&
+    entry.performedVariant !== 'variant_1' &&
+    entry.performedVariant !== 'comp'
+  return !!entry.completed || hasNotes || hasRpe || hasWeightOverride || hasRepsOverride || hasNonDefaultVariant
+}
+
+function hasTrainingSignal(entry: LogEntry): boolean {
+  const hasRpe = typeof entry.rpe === 'number'
+  const hasWeightOverride = typeof entry.actualWeight === 'number' && entry.actualWeight !== entry.prescribedWeight
+  const hasRepsOverride = typeof entry.actualReps === 'number' && entry.actualReps !== entry.prescribedReps
+  const hasNonDefaultVariant =
+    typeof entry.performedVariant === 'string' &&
+    entry.performedVariant.length > 0 &&
+    entry.performedVariant !== 'variant_1' &&
+    entry.performedVariant !== 'comp'
+  return !!entry.completed || hasRpe || hasWeightOverride || hasRepsOverride || hasNonDefaultVariant
+}
+
 function getVariantLabel(program: Program | null, lift: string, variant: string | undefined): string {
-  if (!variant) return ''
-  if (variant === 'comp' || variant === 'variant_1') return 'Variant 1 (Comp)'
-
-  const liftVariants = program?.input?.[lift]?.variants || {}
-  const base: Record<string, string> = {
-    variant_2: liftVariants.variant_2 ? `Variant 2 (${liftVariants.variant_2})` : 'Variant 2',
-    variant_3: liftVariants.variant_3 ? `Variant 3 (${liftVariants.variant_3})` : 'Variant 3',
-    variant_4: liftVariants.variant_4 ? `Variant 4 (${liftVariants.variant_4})` : 'Variant 4',
-  }
-
-  return base[variant] || variant
+  const numberLabel = variantCodeToNumberLabel(variant)
+  const name = getLiftVariantName(program, lift, variant)
+  return name ? `${numberLabel}: ${name}` : numberLabel
 }
 
 function getVariantOptions(program: Program | null, lift: string, plannedVariant?: string): Array<{ value: string; label: string }> {
-  const options: Array<{ value: string; label: string }> = [{ value: 'variant_1', label: 'Variant 1 (Comp)' }]
+  const options: Array<{ value: string; label: string }> = [{ value: 'variant_1', label: getVariantLabel(program, lift, 'variant_1') }]
   const variantsRaw = program?.input?.[lift]?.variants
 
   if (Array.isArray(variantsRaw)) {
@@ -168,14 +224,14 @@ function getVariantOptions(program: Program | null, lift: string, plannedVariant
       const trimmed = String(name || '').trim()
       if (!trimmed) return
       const code = `variant_${idx + 2}`
-      options.push({ value: code, label: `${code.replace('variant_', 'Variant ')} (${trimmed})` })
+      options.push({ value: code, label: getVariantLabel(program, lift, code) })
     })
   } else if (variantsRaw && typeof variantsRaw === 'object') {
     ;(['variant_2', 'variant_3', 'variant_4'] as const).forEach((code) => {
       const raw = (variantsRaw as Record<string, unknown>)[code]
       const trimmed = typeof raw === 'string' ? raw.trim() : ''
       if (!trimmed) return
-      options.push({ value: code, label: `${code.replace('variant_', 'Variant ')} (${trimmed})` })
+      options.push({ value: code, label: getVariantLabel(program, lift, code) })
     })
   }
 
@@ -289,6 +345,7 @@ function parseGlobalInstructions(raw: string): { sections: InstructionSection[];
 export default function ClientProgramDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session, status: authStatus } = useSession()
   const t = useTranslations('client')
   const locale = useLocale()
@@ -306,6 +363,7 @@ export default function ClientProgramDetailPage() {
 
   // Training log state
   const [logEntries, setLogEntries] = useState<Record<string, LogEntry>>({})
+  const [allLogEntries, setAllLogEntries] = useState<LogEntry[]>([])
   const [workoutDateBySessionLift, setWorkoutDateBySessionLift] = useState<Record<string, string>>({})
   const [globalProgramInstructions, setGlobalProgramInstructions] = useState('')
   const [saving, setSaving] = useState(false)
@@ -313,7 +371,11 @@ export default function ClientProgramDetailPage() {
   const [dayLogsByDate, setDayLogsByDate] = useState<Record<string, ProgramDayLog>>({})
   const [dayLogSavingByDate, setDayLogSavingByDate] = useState<Record<string, boolean>>({})
   const [dayLogMessageByDate, setDayLogMessageByDate] = useState<Record<string, string>>({})
-  const isReadOnly = program?.meta?.status !== 'active'
+  const adminPreviewClientSlug = searchParams.get('client') || ''
+  const isAdminPreview = session?.user?.role === 'admin' && searchParams.get('adminPreview') === '1'
+  const isReadOnly = isAdminPreview || program?.meta?.status !== 'active'
+  const backHref = isAdminPreview ? `/${locale}/admin/programs` : `/${locale}/client/dashboard`
+  const backLabel = isAdminPreview ? 'Programs' : 'Dashboard'
 
   // Auth redirect
   useEffect(() => {
@@ -324,10 +386,12 @@ export default function ClientProgramDetailPage() {
 
   // Fetch program
   useEffect(() => {
-    if (session?.user?.client_slug && params.filename) {
+    const hasClientSlug = !!session?.user?.client_slug || (isAdminPreview && !!adminPreviewClientSlug)
+    if (hasClientSlug && params.filename) {
       fetchProgram()
     }
-  }, [session?.user?.client_slug, params.filename])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.client_slug, params.filename, isAdminPreview, adminPreviewClientSlug])
 
   useEffect(() => {
     let cancelled = false
@@ -354,11 +418,20 @@ export default function ClientProgramDetailPage() {
       fetchTrainingLog()
       fetchTrainingDayLogs()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [program?.id, selectedWeek])
+
+  useEffect(() => {
+    if (program?.id) {
+      fetchAllTrainingLog()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program?.id])
 
   const fetchProgram = async () => {
     try {
-      const slug = session?.user?.client_slug
+      const slug = isAdminPreview ? adminPreviewClientSlug : session?.user?.client_slug
+      if (!slug) throw new Error('Missing client slug')
       const filename = decodeURIComponent(params.filename as string)
       const response = await fetch(
         `/api/programs/${slug}/${encodeURIComponent(filename)}`
@@ -374,8 +447,8 @@ export default function ClientProgramDetailPage() {
           setSelectedSession(sessionKeys[0])
         }
       }
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load program')
     } finally {
       setLoading(false)
     }
@@ -397,6 +470,18 @@ export default function ClientProgramDetailPage() {
       setLogEntries(entries)
     } catch {
       // Silently fail — log might not exist yet
+    }
+  }
+
+  const fetchAllTrainingLog = async () => {
+    if (!program?.id) return
+    try {
+      const response = await fetch(`/api/training-log?programId=${program.id}`)
+      if (!response.ok) return
+      const data = await response.json()
+      setAllLogEntries(Array.isArray(data?.logs) ? data.logs : [])
+    } catch {
+      // Silently fail — summary widgets are optional
     }
   }
 
@@ -556,8 +641,10 @@ export default function ClientProgramDetailPage() {
 
       // Refresh log
       await fetchTrainingLog()
-    } catch (err: any) {
-      setSaveMessage(`Error: ${err.message}`)
+      await fetchAllTrainingLog()
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save'
+      setSaveMessage(`Error: ${message}`)
     } finally {
       setSaving(false)
     }
@@ -629,10 +716,10 @@ export default function ClientProgramDetailPage() {
         <div className="text-center">
           <p className="text-red-600 mb-4">{error || 'Program not found'}</p>
           <Link
-            href={`/${locale}/client/dashboard`}
+            href={backHref}
             className="text-blue-600 hover:text-blue-800"
           >
-            ← {t('dashboard.welcome')}
+            ← {backLabel}
           </Link>
         </div>
       </div>
@@ -657,6 +744,7 @@ export default function ClientProgramDetailPage() {
       weekData: WeekSession | undefined
       liftData: LiftData
     }>
+  const plannedSetCountsBySessionLift: Record<string, number> = {}
   const prescribedSessionsByLift = { squat: 0, bench_press: 0, deadlift: 0 }
   if (program.sessions) {
     for (const sessionKey of sessionKeys) {
@@ -667,6 +755,7 @@ export default function ClientProgramDetailPage() {
         if (liftData.lift === 'squat' || liftData.lift === 'bench_press' || liftData.lift === 'deadlift') {
           if (Array.isArray(liftData.sets) && liftData.sets.length > 0) {
             prescribedSessionsByLift[liftData.lift] += 1
+            plannedSetCountsBySessionLift[sessionLiftKey(sessionKey, liftData.lift)] = liftData.sets.length
           }
         }
       }
@@ -677,13 +766,68 @@ export default function ClientProgramDetailPage() {
     bench_press: new Set<string>(),
     deadlift: new Set<string>(),
   }
+  const loggedSetCountsBySessionLift: Record<string, number> = {}
+  const completedSetCountsBySessionLift: Record<string, number> = {}
   for (const entry of Object.values(logEntries)) {
     if (entry.week !== selectedWeek) continue
     if (entry.lift === 'squat' || entry.lift === 'bench_press' || entry.lift === 'deadlift') {
-      completedSessionSetsByLift[entry.lift].add(entry.session)
+      if (!isMeaningfulLogEntry(entry)) continue
+      const sessionLetter = entry.plannedSession || entry.session
+      const key = sessionLiftKey(sessionLetter, entry.lift)
+      loggedSetCountsBySessionLift[key] = (loggedSetCountsBySessionLift[key] || 0) + 1
+      if (entry.completed) {
+        completedSetCountsBySessionLift[key] = (completedSetCountsBySessionLift[key] || 0) + 1
+      }
+    }
+  }
+  for (const [key, plannedSetCount] of Object.entries(plannedSetCountsBySessionLift)) {
+    if (plannedSetCount <= 0) continue
+    const completedSetCount = completedSetCountsBySessionLift[key] || 0
+    const loggedSetCount = loggedSetCountsBySessionLift[key] || 0
+    const effectiveDoneSetCount = Math.max(completedSetCount, loggedSetCount)
+    if (effectiveDoneSetCount < plannedSetCount) continue
+    const separatorIndex = key.indexOf('-')
+    if (separatorIndex <= 0) continue
+    const sessionLetter = key.slice(0, separatorIndex)
+    const lift = key.slice(separatorIndex + 1)
+    if (lift === 'squat' || lift === 'bench_press' || lift === 'deadlift') {
+      completedSessionSetsByLift[lift].add(sessionLetter)
     }
   }
   const parsedGlobal = parseGlobalInstructions(globalProgramInstructions)
+  const blockVariantUsageByLift = (() => {
+    const countsByLift: Record<LiftKey, Record<string, number>> = {
+      squat: {},
+      bench_press: {},
+      deadlift: {},
+    }
+
+    for (const entry of allLogEntries) {
+      if (entry.lift !== 'squat' && entry.lift !== 'bench_press' && entry.lift !== 'deadlift') continue
+      if (!hasTrainingSignal(entry)) continue
+      const variantCode = (entry.performedVariant || 'variant_1').trim() || 'variant_1'
+      countsByLift[entry.lift][variantCode] = (countsByLift[entry.lift][variantCode] || 0) + 1
+    }
+
+    return (['squat', 'bench_press', 'deadlift'] as LiftKey[]).reduce((acc, lift) => {
+      const total = Object.values(countsByLift[lift]).reduce((sum, count) => sum + count, 0)
+      acc[lift] = Object.entries(countsByLift[lift])
+        .map(([variantCode, count]) => ({
+          variantCode,
+          label: getVariantLabel(program, lift, variantCode),
+          count,
+          percent: total > 0 ? (count / total) * 100 : 0,
+        }))
+        .sort((a, b) => b.count - a.count)
+      return acc
+    }, { squat: [], bench_press: [], deadlift: [] } as Record<LiftKey, Array<{
+      variantCode: string
+      label: string
+      count: number
+      percent: number
+    }>>)
+  })()
+
   const getPlannedPercentageForEntry = (entry: LogEntry): number | null => {
     const weekData = program.sessions?.[entry.session]?.[weekKey]
     const liftData = weekData?.lifts?.find((item) => item.lift === entry.lift)
@@ -695,7 +839,13 @@ export default function ClientProgramDetailPage() {
     const byDate = new Map<
       string,
       {
-        sessionTags: Set<string>
+        sessionTags: Map<string, {
+          lift: string
+          sessionLetter: string
+          completedSets: number
+          loggedSets: number
+          plannedSets: number
+        }>
         lifts: Record<string, {
           sessionLetters: Set<string>
           totalSets: number
@@ -709,13 +859,27 @@ export default function ClientProgramDetailPage() {
     for (const entry of Object.values(logEntries)) {
       if (entry.week !== selectedWeek) continue
       if (!entry.performedDate) continue
+      if (!isMeaningfulLogEntry(entry)) continue
       const sessionLetter = entry.plannedSession || entry.session
       const key = entry.performedDate
       if (!byDate.has(key)) {
-        byDate.set(key, { sessionTags: new Set<string>(), lifts: {} })
+        byDate.set(key, { sessionTags: new Map(), lifts: {} })
       }
       const day = byDate.get(key)!
-      day.sessionTags.add(`${liftShortCode(entry.lift)} ${sessionLetter}`)
+      const tagKey = `${entry.lift}-${sessionLetter}`
+      const existingTag = day.sessionTags.get(tagKey)
+      if (existingTag) {
+        existingTag.loggedSets += 1
+        if (entry.completed) existingTag.completedSets += 1
+      } else {
+        day.sessionTags.set(tagKey, {
+          lift: entry.lift,
+          sessionLetter,
+          completedSets: entry.completed ? 1 : 0,
+          loggedSets: 1,
+          plannedSets: plannedSetCountsBySessionLift[sessionLiftKey(sessionLetter, entry.lift)] || 0,
+        })
+      }
 
       if (!day.lifts[entry.lift]) {
         day.lifts[entry.lift] = {
@@ -738,7 +902,7 @@ export default function ClientProgramDetailPage() {
 
     for (const performedDate of Object.keys(dayLogsByDate)) {
       if (!byDate.has(performedDate)) {
-        byDate.set(performedDate, { sessionTags: new Set<string>(), lifts: {} })
+        byDate.set(performedDate, { sessionTags: new Map(), lifts: {} })
       }
     }
 
@@ -752,9 +916,24 @@ export default function ClientProgramDetailPage() {
           completedSets: row.completedSets,
           avgRpe: row.rpeCount > 0 ? row.rpeSum / row.rpeCount : null,
         }))
+        const sessionTags = [...value.sessionTags.values()]
+          .map((tag) => {
+            const effectiveDoneSets = Math.max(tag.completedSets, tag.loggedSets)
+            const isComplete = tag.plannedSets > 0 && effectiveDoneSets >= tag.plannedSets
+            const baseLabel = `${liftShortCode(tag.lift)} ${tag.sessionLetter}`
+            const label = isComplete || tag.plannedSets <= 0
+              ? baseLabel
+              : `${baseLabel} (${effectiveDoneSets}/${tag.plannedSets})`
+            return {
+              ...tag,
+              isComplete,
+              label,
+            }
+          })
+          .sort((a, b) => a.label.localeCompare(b.label))
         return {
           performedDate,
-          sessionTags: [...value.sessionTags].sort(),
+          sessionTags,
           lifts,
         }
       })
@@ -764,30 +943,81 @@ export default function ClientProgramDetailPage() {
     sessionLetter: string,
     liftData: LiftData,
     options?: { showSessionLabel?: boolean; accessories?: WeekSession['accessories'] },
-  ) => (
-    <div
-      key={`${sessionLetter}-${liftData.lift}`}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
-    >
-      <div className="bg-gray-100 dark:bg-gray-700 px-4 py-3">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-            {options?.showSessionLabel ? `Session ${sessionLetter} · ${liftDisplayName(liftData.lift)}` : liftDisplayName(liftData.lift)}
-          </h3>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-600 dark:text-gray-300">Workout date</label>
-            <input
-              type="date"
-              value={workoutDateBySessionLift[sessionLiftKey(sessionLetter, liftData.lift)] || getTodayIsoDate()}
-              onChange={(e) => updateLiftWorkoutDate(sessionLetter, liftData.lift, e.target.value)}
-              disabled={isReadOnly}
-              className={`px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs text-gray-800 dark:text-gray-200 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
-            />
-          </div>
-        </div>
-      </div>
+  ) => {
+    const variantCounts = liftData.sets.reduce<Record<string, number>>((acc, set, setIdx) => {
+      const entry = getLogEntry(sessionLetter, liftData.lift, setIdx, set)
+      const variantCode = entry.performedVariant ?? set.variant ?? 'variant_1'
+      acc[variantCode] = (acc[variantCode] || 0) + 1
+      return acc
+    }, {})
 
-      <div className="overflow-x-auto">
+    const variantDistribution = Object.entries(variantCounts)
+      .map(([variantCode, count]) => ({
+        variantCode,
+        count,
+        label: getVariantLabel(program, liftData.lift, variantCode),
+        percent: liftData.sets.length > 0 ? (count / liftData.sets.length) * 100 : 0,
+      }))
+      .sort((a, b) => b.count - a.count)
+    const variantSummary = variantDistribution
+      .map((item) => `${formatVariantPercent(item.percent)} ${item.label}`)
+      .join(' · ')
+
+    return (
+      <div
+        key={`${sessionLetter}-${liftData.lift}`}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
+      >
+        <div className="bg-gray-100 dark:bg-gray-700 px-4 py-3">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+              {options?.showSessionLabel ? `Session ${sessionLetter} · ${liftDisplayName(liftData.lift)}` : liftDisplayName(liftData.lift)}
+            </h3>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-600 dark:text-gray-300">Workout date</label>
+              <input
+                type="date"
+                value={workoutDateBySessionLift[sessionLiftKey(sessionLetter, liftData.lift)] || getTodayIsoDate()}
+                onChange={(e) => updateLiftWorkoutDate(sessionLetter, liftData.lift, e.target.value)}
+                disabled={isReadOnly}
+                className={`px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs text-gray-800 dark:text-gray-200 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+              />
+            </div>
+          </div>
+          {variantDistribution.length > 0 && (
+            <div className="mt-2">
+              <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-300 mb-1">
+                Variant mix
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">
+                {variantSummary}
+              </p>
+              <div className="h-1.5 w-full rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600 flex">
+                {variantDistribution.map((item, idx) => (
+                  <div
+                    key={`bar-${item.variantCode}-${idx}`}
+                    className={`h-full ${variantBarClass(idx)}`}
+                    style={{ width: `${item.percent}%` }}
+                    title={`${item.label} (${formatVariantPercent(item.percent)})`}
+                  />
+                ))}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {variantDistribution.map((item, idx) => (
+                  <span
+                    key={`chip-${item.variantCode}-${idx}`}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200"
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${variantBarClass(idx)}`} />
+                    <span>{item.label}</span>
+                    <span className="text-gray-500 dark:text-gray-300">{formatVariantPercent(item.percent)}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b dark:border-gray-700 text-gray-500 dark:text-gray-400">
@@ -922,10 +1152,12 @@ export default function ClientProgramDetailPage() {
                         )
                       }
                       disabled={isReadOnly}
-                      className={`w-16 text-center rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 text-sm ${rpeColor(entry.rpe)} ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-16 text-center rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 text-sm ${
+                        entry.completed ? rpeColor(entry.rpe) : 'text-gray-500 dark:text-gray-400'
+                      } ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                       <option value="">-</option>
-                      {[6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map(
+                      {[4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map(
                         (v) => (
                           <option key={v} value={v}>
                             {v}
@@ -974,8 +1206,9 @@ export default function ClientProgramDetailPage() {
           </ul>
         </div>
       )}
-    </div>
-  )
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -985,10 +1218,10 @@ export default function ClientProgramDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link
-                href={`/${locale}/client/dashboard`}
+                href={backHref}
                 className="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm"
               >
-                ← Dashboard
+                ← {backLabel}
               </Link>
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
@@ -1145,80 +1378,6 @@ export default function ClientProgramDetailPage() {
               </>
             )}
 
-            {detailTab === 'plan' && (
-              <>
-                {/* Weekly Lift Progress */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                  {(['squat', 'bench_press', 'deadlift'] as const).map((lift) => (
-                    <div
-                      key={`week-progress-${lift}`}
-                      className="bg-white dark:bg-gray-800 rounded-lg shadow px-4 py-3 border border-gray-100 dark:border-gray-700"
-                    >
-                      <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        {liftDisplayName(lift)}
-                      </div>
-                      <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
-                        Completed this week:{' '}
-                        <span className="font-semibold text-green-700 dark:text-green-400">
-                          {completedSessionSetsByLift[lift].size}
-                        </span>
-                        <span className="text-gray-400"> / </span>
-                        <span className="font-semibold">{prescribedSessionsByLift[lift]}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {(parsedGlobal.sections.length > 0 || parsedGlobal.faqItems.length > 0) && (
-                  <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-900 mb-1">
-                      Global Instructions
-                    </p>
-                    {parsedGlobal.sections.map((section, idx) => (
-                      <details key={`${section.title}-${idx}`} className={`rounded border border-amber-200 bg-white/60 ${idx > 0 ? 'mt-2' : ''}`}>
-                        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
-                          {section.title}
-                        </summary>
-                        <div className="px-3 pb-3">
-                          <MarkdownText content={section.content} />
-                        </div>
-                      </details>
-                    ))}
-                    {parsedGlobal.faqItems.length > 0 && (
-                      <details className="mt-2 rounded border border-amber-200 bg-white/60">
-                        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
-                          FAQ
-                        </summary>
-                        <div className="px-3 pb-3 space-y-2">
-                          {parsedGlobal.faqItems.map((item, idx) => (
-                            <details key={`${item.question}-${idx}`} className="rounded border border-amber-100 bg-white">
-                              <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-amber-900">
-                                {item.question}
-                              </summary>
-                              <div className="px-3 pb-3">
-                                <MarkdownText content={item.answer} />
-                              </div>
-                            </details>
-                          ))}
-                        </div>
-                      </details>
-                    )}
-                  </div>
-                )}
-
-                {program.meta.notes && (
-                  <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-900 mb-1">
-                      Program-specific Notes
-                    </p>
-                    <div className="rounded border border-indigo-200 bg-white/70 px-3 py-3">
-                      <MarkdownText content={program.meta.notes} />
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
             {/* Main Content by tab */}
             {detailTab === 'plan' ? (
               (viewMode === 'session' ? !!currentWeekData?.lifts : sessionsForSelectedLift.length > 0) ? (
@@ -1300,7 +1459,11 @@ export default function ClientProgramDetailPage() {
                     const dayMessage = dayLogMessageByDate[day.performedDate] || ''
                     const daySaving = !!dayLogSavingByDate[day.performedDate]
                     const dayEntries = Object.values(logEntries)
-                      .filter((entry) => entry.week === selectedWeek && entry.performedDate === day.performedDate)
+                      .filter((entry) =>
+                        entry.week === selectedWeek &&
+                        entry.performedDate === day.performedDate &&
+                        isMeaningfulLogEntry(entry)
+                      )
                       .sort((a, b) => {
                         if (a.lift !== b.lift) return a.lift.localeCompare(b.lift)
                         if (a.session !== b.session) return a.session.localeCompare(b.session)
@@ -1326,13 +1489,16 @@ export default function ClientProgramDetailPage() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {day.sessionTags.map((tag) => {
-                                const lift = tag.startsWith('BP') ? 'bench_press' : tag.startsWith('DL') ? 'deadlift' : 'squat'
                                 return (
                                   <span
-                                    key={`${day.performedDate}-${tag}`}
-                                    className={`px-2 py-1 text-xs rounded-full font-medium ${liftBadgeClass(lift)}`}
+                                    key={`${day.performedDate}-${tag.lift}-${tag.sessionLetter}`}
+                                    className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                      tag.isComplete
+                                        ? liftBadgeClass(tag.lift)
+                                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                                    }`}
                                   >
-                                    {tag}
+                                    {tag.label}
                                   </span>
                                 )
                               })}
@@ -1481,6 +1647,129 @@ export default function ClientProgramDetailPage() {
                       </details>
                     )
                   })
+                )}
+              </div>
+            )}
+
+            {detailTab === 'plan' && (
+              <div className="mt-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {(['squat', 'bench_press', 'deadlift'] as const).map((lift) => (
+                    <div
+                      key={`week-progress-${lift}`}
+                      className="bg-white dark:bg-gray-800 rounded-lg shadow px-4 py-3 border border-gray-100 dark:border-gray-700"
+                    >
+                      <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        {liftDisplayName(lift)}
+                      </div>
+                      <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                        Completed this week:{' '}
+                        <span className="font-semibold text-green-700 dark:text-green-400">
+                          {completedSessionSetsByLift[lift].size}
+                        </span>
+                        <span className="text-gray-400"> / </span>
+                        <span className="font-semibold">{prescribedSessionsByLift[lift]}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:bg-gray-800 dark:border-gray-700">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 mb-2">
+                    Block Variant Overview
+                  </p>
+                  <div className="space-y-3">
+                    {(['squat', 'bench_press', 'deadlift'] as LiftKey[]).map((lift) => {
+                      const variants = blockVariantUsageByLift[lift]
+                      return (
+                        <div key={`block-variants-${lift}`}>
+                          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+                            {liftDisplayName(lift)}
+                          </div>
+                          {variants.length === 0 ? (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              No logged sets yet.
+                            </div>
+                          ) : (
+                            <>
+                              <div className="text-xs text-gray-600 dark:text-gray-300 mb-1">
+                                {variants.map((item) => `${formatVariantPercent(item.percent)} ${item.label}`).join(' · ')}
+                              </div>
+                              <div className="h-1.5 w-full rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600 flex mb-1">
+                                {variants.map((item, idx) => (
+                                  <div
+                                    key={`block-bar-${lift}-${item.variantCode}-${idx}`}
+                                    className={`h-full ${variantBarClass(idx)}`}
+                                    style={{ width: `${item.percent}%` }}
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {variants.map((item, idx) => (
+                                  <span
+                                    key={`block-chip-${lift}-${item.variantCode}-${idx}`}
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200"
+                                  >
+                                    <span className={`w-1.5 h-1.5 rounded-full ${variantBarClass(idx)}`} />
+                                    <span>{item.label}</span>
+                                    <span className="text-gray-500 dark:text-gray-300">{formatVariantPercent(item.percent)}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {program.meta.notes && (
+                  <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-900 mb-1">
+                      Program-specific Notes
+                    </p>
+                    <div className="rounded border border-indigo-200 bg-white/70 px-3 py-3">
+                      <MarkdownText content={program.meta.notes} />
+                    </div>
+                  </div>
+                )}
+
+                {(parsedGlobal.sections.length > 0 || parsedGlobal.faqItems.length > 0) && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-900 mb-1">
+                      Global Instructions
+                    </p>
+                    {parsedGlobal.sections.map((section, idx) => (
+                      <details key={`${section.title}-${idx}`} className={`rounded border border-amber-200 bg-white/60 ${idx > 0 ? 'mt-2' : ''}`}>
+                        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
+                          {section.title}
+                        </summary>
+                        <div className="px-3 pb-3">
+                          <MarkdownText content={section.content} />
+                        </div>
+                      </details>
+                    ))}
+                    {parsedGlobal.faqItems.length > 0 && (
+                      <details className="mt-2 rounded border border-amber-200 bg-white/60">
+                        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-amber-900">
+                          FAQ
+                        </summary>
+                        <div className="px-3 pb-3 space-y-2">
+                          {parsedGlobal.faqItems.map((item, idx) => (
+                            <details key={`${item.question}-${idx}`} className="rounded border border-amber-100 bg-white">
+                              <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-amber-900">
+                                {item.question}
+                              </summary>
+                              <div className="px-3 pb-3">
+                                <MarkdownText content={item.answer} />
+                              </div>
+                            </details>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                  </div>
                 )}
               </div>
             )}

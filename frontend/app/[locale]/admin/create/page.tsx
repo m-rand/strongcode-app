@@ -1298,12 +1298,17 @@ export default function CreateProgram() {
     try {
       setLoading(true)
       const normalizedNotes = programInstructions.trim()
+      const syncedSessions: SessionsData = JSON.parse(JSON.stringify(calculatedResults.sessions || {} as SessionsData))
+      ;(['squat', 'bench_press', 'deadlift'] as LiftKey[]).forEach((liftKey) => {
+        syncLiftSessionWeights(syncedSessions, liftKey, formData.lifts[liftKey])
+      })
       const programToSave: ProgramData = {
         ...calculatedResults,
         meta: {
           ...calculatedResults.meta,
           ...(normalizedNotes ? { notes: normalizedNotes } : {}),
         },
+        sessions: syncedSessions,
       }
 
       if (editingTemplateSlug) {
@@ -1554,6 +1559,52 @@ export default function CreateProgram() {
     return Math.round(raw / rounding) * rounding
   }
 
+  const normalizeSetPercentage = (percentage: number): number => (
+    Math.round(percentage * 10) / 10
+  )
+
+  const getExpectedSetWeight = (liftConfig: LiftConfig, percentageRaw: number): number => {
+    const percentage = normalizeSetPercentage(Number(percentageRaw))
+    if (!Number.isFinite(percentage) || percentage <= 0) return 0
+
+    if (Math.abs(percentage - 55) < 0.2) return Number(liftConfig.weight_55)
+    if (Math.abs(percentage - 65) < 0.2) return Number(liftConfig.weight_65)
+    if (Math.abs(percentage - 75) < 0.2) return Number(liftConfig.weight_75)
+    if (Math.abs(percentage - 85) < 0.2) return Number(liftConfig.weight_85)
+    if (Math.abs(percentage - 92.5) < 0.2) return Number(liftConfig.weight_90)
+    if (Math.abs(percentage - 95) < 0.2) return Number(liftConfig.weight_95)
+
+    return calculateWeight(Number(liftConfig.oneRM), percentage, Number(liftConfig.rounding))
+  }
+
+  const syncLiftSessionWeights = (
+    sessions: SessionsData,
+    lift: LiftKey,
+    liftConfig: LiftConfig,
+  ): boolean => {
+    let changed = false
+    const weekKeys: WeekKey[] = ['week_1', 'week_2', 'week_3', 'week_4']
+
+    for (const sessionData of Object.values(sessions)) {
+      for (const weekKey of weekKeys) {
+        const liftEntry = sessionData?.[weekKey]?.lifts?.find(item => item.lift === lift)
+        if (!liftEntry?.sets) continue
+
+        for (const set of liftEntry.sets) {
+          const expectedWeight = getExpectedSetWeight(liftConfig, Number(set.percentage))
+          if (!Number.isFinite(expectedWeight) || expectedWeight <= 0) continue
+
+          if (!Number.isFinite(Number(set.weight)) || Math.abs(Number(set.weight) - expectedWeight) > 0.0001) {
+            set.weight = expectedWeight
+            changed = true
+          }
+        }
+      }
+    }
+
+    return changed
+  }
+
   // Calculate actual percentage from weight and 1RM
   const calculateActualPercentage = (weight: number, oneRM: number): number => {
     if (oneRM === 0) return 0
@@ -1678,6 +1729,9 @@ export default function CreateProgram() {
 
   // Update lift-specific field
   const updateLiftField = (lift: 'squat' | 'bench_press' | 'deadlift', field: string, value: any) => {
+    let nextLiftConfigForSync: LiftConfig | null = null
+    let shouldSyncSessions = false
+
     setFormData(prev => {
       const newLifts = { ...prev.lifts }
       const safeValue = typeof value === 'number'
@@ -1698,9 +1752,40 @@ export default function CreateProgram() {
         liftData.weight_95 = calculateWeight(oneRM, 95, rounding)
       }
 
+      if (
+        field === 'oneRM' ||
+        field === 'rounding' ||
+        field === 'weight_55' ||
+        field === 'weight_65' ||
+        field === 'weight_75' ||
+        field === 'weight_85' ||
+        field === 'weight_90' ||
+        field === 'weight_95'
+      ) {
+        shouldSyncSessions = true
+        nextLiftConfigForSync = liftData as LiftConfig
+      }
+
       newLifts[lift] = liftData
       return { ...prev, lifts: newLifts }
     })
+
+    if (shouldSyncSessions && nextLiftConfigForSync) {
+      const liftConfigSnapshot = nextLiftConfigForSync
+      setCalculatedResults(prev => {
+        if (!prev?.sessions) return prev
+
+        const nextSessions: SessionsData = JSON.parse(JSON.stringify(prev.sessions))
+        const changed = syncLiftSessionWeights(nextSessions, lift, liftConfigSnapshot)
+        if (!changed) return prev
+
+        return {
+          ...prev,
+          sessions: nextSessions,
+        }
+      })
+    }
+
     setIsSaved(false)
   }
 

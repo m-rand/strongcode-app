@@ -96,6 +96,36 @@ export async function POST(request: Request) {
     // Upsert: for each entry, check if a log exists for this set, update or insert
     const results = [];
     for (const entry of entries) {
+      const prescribedWeight = Number(entry.prescribedWeight);
+      const prescribedReps = Number(entry.prescribedReps);
+      const plannedSession = entry.plannedSession ?? entry.session ?? null;
+      const performedDate = entry.performedDate ?? null;
+      const performedVariant = entry.performedVariant ?? null;
+      const actualWeight = entry.actualWeight ?? entry.prescribedWeight;
+      const actualReps = entry.actualReps ?? entry.prescribedReps;
+      const rpe = entry.rpe;
+      const completed = !!entry.completed;
+      const notes = typeof entry.notes === "string" ? entry.notes : null;
+
+      const hasNotes = typeof notes === "string" && notes.trim().length > 0;
+      const hasRpe = typeof rpe === "number";
+      const hasWeightOverride =
+        typeof actualWeight === "number" && actualWeight !== prescribedWeight;
+      const hasRepsOverride =
+        typeof actualReps === "number" && actualReps !== prescribedReps;
+      const hasNonDefaultVariant =
+        typeof performedVariant === "string" &&
+        performedVariant.length > 0 &&
+        performedVariant !== "variant_1" &&
+        performedVariant !== "comp";
+      const isMeaningful =
+        completed ||
+        hasNotes ||
+        hasRpe ||
+        hasWeightOverride ||
+        hasRepsOverride ||
+        hasNonDefaultVariant;
+
       const existing = await db
         .select({ id: trainingLog.id })
         .from(trainingLog)
@@ -110,19 +140,27 @@ export async function POST(request: Request) {
         )
         .limit(1);
 
+      if (!isMeaningful) {
+        if (existing.length > 0) {
+          await db.delete(trainingLog).where(eq(trainingLog.id, existing[0].id));
+          results.push({ id: existing[0].id, action: "deleted" });
+        }
+        continue;
+      }
+
       if (existing.length > 0) {
         // Update existing log entry
         await db
           .update(trainingLog)
           .set({
-            plannedSession: entry.plannedSession ?? entry.session ?? null,
-            performedDate: entry.performedDate ?? null,
-            performedVariant: entry.performedVariant ?? null,
-            actualWeight: entry.actualWeight ?? entry.prescribedWeight,
-            actualReps: entry.actualReps ?? entry.prescribedReps,
-            rpe: entry.rpe,
-            completed: entry.completed ?? false,
-            notes: entry.notes,
+            plannedSession,
+            performedDate,
+            performedVariant,
+            actualWeight,
+            actualReps,
+            rpe,
+            completed,
+            notes,
             loggedAt: new Date().toISOString(),
           })
           .where(eq(trainingLog.id, existing[0].id));
@@ -135,18 +173,18 @@ export async function POST(request: Request) {
             programId: entry.programId,
             week: entry.week,
             session: entry.session,
-            plannedSession: entry.plannedSession ?? entry.session ?? null,
-            performedDate: entry.performedDate ?? null,
+            plannedSession,
+            performedDate,
             lift: entry.lift,
             setIndex: entry.setIndex,
-            prescribedWeight: entry.prescribedWeight,
-            prescribedReps: entry.prescribedReps,
-            performedVariant: entry.performedVariant ?? null,
-            actualWeight: entry.actualWeight ?? entry.prescribedWeight,
-            actualReps: entry.actualReps ?? entry.prescribedReps,
-            rpe: entry.rpe,
-            completed: entry.completed ?? false,
-            notes: entry.notes,
+            prescribedWeight,
+            prescribedReps,
+            performedVariant,
+            actualWeight,
+            actualReps,
+            rpe,
+            completed,
+            notes,
           })
           .returning({ id: trainingLog.id });
         results.push({ id: inserted[0].id, action: "created" });

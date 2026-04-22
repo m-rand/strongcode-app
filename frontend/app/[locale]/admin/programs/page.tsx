@@ -241,8 +241,14 @@ export default function ProgramsListPage() {
                           </button>
                         )}
                         <Link
-                          href={`/${locale}/admin/programs/${program.client}/${encodeURIComponent(program.filename)}`}
-                          className="text-blue-600 hover:text-blue-900"
+                          href={`/${locale}/admin/create?editClient=${encodeURIComponent(program.client)}&editFilename=${encodeURIComponent(program.filename)}`}
+                          className="px-2 py-1 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-700"
+                        >
+                          {t('edit')}
+                        </Link>
+                        <Link
+                          href={`/${locale}/client/programs/${encodeURIComponent(program.filename)}?adminPreview=1&client=${encodeURIComponent(program.client)}`}
+                          className="px-2 py-1 text-xs font-semibold rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
                         >
                           {t('view')}
                         </Link>

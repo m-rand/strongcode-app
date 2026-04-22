@@ -433,6 +433,16 @@
     "dashboard": {
       "title": "Dashboard",
       "welcome": "Welcome",
+      "notifications": {
+        "title": "Client Session Notifications",
+        "description": "Latest session updates logged by clients. This list refreshes every minute.",
+        "refreshHint": "Auto-refresh: 60s",
+        "headerButton": "Notifications",
+        "loading": "Loading notifications...",
+        "empty": "No recent client session updates.",
+        "viewProgram": "Open program",
+        "sets": "Sets: {completed}/{logged} completed"
+      },
       "stats": {
         "totalClients": "Total Clients",
         "activePrograms": "Active Programs",
@@ -621,6 +631,16 @@
       "saving": "Saving...",
       "saved": "Client saved successfully. Redirecting..."
     },
+    "clientSurveyForm": {
+      "title": "Be Strong Advanced Survey",
+      "backToClients": "Back to clients",
+      "save": "Save Survey",
+      "saving": "Saving...",
+      "errors": {
+        "loadClient": "Failed to load client",
+        "saveSurvey": "Failed to save survey"
+      }
+    },
     "import": {
       "title": "Import Program",
       "backToDashboard": "← Dashboard",
@@ -761,10 +781,11 @@
       "noProgramsDescription": "No programs have been created yet",
       "createProgram": "Create program",
       "importProgram": "Import program",
-      "import": "Import",
-      "createNew": "Create new",
-      "hasSessionsYes": "Yes",
-      "hasSessionsNo": "Only targets",
+    "import": "Import",
+    "createNew": "Create new",
+    "edit": "Edit",
+    "hasSessionsYes": "Yes",
+    "hasSessionsNo": "Only targets",
       "table": {
         "client": "Client",
         "program": "Program",
