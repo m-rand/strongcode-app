@@ -150,6 +150,14 @@ function variantBarClass(index: number): string {
   return palette[index % palette.length]
 }
 
+function variantTextClass(variant: string | undefined): string {
+  const code = (variant || 'variant_1').trim() || 'variant_1'
+  if (code === 'variant_2') return 'text-blue-700 dark:text-blue-300'
+  if (code === 'variant_3') return 'text-amber-700 dark:text-amber-300'
+  if (code === 'variant_4') return 'text-violet-700 dark:text-violet-300'
+  return 'text-gray-700 dark:text-gray-300'
+}
+
 function variantCodeToNumberLabel(variant: string | undefined): string {
   if (!variant || variant === 'variant_1' || variant === 'comp') return 'V1'
   const match = variant.match(/^variant_(\d+)$/)
@@ -257,6 +265,12 @@ function sessionLiftKey(session: string, lift: string): string {
 function roundToStep(value: number, step: number): number {
   if (!Number.isFinite(step) || step <= 0) return value
   return Math.round(value / step) * step
+}
+
+function formatKg(value: number): string {
+  if (!Number.isFinite(value)) return '—'
+  const rounded = Math.round(value * 100) / 100
+  return Number.isInteger(rounded) ? `${rounded}` : `${rounded}`
 }
 
 function getLiftRounding(program: Program | null, lift: string): number {
@@ -1582,13 +1596,34 @@ export default function ClientProgramDetailPage() {
                           {Object.entries(dayEntriesByLift).length > 0 && (
                             <div className="space-y-4">
                               <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Cell values are reps in <strong>planned/actual</strong> format.
+                                Cell values are reps in <strong>planned/actual</strong> format. Small text shows <strong>actual kg / target kg</strong>.
                               </p>
                               {Object.entries(dayEntriesByLift).map(([lift, liftEntries]) => {
                                 const columns = liftEntries.map((entry, colIndex) => ({
                                   ...entry,
                                   colId: `${entry.session}-${entry.setIndex}-${colIndex}`,
                                   header: `${entry.session}${entry.setIndex + 1}`,
+                                  variantCode: ((entry.performedVariant || 'variant_1').trim() || 'variant_1'),
+                                  variantShort: variantCodeToNumberLabel((entry.performedVariant || 'variant_1').trim() || 'variant_1'),
+                                  variantLabel: getVariantLabel(
+                                    program,
+                                    lift,
+                                    (entry.performedVariant || 'variant_1').trim() || 'variant_1',
+                                  ),
+                                  targetWeight: getSuggestedWeightForVariant(
+                                    program,
+                                    lift,
+                                    Number(entry.prescribedWeight || 0),
+                                    (entry.performedVariant || 'variant_1').trim() || 'variant_1',
+                                  ),
+                                  actualWeightResolved: Number.isFinite(Number(entry.actualWeight))
+                                    ? Number(entry.actualWeight)
+                                    : getSuggestedWeightForVariant(
+                                      program,
+                                      lift,
+                                      Number(entry.prescribedWeight || 0),
+                                      (entry.performedVariant || 'variant_1').trim() || 'variant_1',
+                                    ),
                                 }))
 
                                 type LiftRow = {
@@ -1611,7 +1646,7 @@ export default function ClientProgramDetailPage() {
                                   if (!rowMap[key]) {
                                     rowMap[key] = {
                                       key,
-                                      label: `${pctLabel} / ${kg}kg`,
+                                      label: `${pctLabel}`,
                                       sortPct: Number.isFinite(pct) ? pct : 999,
                                       sortKg: Number.isFinite(kg) ? kg : 0,
                                       cells: {},
@@ -1625,19 +1660,32 @@ export default function ClientProgramDetailPage() {
                                   if (a.sortPct !== b.sortPct) return a.sortPct - b.sortPct
                                   return a.sortKg - b.sortKg
                                 })
+                                const liftVariantLegend = [...new Map(
+                                  columns.map((col) => [col.variantCode, {
+                                    code: col.variantCode,
+                                    label: getVariantLabel(program, lift, col.variantCode),
+                                  }]),
+                                ).values()]
 
                                 return (
                                   <div key={`${day.performedDate}-${lift}`} className="overflow-x-auto">
-                                    <div className="mb-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                      {liftDisplayName(lift)}
+                                    <div className="mb-1 flex flex-wrap items-center gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                      <span>{liftDisplayName(lift)}</span>
+                                      <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+                                        {liftVariantLegend.map((item) => (
+                                          <span key={`${day.performedDate}-${lift}-legend-${item.code}`} className={variantTextClass(item.code)}>
+                                            {item.label}
+                                          </span>
+                                        ))}
+                                      </div>
                                     </div>
                                     <table className="min-w-full text-sm border border-gray-200 dark:border-gray-700">
                                       <thead className="bg-gray-50 dark:bg-gray-700/50">
                                         <tr>
-                                          <th className="px-3 py-2 text-left text-gray-700 dark:text-gray-200">Zone / kg</th>
+                                          <th className="px-3 py-2 text-left text-gray-700 dark:text-gray-200">Zone</th>
                                           {columns.map((col) => (
                                             <th key={`${day.performedDate}-${lift}-${col.colId}`} className="px-2 py-2 text-center text-gray-700 dark:text-gray-200">
-                                              {col.header}
+                                              <div>{col.header}</div>
                                             </th>
                                           ))}
                                         </tr>
@@ -1649,11 +1697,29 @@ export default function ClientProgramDetailPage() {
                                               {row.label}
                                             </td>
                                             {columns.map((col) => (
-                                              <td key={`${day.performedDate}-${lift}-${row.key}-${col.colId}`} className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">
-                                                {row.cells[col.colId] || '—'}
+                                              <td
+                                                key={`${day.performedDate}-${lift}-${row.key}-${col.colId}`}
+                                                className={`px-2 py-2 text-center ${
+                                                  row.cells[col.colId]
+                                                    ? variantTextClass(col.variantCode)
+                                                    : 'text-gray-700 dark:text-gray-300'
+                                                }`}
+                                              >
+                                                {row.cells[col.colId] ? (
+                                                  <div>
+                                                    <div>{row.cells[col.colId]}</div>
+                                                    <div className={`${
+                                                      variantTextClass(col.variantCode)
+                                                    }`}>
+                                                      {Math.abs(Number(col.targetWeight) - Number(col.actualWeightResolved)) < 0.001
+                                                        ? `${formatKg(col.actualWeightResolved)} kg`
+                                                        : `${formatKg(col.actualWeightResolved)} / ${formatKg(col.targetWeight)} kg`}
+                                                    </div>
+                                                  </div>
+                                                ) : '—'}
                                               </td>
                                             ))}
-                                          </tr>
+                                        </tr>
                                         ))}
                                         <tr className="border-t border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/30">
                                           <td className="px-3 py-2 font-semibold text-gray-900 dark:text-gray-100">RPE</td>
