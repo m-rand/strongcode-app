@@ -28,6 +28,11 @@ export default function LiftColumn({
     const n = Number(value)
     return Number.isFinite(n) ? n : 0
   }
+  const toPositiveNumber = (raw: string, fallback = 1): number => {
+    const normalized = raw.replace(',', '.')
+    const parsed = Number(normalized)
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+  }
   const liftLabel = liftName === 'squat' ? 'Squat' :
                     liftName === 'bench_press' ? 'Bench Press' : 'Deadlift'
 
@@ -92,36 +97,67 @@ export default function LiftColumn({
         <p className="text-xs text-gray-500 mb-3">Variant 1 is always Comp (default). You can define up to 3 additional variants.</p>
         <div className="mb-3">
           <label className="block text-xs font-medium text-gray-700 mb-1">Variant 1</label>
-          <input
-            type="text"
-            value="Comp variant"
-            disabled
-            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm"
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input
+              type="text"
+              value="Comp variant"
+              disabled
+              className="sm:col-span-2 w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm"
+            />
+            <input
+              type="text"
+              value="1.00"
+              disabled
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm text-right"
+            />
+          </div>
         </div>
         <div className="space-y-3">
           {[0, 1, 2].map(index => (
             <div key={index}>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Variant {index + 2}
-              </label>
-              <input
-                type="text"
-                value={liftData.variants?.[index] || ''}
-                onChange={(e) => {
-                  const next = [
-                    liftData.variants?.[0] || '',
-                    liftData.variants?.[1] || '',
-                    liftData.variants?.[2] || '',
-                  ]
-                  next[index] = e.target.value
-                  onUpdate('variants', next)
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm"
-              />
+              <label className="block text-xs font-medium text-gray-700 mb-1">Variant {index + 2}</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input
+                  type="text"
+                  value={liftData.variants?.[index] || ''}
+                  onChange={(e) => {
+                    const next = [
+                      liftData.variants?.[0] || '',
+                      liftData.variants?.[1] || '',
+                      liftData.variants?.[2] || '',
+                    ]
+                    next[index] = e.target.value
+                    onUpdate('variants', next)
+                  }}
+                  className="sm:col-span-2 w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm"
+                  placeholder={`Variant ${index + 2} name`}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.1"
+                  value={Number.isFinite(Number(liftData.variantCoefficients?.[index]))
+                    ? Number(liftData.variantCoefficients[index])
+                    : 1}
+                  onChange={(e) => {
+                    const next = [
+                      Number.isFinite(Number(liftData.variantCoefficients?.[0])) ? Number(liftData.variantCoefficients[0]) : 1,
+                      Number.isFinite(Number(liftData.variantCoefficients?.[1])) ? Number(liftData.variantCoefficients[1]) : 1,
+                      Number.isFinite(Number(liftData.variantCoefficients?.[2])) ? Number(liftData.variantCoefficients[2]) : 1,
+                    ]
+                    next[index] = toPositiveNumber(e.target.value, 1)
+                    onUpdate('variantCoefficients', next)
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-800 placeholder-gray-600 text-sm text-right"
+                  title="Coefficient vs main variant"
+                />
+              </div>
             </div>
           ))}
         </div>
+        <p className="text-[11px] text-gray-500 mt-2">
+          Coefficients are used for client-side suggested weight when changing variant. Athlete can still override weight manually.
+        </p>
       </div>
 
       {/* Zone Weights */}

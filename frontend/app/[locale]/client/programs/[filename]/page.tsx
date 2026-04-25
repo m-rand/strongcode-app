@@ -48,7 +48,11 @@ interface Program {
     end_date: string
     weeks: number
   }
-  input: Record<string, { variants?: Record<string, unknown> | string[] } | undefined>
+  input: Record<string, {
+    variants?: Record<string, unknown> | string[]
+    variant_coefficients?: Record<string, unknown>
+    rounding?: number
+  } | undefined>
   calculated: Record<string, unknown>
   sessions?: Record<string, Record<string, WeekSession>>
 }
@@ -250,6 +254,44 @@ function sessionLiftKey(session: string, lift: string): string {
   return `${session}-${lift}`
 }
 
+function roundToStep(value: number, step: number): number {
+  if (!Number.isFinite(step) || step <= 0) return value
+  return Math.round(value / step) * step
+}
+
+function getLiftRounding(program: Program | null, lift: string): number {
+  const n = Number(program?.input?.[lift]?.rounding)
+  return Number.isFinite(n) && n > 0 ? n : 2.5
+}
+
+function normalizeVariantCode(variant: string | undefined): string {
+  if (!variant || variant === 'comp') return 'variant_1'
+  return variant
+}
+
+function getVariantCoefficient(program: Program | null, lift: string, variant: string | undefined): number {
+  const normalizedVariant = normalizeVariantCode(variant)
+  if (normalizedVariant === 'variant_1') return 1
+
+  const coefficientsRaw = program?.input?.[lift]?.variant_coefficients
+  if (!coefficientsRaw || typeof coefficientsRaw !== 'object') return 1
+
+  const raw = (coefficientsRaw as Record<string, unknown>)[normalizedVariant]
+  const n = Number(raw)
+  return Number.isFinite(n) && n > 0 ? n : 1
+}
+
+function getSuggestedWeightForVariant(
+  program: Program | null,
+  lift: string,
+  baseWeight: number,
+  variant: string | undefined,
+): number {
+  const coef = getVariantCoefficient(program, lift, variant)
+  const rounding = getLiftRounding(program, lift)
+  return roundToStep(baseWeight * coef, rounding)
+}
+
 function splitGeneralSections(rawGeneral: string): InstructionSection[] {
   const general = (rawGeneral || '').trim()
   if (!general) return []
@@ -434,7 +476,8 @@ export default function ClientProgramDetailPage() {
       if (!slug) throw new Error('Missing client slug')
       const filename = decodeURIComponent(params.filename as string)
       const response = await fetch(
-        `/api/programs/${slug}/${encodeURIComponent(filename)}`
+        `/api/programs/${slug}/${encodeURIComponent(filename)}`,
+        { cache: 'no-store' },
       )
       if (!response.ok) throw new Error('Failed to load program')
       const data = await response.json()
@@ -457,7 +500,8 @@ export default function ClientProgramDetailPage() {
   const fetchTrainingLog = async () => {
     try {
       const response = await fetch(
-        `/api/training-log?programId=${program!.id}&week=${selectedWeek}`
+        `/api/training-log?programId=${program!.id}&week=${selectedWeek}`,
+        { cache: 'no-store' },
       )
       if (!response.ok) return
 
@@ -476,7 +520,7 @@ export default function ClientProgramDetailPage() {
   const fetchAllTrainingLog = async () => {
     if (!program?.id) return
     try {
-      const response = await fetch(`/api/training-log?programId=${program.id}`)
+      const response = await fetch(`/api/training-log?programId=${program.id}`, { cache: 'no-store' })
       if (!response.ok) return
       const data = await response.json()
       setAllLogEntries(Array.isArray(data?.logs) ? data.logs : [])
@@ -490,7 +534,8 @@ export default function ClientProgramDetailPage() {
 
     try {
       const response = await fetch(
-        `/api/training-day-log?programId=${program.id}&week=${selectedWeek}`
+        `/api/training-day-log?programId=${program.id}&week=${selectedWeek}`,
+        { cache: 'no-store' },
       )
       if (!response.ok) return
 
@@ -554,7 +599,7 @@ export default function ClientProgramDetailPage() {
           prescribedWeight: set.weight,
           prescribedReps: set.reps,
           performedVariant: set.variant,
-          actualWeight: set.weight,
+          actualWeight: getSuggestedWeightForVariant(program!, lift, set.weight, set.variant),
           completed: false,
         }
       )
@@ -1039,6 +1084,13 @@ export default function ClientProgramDetailPage() {
                 setIdx,
                 set,
               )
+              const activeVariant = entry.performedVariant ?? set.variant ?? 'variant_1'
+              const suggestedActualWeight = getSuggestedWeightForVariant(
+                program,
+                liftData.lift,
+                set.weight,
+                activeVariant,
+              )
               return (
                 <tr
                   key={setIdx}
@@ -1076,15 +1128,38 @@ export default function ClientProgramDetailPage() {
                   <td className="py-2 px-3">
                     <select
                       value={entry.performedVariant ?? set.variant ?? 'variant_1'}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const nextVariant = e.target.value || undefined
+                        const currentVariant = entry.performedVariant ?? set.variant ?? 'variant_1'
+                        const currentSuggestedWeight = getSuggestedWeightForVariant(
+                          program,
+                          liftData.lift,
+                          set.weight,
+                          currentVariant,
+                        )
+                        const nextSuggestedWeight = getSuggestedWeightForVariant(
+                          program,
+                          liftData.lift,
+                          set.weight,
+                          nextVariant,
+                        )
+                        const currentActualWeight = Number(entry.actualWeight)
+                        const shouldAutoAdjustWeight = (
+                          !Number.isFinite(currentActualWeight) ||
+                          Math.abs(currentActualWeight - currentSuggestedWeight) < 0.001
+                        )
+
                         updateLogEntry(
                           sessionLetter,
                           liftData.lift,
                           setIdx,
                           set,
-                          { performedVariant: e.target.value || undefined },
+                          {
+                            performedVariant: nextVariant,
+                            ...(shouldAutoAdjustWeight ? { actualWeight: nextSuggestedWeight } : {}),
+                          },
                         )
-                      }
+                      }}
                       disabled={isReadOnly}
                       className={`w-full rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 px-2 text-sm text-gray-700 dark:text-gray-200 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
@@ -1101,11 +1176,6 @@ export default function ClientProgramDetailPage() {
                       {set.weight}
                     </span>
                     <span className="text-gray-400 ml-1">kg</span>
-                    {set.percentage && (
-                      <span className="text-xs text-gray-400 ml-1">
-                        ({set.percentage.toFixed(0)}%)
-                      </span>
-                    )}
                   </td>
 
                   <td className="py-2 px-3 text-right">
@@ -1129,6 +1199,9 @@ export default function ClientProgramDetailPage() {
                       disabled={isReadOnly}
                       className={`w-24 text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 py-1 px-2 text-sm text-gray-700 dark:text-gray-200 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                     />
+                    <div className="text-[10px] text-gray-400">
+                      Suggested: {suggestedActualWeight}
+                    </div>
                   </td>
 
                   <td className="py-2 px-3 text-right font-medium text-gray-900 dark:text-gray-100">

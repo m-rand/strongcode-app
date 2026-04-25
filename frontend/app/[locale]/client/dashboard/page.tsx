@@ -69,7 +69,7 @@ export default function ClientDashboard() {
 
   const fetchClientData = async () => {
     try {
-      const response = await fetch(`/api/clients/${session?.user?.client_slug}`)
+      const response = await fetch(`/api/clients/${session?.user?.client_slug}`, { cache: 'no-store' })
       if (!response.ok) throw new Error('Failed to load data')
 
       const data = await response.json()
@@ -154,7 +154,9 @@ export default function ClientDashboard() {
   }
 
   const latestOneRM = clientData?.one_rm_history?.[0]
-  const activeProgram = programs.find(p => p.status === 'active')
+  const activeProgram = programs
+    .filter((p) => p.status === 'active')
+    .sort((a, b) => b.id - a.id)[0]
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>

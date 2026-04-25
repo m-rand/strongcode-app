@@ -45,6 +45,12 @@ interface LiftInputPayload {
     variant_3?: string
     variant_4?: string
   }
+  variant_coefficients?: {
+    variant_1: number
+    variant_2?: number
+    variant_3?: number
+    variant_4?: number
+  }
   weights: {
     '55': number
     '65': number
@@ -171,6 +177,7 @@ const DEFAULT_SESSIONS_PER_WEEK = 3
 const DEFAULT_SESSION_DISTRIBUTION = 'd25_33_42'
 const DEFAULT_COMP_VARIANT = 'variant_1'
 const DEFAULT_COMP_VARIANT_LABEL = 'Comp variant'
+const DEFAULT_VARIANT_COEFFICIENTS: [number, number, number] = [1, 1, 1]
 
 interface VariantOption {
   code: string
@@ -232,6 +239,23 @@ const toApiBlock = (block: string): 'prep' | 'comp' => (
   block === 'comp' ? 'comp' : 'prep'
 )
 
+const sanitizeVariantCoefficient = (value: unknown): number => {
+  const n = Number(value)
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 1
+}
+
+const readVariantCoefficients = (inputLift: Record<string, unknown>): [number, number, number] => {
+  const raw = (inputLift.variant_coefficients && typeof inputLift.variant_coefficients === 'object')
+    ? inputLift.variant_coefficients as Record<string, unknown>
+    : {}
+
+  return [
+    sanitizeVariantCoefficient(raw.variant_2),
+    sanitizeVariantCoefficient(raw.variant_3),
+    sanitizeVariantCoefficient(raw.variant_4),
+  ]
+}
+
 export default function CreateProgram() {
   const router = useRouter()
   const t = useTranslations('admin.create')
@@ -283,6 +307,7 @@ export default function CreateProgram() {
     volume_pattern_main: '3a',
     volume_pattern_8190: '3a',
     variants: ['', '', ''] as [string, string, string],
+    variantCoefficients: [...DEFAULT_VARIANT_COEFFICIENTS] as [number, number, number],
   })
 
   type LiftConfig = ReturnType<typeof defaultLiftConfig>
@@ -321,6 +346,7 @@ export default function CreateProgram() {
         String(variants.variant_3 ?? ''),
         String(variants.variant_4 ?? ''),
       ] as [string, string, string],
+      variantCoefficients: readVariantCoefficients(inputLift),
     }
   }, [])
 
@@ -357,6 +383,12 @@ export default function CreateProgram() {
       ...(liftData.variants[0].trim() ? { variant_2: liftData.variants[0].trim() } : {}),
       ...(liftData.variants[1].trim() ? { variant_3: liftData.variants[1].trim() } : {}),
       ...(liftData.variants[2].trim() ? { variant_4: liftData.variants[2].trim() } : {}),
+    },
+    variant_coefficients: {
+      variant_1: 1,
+      variant_2: sanitizeVariantCoefficient(liftData.variantCoefficients[0]),
+      variant_3: sanitizeVariantCoefficient(liftData.variantCoefficients[1]),
+      variant_4: sanitizeVariantCoefficient(liftData.variantCoefficients[2]),
     },
     weights: {
       '55': liftData.weight_55,
@@ -1248,6 +1280,7 @@ export default function CreateProgram() {
               String(variants.variant_3 ?? ''),
               String(variants.variant_4 ?? ''),
             ] as [string, string, string],
+            variantCoefficients: readVariantCoefficients(inputLift),
           }
         }
 
@@ -1302,8 +1335,38 @@ export default function CreateProgram() {
       ;(['squat', 'bench_press', 'deadlift'] as LiftKey[]).forEach((liftKey) => {
         syncLiftSessionWeights(syncedSessions, liftKey, formData.lifts[liftKey])
       })
+      const nextInput: ProgramData['input'] = {
+        ...(calculatedResults.input || {}),
+      }
+      const liftsToPersist: LiftKey[] = (
+        editingTemplateSlug &&
+        editingTemplateMeta?.scope === 'single_lift' &&
+        editingTemplateMeta.lift
+      )
+        ? [editingTemplateMeta.lift]
+        : ['squat', 'bench_press', 'deadlift']
+
+      liftsToPersist.forEach((liftKey) => {
+        nextInput[liftKey] = buildLiftPayload(formData.lifts[liftKey])
+      })
+
       const programToSave: ProgramData = {
         ...calculatedResults,
+        client: {
+          ...calculatedResults.client,
+          name: formData.clientName,
+          delta: formData.delta,
+          one_rm: {
+            squat: formData.lifts.squat.oneRM,
+            bench_press: formData.lifts.bench_press.oneRM,
+            deadlift: formData.lifts.deadlift.oneRM,
+          },
+        },
+        program_info: {
+          ...calculatedResults.program_info,
+          block: toApiBlock(formData.block),
+        },
+        input: nextInput,
         meta: {
           ...calculatedResults.meta,
           ...(normalizedNotes ? { notes: normalizedNotes } : {}),

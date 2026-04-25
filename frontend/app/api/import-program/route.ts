@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { programs, clients } from '@/db/schema'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, ne } from 'drizzle-orm'
 import { validateProgramWithVersion } from '@/lib/program/schemaValidation'
 
 const FILENAME_PATTERN = /^\d{4}-\d{2}-\d{2}_[a-z0-9-]+_(prep|comp)_all_lifts\.json$/
@@ -172,10 +172,26 @@ export async function POST(request: Request) {
       createdBy: programData.meta.created_by || existingProgram?.createdBy || 'Import',
     }
 
+    let savedProgramId: number
     if (existingProgram) {
       await db.update(programs).set(rowValues).where(eq(programs.id, existingProgram.id))
+      savedProgramId = existingProgram.id
     } else {
-      await db.insert(programs).values(rowValues)
+      const inserted = await db.insert(programs).values(rowValues).returning({ id: programs.id })
+      savedProgramId = inserted[0]?.id
+        ? Number(inserted[0].id)
+        : 0
+    }
+
+    if (rowValues.status === 'active' && savedProgramId > 0) {
+      await db
+        .update(programs)
+        .set({ status: 'completed' })
+        .where(and(
+          eq(programs.clientId, client.id),
+          eq(programs.status, 'active'),
+          ne(programs.id, savedProgramId),
+        ))
     }
 
     return NextResponse.json({

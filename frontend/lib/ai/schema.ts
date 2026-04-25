@@ -97,6 +97,18 @@ export interface LiftInput {
   volume: number           // Total NL for the block
   rounding: number         // Weight rounding (1, 2.5, or 5)
   one_rm: number           // 1RM in kg
+  variants?: {
+    variant_1?: string
+    variant_2?: string
+    variant_3?: string
+    variant_4?: string
+  }
+  variant_coefficients?: {
+    variant_1?: number
+    variant_2?: number
+    variant_3?: number
+    variant_4?: number
+  }
   weights: Record<string, number> // Pre-calculated zone weights (e.g. {"65": 52.5, "75": 60, ...})
   intensity_distribution: {
     '55_percent'?: number   // % of NL in 55% zone (optional, default 0)

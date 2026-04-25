@@ -104,7 +104,7 @@ export async function GET(
       .select()
       .from(programs)
       .where(eq(programs.clientId, client.id))
-      .orderBy(sql`start_date DESC`, sql`id DESC`)
+      .orderBy(sql`id DESC`, sql`start_date DESC`)
 
     // Show only the latest row for each filename (older duplicates can exist
     // from historical saves before upsert logic was fixed).
