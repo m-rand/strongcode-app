@@ -132,3 +132,54 @@ export async function PATCH(
     )
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ client: string; filename: string }> }
+) {
+  try {
+    const { client: clientSlug, filename } = await params
+    const decodedFilename = decodeURIComponent(filename)
+
+    const [client] = await db
+      .select({ id: clients.id })
+      .from(clients)
+      .where(eq(clients.slug, clientSlug))
+      .limit(1)
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+    }
+
+    const existing = await db
+      .select({ id: programs.id })
+      .from(programs)
+      .where(and(
+        eq(programs.clientId, client.id),
+        eq(programs.filename, decodedFilename)
+      ))
+
+    if (existing.length === 0) {
+      return NextResponse.json({ error: 'Program not found' }, { status: 404 })
+    }
+
+    await db
+      .delete(programs)
+      .where(and(
+        eq(programs.clientId, client.id),
+        eq(programs.filename, decodedFilename)
+      ))
+
+    return NextResponse.json({
+      success: true,
+      filename: decodedFilename,
+      deletedRows: existing.length,
+    })
+  } catch (error) {
+    console.error('Error deleting program:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete program' },
+      { status: 500 }
+    )
+  }
+}

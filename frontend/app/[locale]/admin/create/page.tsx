@@ -75,6 +75,7 @@ interface LiftInputPayload {
 }
 
 interface ProgramData {
+  id?: number
   schema_version: string
   meta: {
     filename: string
@@ -267,6 +268,8 @@ export default function CreateProgram() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [isFlexibleBridgeMode, setIsFlexibleBridgeMode] = useState(false)
   const [isEditingExistingProgram, setIsEditingExistingProgram] = useState(false)
+  const [editingProgramId, setEditingProgramId] = useState<number | null>(null)
+  const [editingProgramFilename, setEditingProgramFilename] = useState<string | null>(null)
   const [editingTemplateSlug, setEditingTemplateSlug] = useState<string | null>(null)
   const [editingTemplateMeta, setEditingTemplateMeta] = useState<EditingTemplateMeta | null>(null)
   const [editingTemplateDescription, setEditingTemplateDescription] = useState<string>('')
@@ -1147,6 +1150,8 @@ export default function CreateProgram() {
           if (!template) throw new Error('Template payload missing')
 
           setEditingTemplateSlug(template.slug)
+          setEditingProgramId(null)
+          setEditingProgramFilename(null)
           setEditingTemplateMeta({
             scope: template.scope,
             lift: template.lift,
@@ -1246,6 +1251,8 @@ export default function CreateProgram() {
         if (!program) throw new Error('Program payload missing')
 
         setIsEditingExistingProgram(true)
+        setEditingProgramId(typeof program.id === 'number' ? program.id : null)
+        setEditingProgramFilename(typeof program.meta?.filename === 'string' ? program.meta.filename : null)
         setEditingTemplateSlug(null)
         setEditingTemplateMeta(null)
         setEditingTemplateDescription('')
@@ -1352,6 +1359,7 @@ export default function CreateProgram() {
 
       const programToSave: ProgramData = {
         ...calculatedResults,
+        ...(editingProgramId ? { id: editingProgramId } : {}),
         client: {
           ...calculatedResults.client,
           name: formData.clientName,
@@ -1369,6 +1377,7 @@ export default function CreateProgram() {
         input: nextInput,
         meta: {
           ...calculatedResults.meta,
+          ...(isEditingExistingProgram && editingProgramFilename ? { filename: editingProgramFilename } : {}),
           ...(normalizedNotes ? { notes: normalizedNotes } : {}),
         },
         sessions: syncedSessions,
@@ -2650,6 +2659,8 @@ export default function CreateProgram() {
                   setCalculatedResults(null)
                   setIsProgramPinned(false)
                   setIsEditingExistingProgram(false)
+                  setEditingProgramId(null)
+                  setEditingProgramFilename(null)
                   setEditingTemplateSlug(null)
                   setEditingTemplateMeta(null)
                   setEditingTemplateDescription('')

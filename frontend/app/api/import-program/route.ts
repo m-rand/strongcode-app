@@ -62,6 +62,8 @@ const normalizeSessionsShape = (sessions: unknown): unknown => {
 export async function POST(request: Request) {
   try {
     const programData = await request.json()
+    const payloadProgramId = Number((programData as Record<string, unknown>)?.id)
+    const hasPayloadProgramId = Number.isFinite(payloadProgramId) && payloadProgramId > 0
 
     // Make payload robust for older UI/client formats before schema validation.
     if (programData && typeof programData === 'object') {
@@ -79,9 +81,10 @@ export async function POST(request: Request) {
       // Normalize session keys to schema-compatible letter keys (A, B, C...).
       payload.sessions = normalizeSessionsShape(payload.sessions)
 
-      // Ensure filename always matches schema pattern.
+      // Ensure filename always matches schema pattern for new rows.
+      // For existing-row edits (payload with id), keep original filename.
       const filenameRaw = typeof meta.filename === 'string' ? meta.filename : ''
-      if (!FILENAME_PATTERN.test(filenameRaw)) {
+      if (!hasPayloadProgramId && !FILENAME_PATTERN.test(filenameRaw)) {
         const date = new Date().toISOString().split('T')[0]
         const clientSlug = toClientSlug(typeof client.name === 'string' ? client.name : 'client')
         const block = info.block === 'comp' ? 'comp' : 'prep'
@@ -142,17 +145,49 @@ export async function POST(request: Request) {
       programData.meta.created_at = new Date().toISOString()
     }
 
-    const [existingProgram] = await db
-      .select({
-        id: programs.id,
-        status: programs.status,
-        createdAt: programs.createdAt,
-        createdBy: programs.createdBy,
-      })
-      .from(programs)
-      .where(and(eq(programs.clientId, client.id), eq(programs.filename, filename)))
-      .orderBy(desc(programs.id))
-      .limit(1)
+    let existingProgram: {
+      id: number
+      status: string
+      createdAt: string
+      createdBy: string | null
+      filename: string
+    } | undefined
+
+    if (hasPayloadProgramId) {
+      const [byId] = await db
+        .select({
+          id: programs.id,
+          status: programs.status,
+          createdAt: programs.createdAt,
+          createdBy: programs.createdBy,
+          filename: programs.filename,
+        })
+        .from(programs)
+        .where(and(eq(programs.clientId, client.id), eq(programs.id, payloadProgramId)))
+        .limit(1)
+      existingProgram = byId
+    }
+
+    if (!existingProgram) {
+      const [byFilename] = await db
+        .select({
+          id: programs.id,
+          status: programs.status,
+          createdAt: programs.createdAt,
+          createdBy: programs.createdBy,
+          filename: programs.filename,
+        })
+        .from(programs)
+        .where(and(eq(programs.clientId, client.id), eq(programs.filename, filename)))
+        .orderBy(desc(programs.id))
+        .limit(1)
+      existingProgram = byFilename
+    }
+
+    if (existingProgram?.filename) {
+      filename = existingProgram.filename
+      programData.meta.filename = filename
+    }
 
     const rowValues = {
       clientId: client.id,

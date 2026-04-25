@@ -22,6 +22,7 @@ export default function ProgramsListPage() {
   const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [activatingProgram, setActivatingProgram] = useState<string | null>(null)
+  const [deletingProgram, setDeletingProgram] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -72,6 +73,33 @@ export default function ProgramsListPage() {
       setError(err instanceof Error ? err.message : 'Failed to activate program')
     } finally {
       setActivatingProgram(null)
+    }
+  }
+
+  const deleteProgram = async (program: Program) => {
+    const key = `${program.client}/${program.filename}`
+    const confirmed = window.confirm(`Delete program ${program.filename} for ${program.clientName}? This cannot be undone.`)
+    if (!confirmed) return
+
+    setDeletingProgram(key)
+    setError('')
+
+    try {
+      const response = await fetch(
+        `/api/programs/${encodeURIComponent(program.client)}/${encodeURIComponent(program.filename)}`,
+        { method: 'DELETE' },
+      )
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete program')
+      }
+
+      setPrograms(prev => prev.filter((p) => !(p.client === program.client && p.filename === program.filename)))
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete program')
+    } finally {
+      setDeletingProgram(null)
     }
   }
 
@@ -252,6 +280,13 @@ export default function ProgramsListPage() {
                         >
                           {t('view')}
                         </Link>
+                        <button
+                          onClick={() => deleteProgram(program)}
+                          disabled={deletingProgram === `${program.client}/${program.filename}`}
+                          className="px-2 py-1 text-xs font-semibold rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                        >
+                          {deletingProgram === `${program.client}/${program.filename}` ? 'Deleting...' : 'Delete'}
+                        </button>
                       </div>
                     </td>
                   </tr>
